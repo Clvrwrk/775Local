@@ -1,0 +1,26 @@
+node_modules/
+.node_modules.lock
+dist/
+.output/
+.vercel/
+.tanstack/
+.nitro/
+.wrangler/
+*.local
+.env
+.env.*
+!.env.example
+
+# Sandbox / local QA
+.grok/
+artifacts/
+screenshots/
+public/__grok/
+public/uploads/
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+*.log
+npm-debug.log*
