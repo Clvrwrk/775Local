@@ -12,7 +12,6 @@ export function BusinessCardView({
   biz: BusinessCard;
   variant?: "sheet" | "photo";
 }) {
-  const rating = Number(biz.rating);
   const cover = biz.coverUrl || listingCover(biz.citySlug, biz.id);
 
   if (variant === "photo") {
@@ -63,7 +62,7 @@ export function BusinessCardView({
         </p>
         <h3 className="mt-0.5 font-display text-2xl font-semibold leading-tight">{biz.name}</h3>
         <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-paper/85">
-          <Stars rating={rating} />
+          {biz.rating != null ? <Stars rating={biz.rating} /> : null}
           <span className="inline-flex items-center gap-1">
             <MapPin className="size-3.5" />
             {biz.street}

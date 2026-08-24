@@ -23,7 +23,7 @@ function CategoryPage() {
       <section className="app-sheet px-4 py-8">
         <p className="text-xs font-medium uppercase tracking-[0.18em] text-sage">Across the 775</p>
         <h1 className="mt-2 font-display text-4xl font-semibold tracking-tight">
-          {category.name} in Northern Nevada
+          {category.name} in Reno and Sparks
         </h1>
         <p className="mt-3 max-w-2xl text-ink-soft">{category.description}</p>
         <div className="mt-6 flex flex-wrap gap-2">

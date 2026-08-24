@@ -38,16 +38,12 @@ function BusinessPage() {
     telephone: biz.phone,
     address: {
       "@type": "PostalAddress",
-      streetAddress: biz.street,
+      ...(showStreet ? { streetAddress: biz.street } : {}),
       addressLocality: biz.cityName,
       addressRegion: "NV",
       postalCode: biz.zip,
     },
-    aggregateRating: {
-      "@type": "AggregateRating",
-      ratingValue: biz.rating,
-      reviewCount: biz.reviewCount,
-    },
+    ...(!showStreet ? { areaServed: `${biz.cityName}, NV ${biz.zip}` } : {}),
   };
 
   return (
@@ -71,10 +67,14 @@ function BusinessPage() {
         <h1 className="mt-1 font-display text-3xl font-semibold leading-tight">{biz.name}</h1>
         <p className="mt-1 text-sm text-ink-soft">{biz.tagline}</p>
         <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
-          <Stars rating={biz.rating} />
-          <span className="tabular-nums text-muted">
-            {Number(biz.rating).toFixed(1)} ({biz.reviewCount})
-          </span>
+          {biz.rating != null && biz.reviewCount != null ? (
+            <>
+              <Stars rating={biz.rating} />
+              <span className="tabular-nums text-muted">
+                {biz.rating.toFixed(1)} ({biz.reviewCount})
+              </span>
+            </>
+          ) : null}
           {biz.featured ? (
             <span className="rounded-full bg-gold px-2.5 py-0.5 text-[11px] font-medium text-ink">Featured</span>
           ) : biz.claimedBy ? (
@@ -120,7 +120,7 @@ function BusinessPage() {
               <div>
                 <dt className="text-xs text-muted">Email</dt>
                 <dd>
-                  {biz.publicEmail ? (
+                  {biz.publicEmail === true ? (
                     <a href={`mailto:${biz.email}`}>{biz.email}</a>
                   ) : (
                     <span className="text-ink-soft">{biz.email} <span className="text-xs text-muted">(private)</span></span>

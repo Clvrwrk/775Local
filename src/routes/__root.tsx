@@ -4,7 +4,6 @@ import {
   Outlet,
   Scripts,
 } from "@tanstack/react-router";
-import { AuthProvider } from "@/lib/auth/provider";
 import { SiteShell } from "@/components/layout/site-shell";
 import { Link } from "@tanstack/react-router";
 import appCss from "../styles.css?url";
@@ -20,7 +19,7 @@ export const Route = createRootRoute({
       {
         name: "description",
         content:
-          "Find local businesses across Northern Nevada — the 775 from the California border to the Utah line.",
+          "Find trusted local businesses across the 775, from the California border to West Wendover.",
       },
       { name: "theme-color", content: "#1C3B34" },
     ],
@@ -46,9 +45,7 @@ export const Route = createRootRoute({
         <HeadContent />
       </head>
       <body className="min-h-dvh bg-paper font-sans text-ink">
-        <AuthProvider>
-          <Outlet />
-        </AuthProvider>
+        <Outlet />
         <Scripts />
       </body>
     </html>

@@ -10,7 +10,6 @@ dist/
 .env
 .env.*
 !.env.example
-.env.local
 supabase/.temp/
 
 # Sandbox / local QA

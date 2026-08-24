@@ -125,7 +125,7 @@ export function SiteShell({
               775 Directory
             </p>
             <p className="mt-2 max-w-xs text-sm text-muted">
-              The local business finder for Northern Nevada — California border to the Utah line.
+              The local business finder for the 775 — California border to the Utah line.
             </p>
           </div>
           <div className="text-sm">

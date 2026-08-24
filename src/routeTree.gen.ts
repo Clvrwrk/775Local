@@ -27,7 +27,6 @@ import { Route as BizSlugRouteImport } from './routes/biz.$slug'
 import { Route as CategoriesSlugRouteImport } from './routes/categories.$slug'
 import { Route as NvCityRouteImport } from './routes/nv.$city'
 import { Route as StudioSlugRouteImport } from './routes/studio.$slug'
-import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as NvCityCategoryRouteImport } from './routes/nv.$city.$category'
 
 const IndexRoute = IndexRouteImport.update({
@@ -120,11 +119,6 @@ const StudioSlugRoute = StudioSlugRouteImport.update({
   path: '/studio/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
-  id: '/api/auth/$',
-  path: '/api/auth/$',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const NvCityCategoryRoute = NvCityCategoryRouteImport.update({
   id: '/$category',
   path: '/$category',
@@ -150,7 +144,6 @@ export interface FileRoutesByFullPath {
   '/categories/$slug': typeof CategoriesSlugRoute
   '/nv/$city': typeof NvCityRouteWithChildren
   '/studio/$slug': typeof StudioSlugRoute
-  '/api/auth/$': typeof ApiAuthSplatRoute
   '/nv/$city/$category': typeof NvCityCategoryRoute
 }
 export interface FileRoutesByTo {
@@ -172,7 +165,6 @@ export interface FileRoutesByTo {
   '/categories/$slug': typeof CategoriesSlugRoute
   '/nv/$city': typeof NvCityRouteWithChildren
   '/studio/$slug': typeof StudioSlugRoute
-  '/api/auth/$': typeof ApiAuthSplatRoute
   '/nv/$city/$category': typeof NvCityCategoryRoute
 }
 export interface FileRoutesById {
@@ -195,7 +187,6 @@ export interface FileRoutesById {
   '/categories/$slug': typeof CategoriesSlugRoute
   '/nv/$city': typeof NvCityRouteWithChildren
   '/studio/$slug': typeof StudioSlugRoute
-  '/api/auth/$': typeof ApiAuthSplatRoute
   '/nv/$city/$category': typeof NvCityCategoryRoute
 }
 export interface FileRouteTypes {
@@ -219,7 +210,6 @@ export interface FileRouteTypes {
     | '/categories/$slug'
     | '/nv/$city'
     | '/studio/$slug'
-    | '/api/auth/$'
     | '/nv/$city/$category'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -241,7 +231,6 @@ export interface FileRouteTypes {
     | '/categories/$slug'
     | '/nv/$city'
     | '/studio/$slug'
-    | '/api/auth/$'
     | '/nv/$city/$category'
   id:
     | '__root__'
@@ -263,7 +252,6 @@ export interface FileRouteTypes {
     | '/categories/$slug'
     | '/nv/$city'
     | '/studio/$slug'
-    | '/api/auth/$'
     | '/nv/$city/$category'
   fileRoutesById: FileRoutesById
 }
@@ -285,7 +273,6 @@ export interface RootRouteChildren {
   BizSlugRoute: typeof BizSlugRoute
   NvCityRoute: typeof NvCityRouteWithChildren
   StudioSlugRoute: typeof StudioSlugRoute
-  ApiAuthSplatRoute: typeof ApiAuthSplatRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -416,13 +403,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StudioSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/auth/$': {
-      id: '/api/auth/$'
-      path: '/api/auth/$'
-      fullPath: '/api/auth/$'
-      preLoaderRoute: typeof ApiAuthSplatRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/nv/$city/$category': {
       id: '/nv/$city/$category'
       path: '/$category'
@@ -474,7 +454,6 @@ const rootRouteChildren: RootRouteChildren = {
   BizSlugRoute: BizSlugRoute,
   NvCityRoute: NvCityRouteWithChildren,
   StudioSlugRoute: StudioSlugRoute,
-  ApiAuthSplatRoute: ApiAuthSplatRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

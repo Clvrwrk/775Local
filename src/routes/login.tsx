@@ -1,8 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { GROK_PROVIDERS, authEnabled, signIn } from "@/lib/auth/client";
 import { CircleMark } from "@/components/brand/mark";
 import { SiteShell } from "@/components/layout/site-shell";
-import { Button } from "@/components/ui/button";
 
 function safeNext(raw: unknown) {
   if (typeof raw !== "string") return "/account";
@@ -16,7 +14,6 @@ export const Route = createFileRoute("/login")({
 });
 
 function Login() {
-  const { next } = Route.useSearch();
   return (
     <SiteShell wash>
       <section className="mx-auto max-w-md px-4 py-12 text-center">
@@ -31,25 +28,15 @@ function Login() {
         <p className="mt-6 text-sm text-ink-soft">
           Claim a shop, register for neighborhood mail, or keep a punch card in your pocket.
         </p>
-        <div className="mt-8 space-y-3">
-          {authEnabled ? (
-            GROK_PROVIDERS.map((p) => (
-              <Button
-                key={p.providerId}
-                type="button"
-                variant={p.providerId === "google" ? "default" : "outline"}
-                className="w-full rounded-full"
-                onClick={() => signIn(p.providerId, { callbackURL: next })}
-              >
-                Continue with {p.label}
-              </Button>
-            ))
-          ) : (
-            <p className="text-sm text-muted">Sign-in is disabled.</p>
-          )}
+        <div className="mt-8 rounded-[20px] border border-line bg-card p-5 text-left">
+          <p className="font-medium">Owner access is being connected</p>
+          <p className="mt-2 text-sm text-muted">
+            WorkOS sign-in will use email magic code and Google. Until that connection passes the
+            preview security gate, listing management stays locked.
+          </p>
         </div>
         <p className="mt-8 text-sm text-muted">
-          Prefer Google or X. Email codes ship on the production auth layer.
+          No test or shared account can access owner data.
         </p>
         <p className="mt-4 text-sm">
           <Link to="/" className="text-teal underline-offset-4 hover:underline">

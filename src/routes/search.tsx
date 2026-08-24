@@ -36,7 +36,7 @@ function SearchPage() {
       <section className="app-sheet px-4 py-8">
         <h1 className="font-display text-3xl font-semibold tracking-tight sm:text-4xl">{title}</h1>
         <p className="mt-2 text-sm text-muted">
-          {results.length} listing{results.length === 1 ? "" : "s"} · Northern Nevada
+          {results.length} listing{results.length === 1 ? "" : "s"} · Reno and Sparks launch
         </p>
         <div className="mt-6 max-w-3xl">
           <SearchBox cities={cities} defaultQ={q} defaultCity={city} />

@@ -28,20 +28,25 @@ export type BusinessCard = {
   phone: string;
   street: string;
   zip: string;
-  rating: number;
-  reviewCount: number;
+  rating: number | null;
+  reviewCount: number | null;
   hours: string;
   featured: boolean;
   verified: boolean;
+  ownerVerified: boolean;
   citySlug: string;
   cityName: string;
   primaryCategory: string;
   primaryCategorySlug: string;
+  categorySlugs: string[];
   claimedBy: string | null;
   website: string;
   publicEmail: boolean;
   hideStreet: boolean;
   coverUrl: string | null;
+  informationCheckedAt: string | null;
+  publishedAt: string | null;
+  googlePlaceId: string | null;
 };
 
 export type ListingPhoto = {
