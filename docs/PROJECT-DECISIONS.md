@@ -392,3 +392,11 @@ The ten accepted launch categories currently defined by the product are Screen R
 - The authorization is Preview-only. No production WorkOS configuration, Supabase migration, Vercel production deployment, or production-domain attachment is approved by this decision.
 - “Supabase Preview” is a database integration environment and is not a user-facing website. At the time of this correction, the Vercel project had only its inherited `main` deployment and the canonical checkout had no local Vercel link, so a current branch website preview was not available.
 - The feature branch must create an accessible Vercel Preview deployment before browser acceptance. Its eventual callback URL becomes the WorkOS staging redirect; production callback and domain configuration remain separately gated.
+
+## 2026-08-24 — WorkOS and Supabase Preview activation evidence
+
+- WorkOS Staging now accepts the exact callback `https://reno-local-directory-git-codex-launch-foundation-cleverwork.vercel.app/api/auth/callback`. The existing Staging application and API credential were reused; no Production WorkOS setting, paid feature, custom auth domain, enterprise connection, user, invitation, or billing setting was created.
+- Supabase Preview now trusts the matching WorkOS OIDC issuer through its supported third-party authentication integration. OIDC discovery resolved successfully before the integration was created. The Production Supabase project was not changed.
+- Ten application settings were installed in Vercel as branch-specific Preview variables for `codex/launch-foundation`: the Supabase Preview URL and publishable/server keys, WorkOS Staging client/API credentials, the exact callback URL, a generated cookie-encryption password, and the accepted seven-day cookie maximum. Secret values were injected directly and were not written to repository files or command output.
+- The branch deployment remains protected by Vercel Authentication. The stable branch alias is `https://reno-local-directory-git-codex-launch-foundation-cleverwork.vercel.app`; no production alias or Local775 domain was attached.
+- JWT claim-template, login-method, session-duration, Operations-organization MFA, and end-to-end authenticated-user acceptance still require provider-level proof. Until those proofs exist, Operator access remains fail closed and CLE-106 remains in progress.
