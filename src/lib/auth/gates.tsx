@@ -1,4 +1,5 @@
 import { Navigate } from "@tanstack/react-router";
+import { useAuth } from "@workos/authkit-tanstack-react-start/client";
 import type { ReactNode } from "react";
 import { useCurrentUserState } from "./use-current-user";
 
@@ -20,5 +21,15 @@ export function RedirectToSignIn({ to = SIGN_IN_PATH }: { to?: string }) {
 }
 
 export function UserButton() {
-  return null;
+  const { user, signOut } = useAuth();
+  if (!user) return null;
+  return (
+    <button
+      type="button"
+      className="text-sm font-medium text-teal hover:underline"
+      onClick={() => void signOut({ returnTo: "/" })}
+    >
+      Sign out
+    </button>
+  );
 }

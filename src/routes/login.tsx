@@ -1,19 +1,18 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { CircleMark } from "@/components/brand/mark";
 import { SiteShell } from "@/components/layout/site-shell";
-
-function safeNext(raw: unknown) {
-  if (typeof raw !== "string") return "/account";
-  if (!raw.startsWith("/") || raw.startsWith("//") || raw.includes("://")) return "/account";
-  return raw;
-}
+import { safeReturnPath } from "@/lib/auth/policy.mjs";
 
 export const Route = createFileRoute("/login")({
-  validateSearch: (s: Record<string, unknown>) => ({ next: safeNext(s.next) }),
+  validateSearch: (s: Record<string, unknown>) => ({
+    next: safeReturnPath(s.next),
+    error: typeof s.error === "string" ? s.error : undefined,
+  }),
   component: Login,
 });
 
 function Login() {
+  const { next, error } = Route.useSearch();
   return (
     <SiteShell wash>
       <section className="mx-auto max-w-md px-4 py-12 text-center">
@@ -28,15 +27,21 @@ function Login() {
         <p className="mt-6 text-sm text-ink-soft">
           Claim a shop, register for neighborhood mail, or keep a punch card in your pocket.
         </p>
-        <div className="mt-8 rounded-[20px] border border-line bg-card p-5 text-left">
-          <p className="font-medium">Owner access is being connected</p>
-          <p className="mt-2 text-sm text-muted">
-            WorkOS sign-in will use email magic code and Google. Until that connection passes the
-            preview security gate, listing management stays locked.
+        {error ? (
+          <p role="alert" className="mt-6 rounded-[16px] border border-line bg-card p-4 text-sm">
+            {error === "not_configured"
+              ? "Sign-in is not configured in this environment yet."
+              : "Sign-in could not be completed. Please try again."}
           </p>
-        </div>
+        ) : null}
+        <a
+          href={`/api/auth/sign-in?returnPathname=${encodeURIComponent(next)}`}
+          className="mt-8 inline-flex h-10 w-full items-center justify-center rounded-full bg-teal px-4 text-sm font-medium text-white hover:bg-teal/90"
+        >
+          Continue with email or Google
+        </a>
         <p className="mt-8 text-sm text-muted">
-          No test or shared account can access owner data.
+          Residents do not need an account. Owner and operator access is individually authorized.
         </p>
         <p className="mt-4 text-sm">
           <Link to="/" className="text-teal underline-offset-4 hover:underline">

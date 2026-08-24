@@ -27,6 +27,8 @@ import { Route as BizSlugRouteImport } from './routes/biz.$slug'
 import { Route as CategoriesSlugRouteImport } from './routes/categories.$slug'
 import { Route as NvCityRouteImport } from './routes/nv.$city'
 import { Route as StudioSlugRouteImport } from './routes/studio.$slug'
+import { Route as ApiAuthCallbackRouteImport } from './routes/api/auth/callback'
+import { Route as ApiAuthSignInRouteImport } from './routes/api/auth/sign-in'
 import { Route as NvCityCategoryRouteImport } from './routes/nv.$city.$category'
 
 const IndexRoute = IndexRouteImport.update({
@@ -119,6 +121,16 @@ const StudioSlugRoute = StudioSlugRouteImport.update({
   path: '/studio/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAuthCallbackRoute = ApiAuthCallbackRouteImport.update({
+  id: '/api/auth/callback',
+  path: '/api/auth/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAuthSignInRoute = ApiAuthSignInRouteImport.update({
+  id: '/api/auth/sign-in',
+  path: '/api/auth/sign-in',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const NvCityCategoryRoute = NvCityCategoryRouteImport.update({
   id: '/$category',
   path: '/$category',
@@ -144,6 +156,8 @@ export interface FileRoutesByFullPath {
   '/categories/$slug': typeof CategoriesSlugRoute
   '/nv/$city': typeof NvCityRouteWithChildren
   '/studio/$slug': typeof StudioSlugRoute
+  '/api/auth/callback': typeof ApiAuthCallbackRoute
+  '/api/auth/sign-in': typeof ApiAuthSignInRoute
   '/nv/$city/$category': typeof NvCityCategoryRoute
 }
 export interface FileRoutesByTo {
@@ -165,6 +179,8 @@ export interface FileRoutesByTo {
   '/categories/$slug': typeof CategoriesSlugRoute
   '/nv/$city': typeof NvCityRouteWithChildren
   '/studio/$slug': typeof StudioSlugRoute
+  '/api/auth/callback': typeof ApiAuthCallbackRoute
+  '/api/auth/sign-in': typeof ApiAuthSignInRoute
   '/nv/$city/$category': typeof NvCityCategoryRoute
 }
 export interface FileRoutesById {
@@ -187,6 +203,8 @@ export interface FileRoutesById {
   '/categories/$slug': typeof CategoriesSlugRoute
   '/nv/$city': typeof NvCityRouteWithChildren
   '/studio/$slug': typeof StudioSlugRoute
+  '/api/auth/callback': typeof ApiAuthCallbackRoute
+  '/api/auth/sign-in': typeof ApiAuthSignInRoute
   '/nv/$city/$category': typeof NvCityCategoryRoute
 }
 export interface FileRouteTypes {
@@ -210,6 +228,8 @@ export interface FileRouteTypes {
     | '/categories/$slug'
     | '/nv/$city'
     | '/studio/$slug'
+    | '/api/auth/callback'
+    | '/api/auth/sign-in'
     | '/nv/$city/$category'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -231,6 +251,8 @@ export interface FileRouteTypes {
     | '/categories/$slug'
     | '/nv/$city'
     | '/studio/$slug'
+    | '/api/auth/callback'
+    | '/api/auth/sign-in'
     | '/nv/$city/$category'
   id:
     | '__root__'
@@ -252,6 +274,8 @@ export interface FileRouteTypes {
     | '/categories/$slug'
     | '/nv/$city'
     | '/studio/$slug'
+    | '/api/auth/callback'
+    | '/api/auth/sign-in'
     | '/nv/$city/$category'
   fileRoutesById: FileRoutesById
 }
@@ -273,6 +297,8 @@ export interface RootRouteChildren {
   BizSlugRoute: typeof BizSlugRoute
   NvCityRoute: typeof NvCityRouteWithChildren
   StudioSlugRoute: typeof StudioSlugRoute
+  ApiAuthCallbackRoute: typeof ApiAuthCallbackRoute
+  ApiAuthSignInRoute: typeof ApiAuthSignInRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -403,6 +429,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StudioSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/auth/callback': {
+      id: '/api/auth/callback'
+      path: '/api/auth/callback'
+      fullPath: '/api/auth/callback'
+      preLoaderRoute: typeof ApiAuthCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/auth/sign-in': {
+      id: '/api/auth/sign-in'
+      path: '/api/auth/sign-in'
+      fullPath: '/api/auth/sign-in'
+      preLoaderRoute: typeof ApiAuthSignInRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/nv/$city/$category': {
       id: '/nv/$city/$category'
       path: '/$category'
@@ -454,16 +494,19 @@ const rootRouteChildren: RootRouteChildren = {
   BizSlugRoute: BizSlugRoute,
   NvCityRoute: NvCityRouteWithChildren,
   StudioSlugRoute: StudioSlugRoute,
+  ApiAuthCallbackRoute: ApiAuthCallbackRoute,
+  ApiAuthSignInRoute: ApiAuthSignInRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
 
 import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
+import type { startInstance } from './start.ts'
 declare module '@tanstack/react-start' {
   interface Register {
     ssr: true
     router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
   }
 }

@@ -70,7 +70,11 @@ function ListPage() {
         ) : !user ? (
           <p className="mt-8 text-sm text-ink-soft">
             Need a brand-new page?{" "}
-            <Link to="/login" search={{ next: "/list-your-business" }} className="text-sage hover:underline">
+            <Link
+              to="/login"
+              search={{ next: "/list-your-business", error: undefined }}
+              className="text-sage hover:underline"
+            >
               Sign in to publish
             </Link>
             .

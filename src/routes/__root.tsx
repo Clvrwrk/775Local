@@ -6,11 +6,19 @@ import {
 } from "@tanstack/react-router";
 import { SiteShell } from "@/components/layout/site-shell";
 import { Link } from "@tanstack/react-router";
+import { AuthKitProvider, getAuthAction } from "@workos/authkit-tanstack-react-start/client";
 import appCss from "../styles.css?url";
 
 const APP_NAME = "775 Directory";
 
 export const Route = createRootRoute({
+  loader: async () => {
+    try {
+      return { auth: await getAuthAction() };
+    } catch {
+      return { auth: { user: null } as const };
+    }
+  },
   head: () => ({
     meta: [
       { charSet: "utf-8" },
@@ -39,15 +47,22 @@ export const Route = createRootRoute({
       </div>
     </SiteShell>
   ),
-  component: () => (
+  component: RootDocument,
+});
+
+function RootDocument() {
+  const { auth } = Route.useLoaderData();
+  return (
     <html lang="en" className="antialiased" suppressHydrationWarning>
       <head>
         <HeadContent />
       </head>
       <body className="min-h-dvh bg-paper font-sans text-ink">
-        <Outlet />
+        <AuthKitProvider initialAuth={auth}>
+          <Outlet />
+        </AuthKitProvider>
         <Scripts />
       </body>
     </html>
-  ),
-});
+  );
+}

@@ -1,4 +1,7 @@
-/** The identity shape the WorkOS adapter will expose to UI code. */
+import { useAuth } from "@workos/authkit-tanstack-react-start/client";
+import { toAppUser } from "./policy.mjs";
+
+/** The sanitized identity shape exposed to Local775 UI code. */
 export type AppUser = {
   id: string;
   displayName: string | null;
@@ -11,12 +14,9 @@ export type CurrentUserState = {
   isPending: boolean;
 };
 
-/**
- * Authentication fails closed until the approved WorkOS AuthKit environment is
- * connected. There is deliberately no local or preview identity fallback.
- */
 export function useCurrentUserState(): CurrentUserState {
-  return { user: null, isPending: false };
+  const { user, loading } = useAuth();
+  return { user: user ? toAppUser(user) : null, isPending: loading };
 }
 
 export function useCurrentUser(): AppUser | null {

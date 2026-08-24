@@ -27,7 +27,7 @@ function AuthSlot() {
     <SignedOut>
       <Link
         to="/login"
-        search={{ next: "/account" }}
+        search={{ next: "/account", error: undefined }}
         className="inline-flex h-10 items-center rounded-full bg-gold px-4 text-sm font-medium text-ink hover:bg-gold-2"
       >
         Sign in
