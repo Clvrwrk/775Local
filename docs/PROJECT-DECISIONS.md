@@ -377,3 +377,11 @@ The ten accepted launch categories currently defined by the product are Screen R
 - **Ranking integrity:** Featured affects only disclosed sponsored placements. Organic ranking remains independent of payment.
 - **Failed-payment behavior:** A failed or canceled Featured subscription receives a seven-day grace period and then reverts to the always-free Business Listing. Payment state never unpublishes the underlying free Listing.
 - **Lead recipients:** Leads go only to explicitly designated, active Lead Recipient participants with verified delivery destinations. Local775 Operators receive delivery-failure escalation rather than routine resident Leads.
+
+## 2026-08-24 — Preview implementation evidence
+
+- The forward-only Supabase migration set was applied to persistent Preview project `dpxeldzunfxmjahgvjhm`. Production project `hcfryjrajqftcnnbnybj` remains untouched; production apply still requires the exact retained approval.
+- Preview security-advisor checks returned no findings after the Row Level Security and public-projection corrections. Anonymous access sees only the reviewed public projection; raw source rows, candidate evidence, private email, and review state remain private.
+- Workbook SHA-256 `cece84ce2904d4448f9920afc92df2864b213b0d45d2fd59305a674016d303a7` was imported into immutable Preview staging as source batch `e1938274-f607-419a-9df7-1e48cfd33a52`. All 20,436 source rows reconciled exactly, and an idempotent rerun inserted zero duplicate raw rows.
+- Deterministic launch transformation `launch-candidate-v1` created 1,798 private candidates: 128 eligible under the accepted evidence rules, 1,500 requiring review, and 170 ineligible. Zero candidates were selected or published automatically.
+- The strict five-per-category-and-city target is not currently satisfiable from eligible rows alone. Reno has zero eligible Handyman and Screen Repair candidates, and several other cells have fewer than five. Sparks has zero eligible Handyman candidates, and several other cells have fewer than five. This is a launch-corpus acceptance blocker to resolve through evidence enrichment or an explicit eligibility-policy change; the implementation must not weaken the rule silently.

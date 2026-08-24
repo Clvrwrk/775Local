@@ -257,7 +257,7 @@ The principal proof is not traffic. It is qualified Leads delivered reliably, ac
 
 - The licensed source workbook contains 20,436 rows across seven ZIP worksheets. It is a source corpus, not a publication list.
 - The existing repository is an inherited demo with synthetic data, Better Auth/Postgres coupling, Grok-specific build behaviors, and a build-time database migration. Implementation must remove these inherited authority assumptions before the first launch-candidate build.
-- The production Supabase project is `local775-production`; the persistent data-less Preview Branch is `local775-preview`. Neither currently contains an accepted Local775 schema or data.
+- The production Supabase project is `local775-production`; the persistent integration branch is `local775-preview`. The reviewed schema and licensed source corpus are proven in Preview only. Production remains schema-less and data-less until the retained production-apply gate is explicitly approved.
 - The existing Vercel project is adopted rather than duplicated. It is not yet live on the canonical domain.
 - Search Console, Bing, WorkOS, dedicated GoHighLevel, Google Maps credentials, Sentry connection, real provider tests, DNS launch, and production deployment retain operational checkpoints described in the acceptance packet.
 - Default future reversible choices use the recommendation recorded in the project decision log. Retained human gates remain binding.
