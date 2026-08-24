@@ -1,19 +1,21 @@
 {
-  "name": "app-builder-workspace",
+  "name": "local775-directory",
   "private": true,
+  "engines": {
+    "node": "24.x"
+  },
+  "packageManager": "npm@10.9.8",
   "sideEffects": false,
   "type": "module",
   "overrides": {
     "nf3": "0.3.17"
   },
   "scripts": {
-    "dev": "node scripts/with-app-env.mjs vite dev --host 0.0.0.0 --port 8080",
-    "build": "node scripts/with-app-env.mjs vite build && npm run db:migrate",
-    "db:migrate": "node scripts/migrate.mjs",
-    "build:dev": "node scripts/with-app-env.mjs vite build --mode development",
-    "preview": "node scripts/with-app-env.mjs vite preview",
+    "dev": "vite dev --host 0.0.0.0 --port 8080",
+    "build": "vite build",
+    "build:dev": "vite build --mode development",
+    "preview": "vite preview",
     "typecheck": "tsc --noEmit",
-    "check:auth": "node scripts/check-auth-invariant.mjs",
     "test": "node --test 'scripts/**/*.test.mjs'",
     "lint": "eslint .",
     "format": "prettier --write ."

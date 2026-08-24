@@ -10,8 +10,10 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
+import { fileURLToPath } from "node:url";
 import { isMigrationFile, migrationName, pendingMigrations } from "./migration-plan.mjs";
-import { projectRoot } from "./with-app-env.mjs";
+
+const PROJECT_ROOT = join(fileURLToPath(new URL(".", import.meta.url)), "..");
 
 const AUTH_MIGRATION = "0001_auth.sql";
 
@@ -56,16 +58,20 @@ test("non-.sql entries are dropped (readdir also yields the auth/ directory)", (
   assert.deepEqual(pendingMigrations(["auth", "README.md"], []), []);
 });
 
-test("the auth schema ships outside the globbed directory", () => {
-  const migrationsDir = join(projectRoot(), "migrations");
-  assert.deepEqual(pendingMigrations(readdirSync(migrationsDir), []), []);
+test("the migration plan includes top-level SQL and excludes the auth source directory", () => {
+  const migrationsDir = join(PROJECT_ROOT, "migrations");
+  const entries = readdirSync(migrationsDir);
+  assert.deepEqual(
+    pendingMigrations(entries, []).map(({ name }) => name),
+    entries.filter(isMigrationFile).sort(),
+  );
   assert.ok(readdirSync(join(migrationsDir, "auth")).includes("0001_auth.sql"));
 });
 
 test("this workspace's auth schema copy is byte-identical to its source", () => {
   // An edited copy diverges silently: basename keying skips it on a database
   // that already ran the original, and applies it on a fresh PGLite preview.
-  const pair = authSchemaCopy(projectRoot());
+  const pair = authSchemaCopy(PROJECT_ROOT);
   if (pair === null) return; // sign-in off — nothing has been copied up
   assert.equal(
     pair.copy,

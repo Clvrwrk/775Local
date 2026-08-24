@@ -120,7 +120,7 @@ function BusinessPage() {
               <div>
                 <dt className="text-xs text-muted">Email</dt>
                 <dd>
-                  {Boolean(biz.publicEmail) ? (
+                  {biz.publicEmail ? (
                     <a href={`mailto:${biz.email}`}>{biz.email}</a>
                   ) : (
                     <span className="text-ink-soft">{biz.email} <span className="text-xs text-muted">(private)</span></span>

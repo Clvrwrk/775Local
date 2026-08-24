@@ -228,6 +228,11 @@ function MailTab({
           Virtual postcards hit registered neighbors instantly. Direct mail is queued as a
           neighborhood estimate for this demo.
         </p>
+        {error ? (
+          <p role="alert" className="text-sm text-red-700">
+            {error}
+          </p>
+        ) : null}
         {listings.length === 0 ? (
           <p className="text-sm">List a business first — campaigns send from a listing you own.</p>
         ) : (
