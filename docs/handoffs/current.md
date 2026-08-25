@@ -8,6 +8,16 @@
 
 ---
 
+## 2026-08-25 — CLE-73 Reno source-corpus adapter
+
+- **Accounting:** [CAT-54](https://linear.app/cleverwork/issue/CAT-54/trailcle-73-build-and-verify-local775-idempotent-reno-seed-import) is the current Codex trail for [CLE-73](https://linear.app/cleverwork/issue/CLE-73/build-reproducible-import-for-the-reno-dataforseo-seed-corpus). The cross-team receipt is `/Users/chussey/Library/CloudStorage/Dropbox-AIA4/Cleverwork Main/CODEX/docs/linear/teams/CLE/2026-08-25-local775-dataforseo-seed-corpus.md`.
+- **Branch:** `codex/cle-73-idempotent-import`, based on `origin/codex/launch-foundation`. Do not move this work to stale `main`.
+- **Implementation:** `scripts/import-listings.mjs` now accepts either the licensed seven-sheet workbook or the saved Local775 DataForSEO corpus directory. `scripts/dataforseo-corpus.mjs` binds the four Reno ZIPs (89502, 89509, 89511, 89521), validates provider/manifests/geography/counts/stable identities, hashes all 12 saved artifacts, preserves the four city-mismatch exclusions as immutable raw rows, and maps only qualified rows into the existing private candidate review transform.
+- **Protection boundary:** apply mode can invoke only source-batch registration, append-only raw-row ingestion, insert-only candidate ingestion, and reconciliation status RPCs. It has no canonical Business Listing, Claim, ownership, participation, or publication RPC. Owner-verified fields cannot be overwritten by this import path.
+- **Real-corpus dry-run receipt:** source SHA-256 `f8deefd620d7c406f6cd3cdabeeeb88a35facaef84d817ba28eae8b6aed77c98`; 14,989 qualified rows plus four preserved exclusions; 1,134 private launch-category candidates; zero canonical Listing writes. A repeated dry run returned the same hash and counts.
+- **Verification:** Node 24 focused/full tests, typecheck, lint, secret scan, Prettier check, and production build pass. No DataForSEO API call, Supabase write, production change, paid effect, or external send occurred.
+- **Next gate:** commit and review this branch, then decide whether to execute the separately target-gated Preview apply using `--apply --expected-sha=f8deefd620d7c406f6cd3cdabeeeb88a35facaef84d817ba28eae8b6aed77c98`. Production remains prohibited without its retained approval.
+
 ## Accomplished This Session
 
 ### Project authority, specification, and delivery system
@@ -154,4 +164,3 @@ Preserve the existing Circle × Sierra visual direction and the tokens in `docs/
 | Cloudflare | Public domains are managed in Cloudflare; no production DNS change was made |
 | Sentry | Existing account/tool available; Local775 production wiring is not yet accepted as complete |
 | Seed workbook | `/Users/chussey/Library/CloudStorage/Dropbox-AIA4/Cleverwork Main/Local775Directory` |
-
