@@ -1,4 +1,12 @@
 import { createHash } from "node:crypto";
+import { createReadStream } from "node:fs";
+
+/** @param {string} path */
+export async function sha256File(path) {
+  const hash = createHash("sha256");
+  for await (const chunk of createReadStream(path)) hash.update(chunk);
+  return hash.digest("hex");
+}
 
 /** @param {unknown} value */
 export function normalizeCellValue(value) {

@@ -1,17 +1,10 @@
 import { createHash } from "node:crypto";
-import { createReadStream } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
-import { rowReceipt } from "./import-listings-lib.mjs";
+import { rowReceipt, sha256File } from "./import-listings-lib.mjs";
 import { classifyListingRow } from "./listing-candidate.mjs";
 
 export const DATAFORSEO_RENO_ZIPS = Object.freeze(["89502", "89509", "89511", "89521"]);
-
-async function sha256File(path) {
-  const hash = createHash("sha256");
-  for await (const chunk of createReadStream(path)) hash.update(chunk);
-  return hash.digest("hex");
-}
 
 async function readJson(path) {
   let value;

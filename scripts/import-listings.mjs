@@ -1,12 +1,15 @@
 #!/usr/bin/env node
-import { createHash } from "node:crypto";
-import { createReadStream } from "node:fs";
 import { stat } from "node:fs/promises";
 import { basename, resolve } from "node:path";
 import ExcelJS from "exceljs";
 import { readDataForSeoRenoCorpus } from "./dataforseo-corpus.mjs";
 import { applyReviewOnlyImport } from "./import-apply-lib.mjs";
-import { normalizeCellValue, rowReceipt, validateImportTarget } from "./import-listings-lib.mjs";
+import {
+  normalizeCellValue,
+  rowReceipt,
+  sha256File,
+  validateImportTarget,
+} from "./import-listings-lib.mjs";
 import { classifyListingRow } from "./listing-candidate.mjs";
 
 const RAW_SHEET = /^businesses-89\d{3}$/;
@@ -26,12 +29,6 @@ function parseArgs(argv) {
     expectedSha: expectedArg?.slice("--expected-sha=".length) ?? "",
     workbookPath: resolve(workbookPath),
   };
-}
-
-async function sha256File(path) {
-  const hash = createHash("sha256");
-  for await (const chunk of createReadStream(path)) hash.update(chunk);
-  return hash.digest("hex");
 }
 
 async function readRawRows(path) {
