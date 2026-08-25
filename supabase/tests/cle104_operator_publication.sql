@@ -1,13 +1,14 @@
 begin;
 
 create extension if not exists pgtap with schema extensions;
-select extensions.plan(41);
+select extensions.plan(55);
 
 insert into app.actors (id, workos_user_id, primary_email, display_name)
 values
   ('30000000-0000-4000-8000-000000000001', 'user_operator', 'chussey@aia4.io', 'Launch Operator'),
   ('30000000-0000-4000-8000-000000000002', 'user_nonoperator', 'person@example.test', 'Ordinary User'),
-  ('30000000-0000-4000-8000-000000000003', 'user_limited_operator', 'chussey@aia4.io', 'Limited Operator');
+  ('30000000-0000-4000-8000-000000000003', 'user_limited_operator', 'chussey@aia4.io', 'Limited Operator'),
+  ('30000000-0000-4000-8000-000000000004', 'user_publisher', 'chussey@aia4.io', 'Launch Publisher');
 
 insert into app.operator_grants (
   actor_id,
@@ -29,6 +30,14 @@ insert into app.operator_grants (
   '30000000-0000-4000-8000-000000000003',
   'chussey@aia4.io',
   '{}',
+  'active',
+  'cle104-test',
+  statement_timestamp(),
+  'org_local775'
+), (
+  '30000000-0000-4000-8000-000000000004',
+  'chussey@aia4.io',
+  array['listing_publish'],
   'active',
   'cle104-test',
   statement_timestamp(),
@@ -164,6 +173,12 @@ join private.source_listing_rows source
   on source.batch_id = '30000000-0000-4000-8000-000000000010'
   and source.source_row = matrix.source_row;
 
+update app.listing_candidates
+set latitude = 39.529600,
+    longitude = -119.813800
+where batch_id = '30000000-0000-4000-8000-000000000010'
+  and id <> '30000000-0000-4000-8000-000000000011';
+
 select extensions.ok(
   not has_function_privilege(
     'anon',
@@ -219,6 +234,30 @@ select extensions.ok(
 select extensions.ok(
   not has_table_privilege('service_role', 'app.publication_receipts', 'insert'),
   'service role cannot fabricate publication receipts'
+);
+select extensions.ok(
+  not has_function_privilege(
+    'anon',
+    'public.transition_listing_publication_state(uuid,text,text[],text)',
+    'execute'
+  ),
+  'anonymous callers cannot invoke Listing rollback transitions'
+);
+select extensions.ok(
+  not has_function_privilege(
+    'service_role',
+    'public.transition_listing_publication_state(uuid,text,text[],text)',
+    'execute'
+  ),
+  'service role cannot impersonate a human rollback Operator'
+);
+select extensions.ok(
+  has_function_privilege(
+    'authenticated',
+    'public.transition_listing_publication_state(uuid,text,text[],text)',
+    'execute'
+  ),
+  'authenticated callers may enter the guarded Listing transition command'
 );
 
 select set_config(
@@ -340,7 +379,13 @@ select extensions.throws_ok(
           'source_urls_current', true
         ),
         'duplicate_decision', 'no_duplicate',
-        'entity_decision', 'independent_business',
+        'entity_decisions', jsonb_build_object(
+          'branch', 'not_branch',
+          'chain', 'not_chain',
+          'practitioner', 'not_practitioner',
+          'franchise', 'not_franchise',
+          'service_area', 'fixed_location'
+        ),
         'reason_codes', jsonb_build_array('missing_resolution')
       ),
       'cle104-unresolved-review'
@@ -367,7 +412,13 @@ select extensions.throws_ok(
           'source_urls_current', true
         ),
         'duplicate_decision', 'no_duplicate',
-        'entity_decision', 'national_branch',
+        'entity_decisions', jsonb_build_object(
+          'branch', 'national_branch',
+          'chain', 'not_chain',
+          'practitioner', 'not_practitioner',
+          'franchise', 'not_franchise',
+          'service_area', 'fixed_location'
+        ),
         'reason_codes', jsonb_build_array('national_branch')
       ),
       'cle104-national-branch'
@@ -394,7 +445,13 @@ select extensions.throws_ok(
           'source_urls_current', true
         ),
         'duplicate_decision', 'no_duplicate',
-        'entity_decision', 'locally_operated_franchise',
+        'entity_decisions', jsonb_build_object(
+          'branch', 'not_branch',
+          'chain', 'not_chain',
+          'practitioner', 'not_practitioner',
+          'franchise', 'locally_operated_franchise',
+          'service_area', 'fixed_location'
+        ),
         'reason_codes', jsonb_build_array('inactive_check')
       ),
       'cle104-incomplete-checks'
@@ -421,7 +478,13 @@ select extensions.lives_ok(
           'source_urls_current', true
         ),
         'duplicate_decision', 'no_duplicate',
-        'entity_decision', 'locally_operated_franchise',
+        'entity_decisions', jsonb_build_object(
+          'branch', 'not_branch',
+          'chain', 'not_chain',
+          'practitioner', 'not_practitioner',
+          'franchise', 'locally_operated_franchise',
+          'service_area', 'fixed_location'
+        ),
         'reason_codes', jsonb_build_array('operator_verified_local_franchise')
       ),
       'cle104-review-needs-review'
@@ -449,12 +512,13 @@ select extensions.ok(
       and jsonb_array_length(source_urls) = 2
       and checks @> '{"nap_verified":true,"category_verified":true,"active_status_verified":true}'::jsonb
       and duplicate_decision = 'no_duplicate'
-      and entity_decision = 'locally_operated_franchise'
-      and rollback_reference <> ''
+      and entity_decisions @> '{"branch":"not_branch","chain":"not_chain","practitioner":"not_practitioner","franchise":"locally_operated_franchise","service_area":"fixed_location"}'::jsonb
+      and reviewed_candidate_fingerprint ~ '^[a-f0-9]{64}$'
+      and reviewed_candidate ->> 'normalized_name' = 'Needs Review Business'
     from app.candidate_review_receipts
     where candidate_id = '30000000-0000-4000-8000-000000000011'
   ),
-  'candidate review receipt preserves checks, decisions, and rollback evidence'
+  'candidate review receipt preserves checks, orthogonal decisions, reviewer, and candidate snapshot'
 );
 
 select extensions.is(
@@ -486,7 +550,13 @@ select extensions.is(
         'source_urls_current', true
       ),
       'duplicate_decision', 'no_duplicate',
-      'entity_decision', 'locally_operated_franchise',
+      'entity_decisions', jsonb_build_object(
+        'branch', 'not_branch',
+        'chain', 'not_chain',
+        'practitioner', 'not_practitioner',
+        'franchise', 'locally_operated_franchise',
+        'service_area', 'fixed_location'
+      ),
       'reason_codes', jsonb_build_array('operator_verified_local_franchise')
     ),
     'cle104-review-needs-review'
@@ -509,7 +579,13 @@ select extensions.throws_ok(
         'source_checked_at', statement_timestamp(),
         'checks', '{}'::jsonb,
         'duplicate_decision', 'duplicate_rejected',
-        'entity_decision', 'independent_business',
+        'entity_decisions', jsonb_build_object(
+          'branch', 'not_branch',
+          'chain', 'not_chain',
+          'practitioner', 'not_practitioner',
+          'franchise', 'not_franchise',
+          'service_area', 'fixed_location'
+        ),
         'reason_codes', jsonb_build_array('changed_replay')
       ),
       'cle104-review-needs-review'
@@ -537,7 +613,16 @@ select extensions.is(
             'source_urls_current', true
           ),
           'duplicate_decision', 'no_duplicate',
-          'entity_decision', 'independent_business',
+          'entity_decisions', jsonb_build_object(
+            'branch', 'not_branch',
+            'chain', 'not_chain',
+            'practitioner', 'not_practitioner',
+            'franchise', 'not_franchise',
+            'service_area', case
+              when candidate.proposed_slug like '%-1' then 'service_area_business'
+              else 'fixed_location'
+            end
+          ),
           'reason_codes', jsonb_build_array('operator_verified_independent_business')
         ),
         'cle104-review-' || candidate.id::text
@@ -556,6 +641,43 @@ select extensions.is(
   101,
   'every terminal candidate decision has one append-only review receipt'
 );
+
+reset role;
+update app.listing_candidates
+set normalized_name = normalized_name || ' changed after review'
+where id = (
+  select id
+  from app.listing_candidates
+  where batch_id = '30000000-0000-4000-8000-000000000010'
+    and id <> '30000000-0000-4000-8000-000000000011'
+  order by id
+  limit 1
+);
+set local role authenticated;
+
+select extensions.throws_ok(
+  $$
+    select public.publish_launch_selection(
+      array(
+        select id from app.listing_candidates
+        where batch_id = '30000000-0000-4000-8000-000000000010'
+          and id <> '30000000-0000-4000-8000-000000000011'
+        order by id
+      ),
+      'cle104-mutated-after-review'
+    )
+  $$,
+  'P0001',
+  'launch selection contains an unreviewed or ineligible candidate',
+  'publication refuses a candidate whose reviewed NAP and category snapshot changed'
+);
+
+reset role;
+update app.listing_candidates candidate
+set normalized_name = receipt.reviewed_candidate ->> 'normalized_name'
+from app.candidate_review_receipts receipt
+where receipt.candidate_id = candidate.id;
+set local role authenticated;
 
 select set_config(
   'request.jwt.claims',
@@ -669,7 +791,7 @@ select extensions.throws_ok(
 select set_config(
   'request.jwt.claims',
   jsonb_build_object(
-    'sub', 'user_operator',
+    'sub', 'user_publisher',
     'org_id', 'org_local775',
     'auth_time', extract(epoch from statement_timestamp())::bigint
   )::text,
@@ -726,10 +848,36 @@ select extensions.ok(
       and bool_and(jsonb_array_length(source_urls) > 0)
       and bool_and(checks @> '{"launch_balance_verified":true}'::jsonb)
       and bool_and(rollback_reference <> '')
+      and bool_and(jsonb_typeof(entity_decisions) = 'object')
+      and bool_and(reviewed_candidate_fingerprint ~ '^[a-f0-9]{64}$')
       and bool_and(outcome = 'published')
     from app.publication_receipts
   ),
   'every published Listing has a structured publication receipt'
+);
+
+select extensions.ok(
+  (select bool_and(reviewer_id = '30000000-0000-4000-8000-000000000001')
+     and bool_and(published_by = '30000000-0000-4000-8000-000000000004')
+   from app.publication_receipts)
+  and (select publisher_id = '30000000-0000-4000-8000-000000000004'
+       from app.launch_publication_batches)
+  and (select bool_and(information_checked_by = '30000000-0000-4000-8000-000000000001')
+       from app.business_listings),
+  'publication keeps the original reviewer distinct from the publishing Operator'
+);
+
+select extensions.ok(
+  (
+    select count(*) = 20
+      and bool_and(street_address is null)
+      and bool_and(latitude is null)
+      and bool_and(longitude is null)
+      and bool_and(hide_street)
+    from app.business_listings
+    where is_service_area
+  ),
+  'service-area Listings publish no residential street or exact coordinates'
 );
 
 select extensions.ok(
@@ -767,9 +915,31 @@ select extensions.is(
 );
 
 select extensions.is(
-  (select count(*)::integer from app.listing_revisions where revision_type = 'created'),
+  (select count(*)::integer from app.listing_revisions),
+  300,
+  'publication records draft, pending-review, and published revisions for every Listing'
+);
+
+select extensions.ok(
+  not exists (
+    select listing_id
+    from app.listing_revisions
+    group by listing_id
+    having array_agg(revision_type order by occurred_at, id)
+      <> array['created', 'proposed_change', 'approved_change']
+  ),
+  'every Listing proves the accepted draft to pending-review to published lifecycle'
+);
+
+select extensions.is(
+  (
+    select count(*)::integer
+    from app.integration_outbox
+    where event_type = 'business_listing.published'
+      and status = 'pending'
+  ),
   100,
-  'publication creates an append-only Listing revision for every Listing'
+  'publication atomically creates one durable downstream outbox event per Listing'
 );
 
 select extensions.is(
@@ -827,6 +997,66 @@ select extensions.throws_ok(
   'P0001',
   'idempotency key was already used for a different launch selection',
   'publication idempotency keys reject changed payloads'
+);
+
+select extensions.lives_ok(
+  $$
+    select public.transition_listing_publication_state(
+      (select listing_id from app.publication_receipts order by listing_id limit 1),
+      'suspend',
+      array['launch_rollback_test'],
+      'cle104-suspend-listing'
+    )
+  $$,
+  'the receipt-backed rollback command suspends a published launch Listing'
+);
+
+select extensions.ok(
+  (select count(*) = 1 and bool_and(published_at is null)
+   from app.business_listings where publication_status = 'suspended')
+  and (select count(*) = 99 from public.directory_listings),
+  'suspension removes exactly one Listing from the public projection'
+);
+
+select extensions.ok(
+  (select count(*) = 1 from app.listing_status_transition_receipts where transition = 'suspend')
+  and (select count(*) = 1 from app.listing_revisions where revision_type = 'suspended')
+  and (select count(*) = 1 from app.audit_events where action = 'business_listing_suspended')
+  and (select count(*) = 1 from app.integration_outbox where event_type = 'business_listing.suspended'),
+  'suspension atomically records its receipt, revision, audit event, and outbox event'
+);
+
+select extensions.is(
+  public.transition_listing_publication_state(
+    (select listing_id from app.publication_receipts order by listing_id limit 1),
+    'suspend',
+    array['launch_rollback_test'],
+    'cle104-suspend-listing'
+  ),
+  (select id from app.listing_status_transition_receipts where idempotency_key = 'cle104-suspend-listing'),
+  'identical suspension replay returns the original transition receipt'
+);
+
+select extensions.lives_ok(
+  $$
+    select public.transition_listing_publication_state(
+      (select listing_id from app.publication_receipts order by listing_id limit 1),
+      'restore',
+      array['launch_rollback_restored'],
+      'cle104-restore-listing'
+    )
+  $$,
+  'a suspended launch Listing can be restored through the guarded command'
+);
+
+select extensions.ok(
+  (select count(*) = 100 from app.business_listings where publication_status = 'published')
+  and (select count(*) = 100 from public.directory_listings)
+  and (select count(*) = 1 from app.listing_status_transition_receipts where transition = 'restore')
+  and (select count(*) = 1 from app.listing_revisions where revision_type = 'restored')
+  and (select count(*) = 1 from app.audit_events where action = 'business_listing_restored')
+  and (select count(*) = 1 from app.integration_outbox where event_type = 'business_listing.restored'),
+  'restoration reverses suspension and retains complete transition evidence'
 );
 
 reset role;

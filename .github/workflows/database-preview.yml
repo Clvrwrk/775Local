@@ -4,6 +4,8 @@ on:
   pull_request:
     paths:
       - "supabase/**"
+      - "scripts/operator-publication-http.integration.mjs"
+      - "src/lib/supabase/operator-publication.mjs"
       - ".github/workflows/database-preview.yml"
   workflow_dispatch:
     inputs:
@@ -34,11 +36,19 @@ jobs:
         with:
           version: 2.105.0
 
+      - name: Use Node 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
       - name: Start isolated Supabase
         run: supabase start
 
       - name: Test database contracts
         run: supabase test db
+
+      - name: Test authenticated HTTP publication contract
+        run: node scripts/operator-publication-http.integration.mjs
 
       - name: Lint local schemas
         run: supabase db lint --local --level warning --fail-on error

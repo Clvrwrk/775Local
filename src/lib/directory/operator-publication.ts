@@ -3,8 +3,10 @@ import { getAuthKitContextOrNull } from "@workos/authkit-tanstack-react-start";
 import {
   publishLaunchSelection as publishLaunchSelectionRpc,
   reviewListingCandidate as reviewListingCandidateRpc,
+  transitionListingPublicationState as transitionListingPublicationStateRpc,
   validateCandidateReviewInput,
   validateLaunchPublicationInput,
+  validateListingPublicationTransitionInput,
 } from "@/lib/supabase/operator-publication.mjs";
 
 function currentAccessToken() {
@@ -26,4 +28,12 @@ export const publishLaunchSelection = createServerFn({ method: "POST" })
     const accessToken = currentAccessToken();
     if (!accessToken) return { ok: false as const, code: "authentication_required" };
     return publishLaunchSelectionRpc(data, { accessToken });
+  });
+
+export const transitionListingPublicationState = createServerFn({ method: "POST" })
+  .validator(validateListingPublicationTransitionInput)
+  .handler(async ({ data }) => {
+    const accessToken = currentAccessToken();
+    if (!accessToken) return { ok: false as const, code: "authentication_required" };
+    return transitionListingPublicationStateRpc(data, { accessToken });
   });

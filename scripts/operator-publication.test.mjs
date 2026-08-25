@@ -1,10 +1,9 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
 import { test } from "node:test";
 import {
   publishLaunchSelection,
   reviewListingCandidate,
+  transitionListingPublicationState,
   validateLaunchPublicationInput,
 } from "../src/lib/supabase/operator-publication.mjs";
 
@@ -134,6 +133,54 @@ test("idempotency conflicts and unknown provider failures are redacted", async (
   assert.deepEqual(unknown, { ok: false, code: "operator_command_failed" });
 });
 
+test("network and timeout failures return one stable redacted command code", async () => {
+  const result = await publishLaunchSelection(
+    { candidateIds, idempotencyKey: "launch-command-network-failure" },
+    {
+      accessToken: "workos.jwt.token",
+      env,
+      fetchImpl: async () => {
+        throw new Error("connect ECONNREFUSED with bearer workos.jwt.token");
+      },
+    },
+  );
+  assert.deepEqual(result, { ok: false, code: "operator_command_failed" });
+});
+
+test("Listing suspension uses the guarded, idempotent transition RPC", async () => {
+  let request;
+  const result = await transitionListingPublicationState(
+    {
+      listingId: candidateId,
+      transition: "suspend",
+      reasonCodes: ["operator_rollback"],
+      idempotencyKey: "listing-suspend-command",
+    },
+    {
+      accessToken: "workos.jwt.token",
+      env,
+      fetchImpl: async (url, init) => {
+        request = { url: String(url), init };
+        return new Response(JSON.stringify(candidateId), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+      },
+    },
+  );
+  assert.deepEqual(result, { ok: true, receipt: candidateId });
+  assert.equal(
+    request.url,
+    "https://preview-project.supabase.co/rest/v1/rpc/transition_listing_publication_state",
+  );
+  assert.deepEqual(JSON.parse(request.init.body), {
+    requested_listing_id: candidateId,
+    requested_transition: "suspend",
+    requested_reason_codes: ["operator_rollback"],
+    requested_idempotency_key: "listing-suspend-command",
+  });
+});
+
 test("operator commands fail closed without an approved target or human token", async () => {
   assert.deepEqual(
     await reviewListingCandidate(
@@ -152,15 +199,4 @@ test("operator commands fail closed without an approved target or human token", 
     ),
     { ok: false, code: "operator_command_not_configured" },
   );
-});
-
-test("the server boundary derives identity from AuthKit and contains no service-role path", () => {
-  const source = readFileSync(
-    join(import.meta.dirname, "..", "src", "lib", "directory", "operator-publication.ts"),
-    "utf8",
-  );
-  assert.match(source, /createServerFn\(\{ method: "POST" \}\)/);
-  assert.match(source, /getAuthKitContextOrNull/);
-  assert.match(source, /accessToken/);
-  assert.doesNotMatch(source, /SERVICE_ROLE|serviceRole|SUPABASE_SERVICE_ROLE_KEY/);
 });
