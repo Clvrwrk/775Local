@@ -8,6 +8,19 @@
 
 ---
 
+## 2026-08-25 — CLE-104 audited publication command ready for merge
+
+- **Accounting:** [CAT-74](https://linear.app/cleverwork/issue/CAT-74/trailcle-104-build-audited-operator-publication-command) is the Codex trail for [CLE-104](https://linear.app/cleverwork/issue/CLE-104/launch-slice-seed-ingestion-and-reviewed-publication-set). The durable cross-team receipt is `/Users/chussey/Library/CloudStorage/Dropbox-AIA4/Cleverwork Main/CODEX/docs/linear/teams/CLE/2026-08-25-local775-publication-command.md`.
+- **Branch:** `codex/cle-104-publication-command` is based on `origin/codex/launch-foundation` at `9bf9209`. Implementation commits are `a992217`, `696a543`, and reviewed fixed point `a3b2bb3`.
+- **Command boundary:** recent, non-impersonated WorkOS authentication plus an allowlisted, organization-scoped Operator Grant is required for candidate review, exact-100 publication, suspension, and restoration. The application uses the human bearer token and Supabase publishable key only; malformed input and transport/provider failures return stable redacted codes.
+- **Publication integrity:** publication is atomic, idempotent, singleton-locked, balanced at five Listings per launch category/city cell, bound to the immutable reviewed candidate snapshot, and rejected when evidence is older than 30 days. Distinct locations can share one reviewed canonical Business identity while retaining separate Business Listings. Service-area residential street and exact coordinates remain private.
+- **Evidence and rollback:** every published Listing records draft, pending-review, and published revisions; attributable review/publication receipts; audit events; and durable outbox entries. Publication receipts preserve the actual `pending_review` before-state. Guarded, idempotent suspend/restore commands append their own receipts, revisions, audits, and outbox entries.
+- **Independent review:** Standards and Spec independently approved exact commit `a3b2bb3` after three review passes. All review findings were remediated; no blocker remains.
+- **Verification:** a fresh isolated local Supabase reset applied all migrations. pgTAP passed 82/82, schema lint reported no errors, and the AuthKit application-handler HTTP contract proved review, exact-100 publication, idempotent replay, wrong-organization denial, suspend/restore, 100 public rows, 100 publication receipts, 100 publication audits, 100 publication outbox records, and 302 lifecycle revisions. All 90 Node tests, typecheck, lint, secret scan, supported-file Prettier, diff check, and the Node 24/Vercel production build pass.
+- **Effects:** no shared Preview or Production migration/data change, no source-batch apply, no real publication, no deployment, no DNS change, no provider call/spend, and no external send occurred. Verification used only the discarded local Supabase stack.
+- **Real-corpus gate:** the saved corpus remains 14,993 raw rows and 1,134 private candidates: 40 eligible, 980 requiring review, and 114 ineligible. It cannot yet supply the exact reviewed 100 without evidence enrichment; do not weaken eligibility or silently publish review rows.
+- **Next gate:** review and merge `codex/cle-104-publication-command` into `codex/launch-foundation`. After merge, continue CLE-104 with evidence enrichment and human review needed to assemble the real balanced 100. Shared Preview application and any real Listing publication remain separate, explicitly reconciled approvals.
+
 ## 2026-08-25 — CLE-104 reviewed-publication foundation merged
 
 - **Accounting:** [CAT-73](https://linear.app/cleverwork/issue/CAT-73/trailcle-104-add-entity-risk-screening-and-reviewed-publication-gate) is the Codex trail for [CLE-104](https://linear.app/cleverwork/issue/CLE-104/launch-slice-seed-ingestion-and-reviewed-publication-set). The verified cross-team receipt is `/Users/chussey/Library/CloudStorage/Dropbox-AIA4/Cleverwork Main/CODEX/docs/linear/teams/CLE/2026-08-25-local775-reviewed-publication.md`.
@@ -72,8 +85,8 @@
 - Linear CLE-106: Added a no-secret remediation receipt and retained In Progress for the human-authenticated callback test.
 
 ## Git State
-- **Branch:** `codex/launch-foundation` tracking `origin/codex/launch-foundation`
-- **Last implementation commit:** `2be6c9c` — "fix(CLE-104): enforce command-only candidate writes"
+- **Branch:** `codex/cle-104-publication-command`, based on `origin/codex/launch-foundation` at `9bf9209`
+- **Last implementation commit:** `a3b2bb3` — "fix(CLE-104): enforce application publication boundary"
 - **Uncommitted changes:** none after the handoff documentation commit.
 
 ## Task Cut Off
@@ -115,13 +128,15 @@ This historical continuation remains valid but is superseded as the immediate ne
 3. **Production launch approval** — the Production Acceptance Packet and explicit approval are required before deploying to production or attaching `775Directory.com`.
 
 ## Verification Commands
-1. `git status --short --branch` — should show `codex/launch-foundation` tracking its remote with no uncommitted changes after the handoff commit.
-2. `npm test` — should report 82 passing tests and zero failures.
+1. `git status --short --branch` — should show `codex/cle-104-publication-command` tracking its remote with no uncommitted changes after the handoff commit.
+2. `npm test` — should report 90 passing tests and zero failures.
 3. `npm run typecheck` — should exit successfully with no TypeScript errors.
 4. `npm run security:secrets` — should print `Secret scan passed.`
 5. `npm run build` — should complete the deterministic Vite/Nitro Vercel build without migrations or provider effects.
-6. `npx vercel@latest inspect reno-local-directory-git-codex-launch-foundation-cleverwork.vercel.app --scope cleverwork` — should resolve the stable alias to Ready deployment `dpl_7HjSx64Yx2ZkurdNj26cRdZzpdk2` until a newer accepted Preview replaces it.
-7. `npx vercel@latest curl '/api/auth/sign-in?returnPathname=%2Faccount' --deployment https://reno-local-directory-git-codex-launch-foundation-cleverwork.vercel.app -- --silent --show-error --max-redirs 0 --dump-header - --output /dev/null` — should return `307` with a WorkOS location; do not paste or log the full redirect state.
+6. `supabase db reset --local && supabase test db && supabase db lint --local --level warning --fail-on error` — should apply all migrations, pass 82 pgTAP assertions, and report no schema errors.
+7. `node scripts/operator-publication-http.integration.mjs` — should prove the AuthKit handler and isolated HTTP/RPC publication/rollback contract.
+8. `npx vercel@latest inspect reno-local-directory-git-codex-launch-foundation-cleverwork.vercel.app --scope cleverwork` — should resolve the stable alias to Ready deployment `dpl_7HjSx64Yx2ZkurdNj26cRdZzpdk2` until a newer accepted Preview replaces it.
+9. `npx vercel@latest curl '/api/auth/sign-in?returnPathname=%2Faccount' --deployment https://reno-local-directory-git-codex-launch-foundation-cleverwork.vercel.app -- --silent --show-error --max-redirs 0 --dump-header - --output /dev/null` — should return `307` with a WorkOS location; do not paste or log the full redirect state.
 
 ## Full Context
 
