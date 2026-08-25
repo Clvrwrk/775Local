@@ -8,17 +8,17 @@
 
 ---
 
-## 2026-08-25 — CLE-73 merged; CLE-104 reviewed-publication gate ready
+## 2026-08-25 — CLE-104 reviewed-publication foundation merged
 
 - **Accounting:** [CAT-73](https://linear.app/cleverwork/issue/CAT-73/trailcle-104-add-entity-risk-screening-and-reviewed-publication-gate) is the Codex trail for [CLE-104](https://linear.app/cleverwork/issue/CLE-104/launch-slice-seed-ingestion-and-reviewed-publication-set). The verified cross-team receipt is `/Users/chussey/Library/CloudStorage/Dropbox-AIA4/Cleverwork Main/CODEX/docs/linear/teams/CLE/2026-08-25-local775-reviewed-publication.md`.
 - **CLE-73 merge:** `codex/cle-73-idempotent-import` passed independent standards/spec review. The duplicate hashing helper was centralized in `1deecd2`, then the branch was fast-forward merged and pushed to `origin/codex/launch-foundation` at `1deecd2`.
-- **CLE-104 branch:** `codex/cle-104-reviewed-publication`, pushed at `270322f` (`feat(CLE-104): enforce reviewed publication screening`). It is based on the merged launch-foundation branch and is not yet merged.
-- **Implementation:** deterministic review reasons now cover duplicate title/address, multi-location or shared-domain chain/franchise risk, practitioners, service-area rows, and ambiguous launch categories. `launch-candidate-v2` preserves the CLE-73 category boundary, reconciles only pending/unselected private candidates, appends before/after audit events, and rejects malformed, duplicate, reviewed, or selected replay inputs.
-- **Selection gate:** `selected_for_launch` now requires an attributable accepted review (`reviewed_by` and `reviewed_at`), `eligible` screening, and zero unresolved reasons. No import or reconciliation path can create or mutate a canonical Business Listing or publish data.
+- **CLE-104 merge:** `codex/cle-104-reviewed-publication` passed fixed-point Standards and Spec review, then fast-forward merged and pushed to `origin/codex/launch-foundation` at `2be6c9c`. The implementation is `270322f`; merge-review remediations are `e35baf0` and `2be6c9c`.
+- **Implementation:** deterministic review reasons now cover duplicate title/address, same-name multi-location evidence, shared-domain entity evidence, practitioners, service-area rows, and ambiguous launch categories. `launch-candidate-v2` preserves the CLE-73 category boundary, reconciles only pending/unselected private candidates, appends before/after audit events, and rejects malformed, contradictory, duplicate, reviewed, or selected replay inputs.
+- **Selection gate:** `selected_for_launch` requires an attributable accepted review (`reviewed_by` and `reviewed_at`), `eligible` screening, and zero unresolved reasons. Authenticated Operators and `service_role` have read-only table privileges; ingestion and reconciliation mutations are limited to scoped command functions. No current path can create or mutate a canonical Business Listing or publish data.
 - **Real-corpus receipt:** the saved four-ZIP Reno corpus remains 14,993 raw rows and 1,134 private candidates: 40 eligible, 980 requiring review, and 114 ineligible. Two final dry runs produced identical output SHA-256 `c9ba586cbb9a038982ffc557d7b3b90c771fa90be786ef2ebd5139ee46dacfcd`.
-- **Verification:** independent standards and specification re-reviews are clean. All 80 Node tests, typecheck, lint, Prettier, secret scan, diff check, and production build pass. A fresh isolated local Supabase reset applied all migrations; pgTAP passed 13/13 and schema lint reported no errors. Relevant pull requests now run the pinned Supabase `2.105.0` database contract before any manual Preview migration dispatch.
+- **Verification:** independent Standards and Spec fixed-point reviews are clean at `1deecd2...2be6c9c`. All 82 Node tests, typecheck, lint, Prettier, secret scan, diff check, and production build pass. A fresh isolated local Supabase reset applied all migrations; pgTAP passed 25/25 and schema lint reported no errors. Relevant pull requests now run the pinned Supabase `2.105.0` database contract before any manual Preview migration dispatch.
 - **Effects:** no shared Preview or Production migration/data change, no source-batch apply, no publication, no provider call/spend, and no external send occurred. The local Supabase test stack was stopped and discarded after verification.
-- **Current next gate:** review and merge `codex/cle-104-reviewed-publication` into `codex/launch-foundation`. Then continue CLE-104 with the Operator review/selection/publication command and receipt flow needed to choose the 100 human-reviewed launch Listings. Do not apply the duplicate Reno DataForSEO source batch to the populated shared Preview; Preview migration application and any real selection remain separate reconciled decisions.
+- **Current next gate:** continue CLE-104 with the recent-authenticated, idempotent, audited Operator review/selection/publication command and structured receipt flow needed to choose the 100 human-reviewed launch Listings. Do not apply the duplicate Reno DataForSEO source batch to the populated shared Preview; Preview migration application and any real selection remain separate reconciled decisions.
 
 ## 2026-08-25 — CLE-73 Reno source-corpus adapter
 
@@ -72,14 +72,9 @@
 - Linear CLE-106: Added a no-secret remediation receipt and retained In Progress for the human-authenticated callback test.
 
 ## Git State
-- **Branch:** `codex/cle-104-reviewed-publication` tracking `origin/codex/cle-104-reviewed-publication`
-- **Last implementation commit:** `270322f` — "feat(CLE-104): enforce reviewed publication screening"
-- **Uncommitted changes:** this handoff update only before its documentation commit.
-
-| File | Status | Note |
-|------|--------|------|
-| `docs/handoffs/current.md` | Added | Canonical current handoff generated this session |
-| `docs/handoffs/archive/2026-08-24-1921.md` | Added | Immutable archive copy of this handoff |
+- **Branch:** `codex/launch-foundation` tracking `origin/codex/launch-foundation`
+- **Last implementation commit:** `2be6c9c` — "fix(CLE-104): enforce command-only candidate writes"
+- **Uncommitted changes:** none after the handoff documentation commit.
 
 ## Task Cut Off
 None — implementation and credential remediation ended at a clean boundary. CLE-106 remains intentionally open because completing a real test-user authentication requires human participation.
@@ -121,7 +116,7 @@ This historical continuation remains valid but is superseded as the immediate ne
 
 ## Verification Commands
 1. `git status --short --branch` — should show `codex/launch-foundation` tracking its remote with no uncommitted changes after the handoff commit.
-2. `npm test` — should report 69 passing tests and zero failures.
+2. `npm test` — should report 82 passing tests and zero failures.
 3. `npm run typecheck` — should exit successfully with no TypeScript errors.
 4. `npm run security:secrets` — should print `Secret scan passed.`
 5. `npm run build` — should complete the deterministic Vite/Nitro Vercel build without migrations or provider effects.
