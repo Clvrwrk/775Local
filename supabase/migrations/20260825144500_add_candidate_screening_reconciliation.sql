@@ -73,6 +73,23 @@ begin
   if exists (
     select 1
     from jsonb_to_recordset(requested_candidates) as requested(
+      screening_status text,
+      screening_reasons jsonb
+    )
+    where (
+      requested.screening_status = 'eligible'
+      and jsonb_array_length(requested.screening_reasons) <> 0
+    ) or (
+      requested.screening_status in ('needs_review', 'ineligible')
+      and jsonb_array_length(requested.screening_reasons) = 0
+    )
+  ) then
+    raise exception 'screening status and reasons are inconsistent';
+  end if;
+
+  if exists (
+    select 1
+    from jsonb_to_recordset(requested_candidates) as requested(
       worksheet text,
       source_row integer
     )
@@ -242,7 +259,7 @@ as $$
         where evidence ->> 'transform_version' = 'launch-candidate-v2'
       ) as transform_current_count,
       count(*) filter (
-        where evidence ->> 'corpus_review_risk_version' = 'entity-risk-v1'
+        where evidence ->> 'corpus_review_risk_version' = 'entity-risk-v2'
       ) as risk_current_count,
       count(*) filter (where screening_status = 'eligible') as eligible_count,
       count(*) filter (where screening_status = 'needs_review') as needs_review_count,

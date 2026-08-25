@@ -17,7 +17,7 @@ function candidate(overrides = {}) {
     screening_status: "eligible",
     screening_reasons: [],
     review_status: "pending",
-    evidence: {},
+    evidence: { website_host: "example.com" },
     ...overrides,
   };
 }
@@ -33,19 +33,52 @@ test("duplicate title and address rows are explicit review cases", () => {
   }
 });
 
-test("multi-location and franchise-like domain groups require review", () => {
+test("same-brand rows at distinct addresses and domains require multi-location review", () => {
   const screened = applyCorpusReviewRisks([
-    candidate(),
+    candidate({ evidence: { website_host: "example-reno.com" } }),
     candidate({
       source_row: 3,
-      normalized_name: "Example Plumbing North",
-      proposed_slug: "example-plumbing-north-00000002",
+      proposed_slug: "example-plumbing-00000002",
+      street_address: "200 Main St",
+      evidence: { website_host: "example-sparks.com" },
+    }),
+  ]);
+  for (const item of screened) {
+    assert.equal(item.screening_status, "needs_review");
+    assert.ok(item.screening_reasons.includes("multi_location_review"));
+    assert.equal(item.screening_reasons.includes("shared_business_domain_entity_review"), false);
+  }
+});
+
+test("national branch rows sharing a business domain require entity review", () => {
+  const screened = applyCorpusReviewRisks([
+    candidate({ normalized_name: "National Heat Reno" }),
+    candidate({
+      source_row: 3,
+      normalized_name: "National Heat Sparks",
+      proposed_slug: "national-heat-sparks-00000002",
+      street_address: "200 Main St",
+    }),
+  ]);
+  for (const item of screened) {
+    assert.ok(item.screening_reasons.includes("shared_business_domain_entity_review"));
+    assert.equal(item.screening_reasons.includes("multi_location_review"), false);
+  }
+});
+
+test("locally operated franchise rows remain in human entity review", () => {
+  const screened = applyCorpusReviewRisks([
+    candidate({ normalized_name: "Locally Owned Hardware Reno" }),
+    candidate({
+      source_row: 3,
+      normalized_name: "Locally Owned Hardware Sparks",
+      proposed_slug: "locally-owned-hardware-sparks-00000002",
       street_address: "200 Main St",
     }),
   ]);
   for (const item of screened) {
     assert.equal(item.screening_status, "needs_review");
-    assert.ok(item.screening_reasons.includes("multi_location_chain_or_franchise_review"));
+    assert.ok(item.screening_reasons.includes("shared_business_domain_entity_review"));
   }
 });
 

@@ -183,7 +183,7 @@ test("repeat apply inserts nothing twice and uses only review-boundary RPCs", as
         if (candidate.evidence?.transform_version === "launch-candidate-v2") {
           row.transform_current_count += 1;
         }
-        if (candidate.evidence?.corpus_review_risk_version === "entity-risk-v1") {
+        if (candidate.evidence?.corpus_review_risk_version === "entity-risk-v2") {
           row.risk_current_count += 1;
         }
         if (candidate.screening_status === "eligible") row.eligible_count += 1;
@@ -197,7 +197,7 @@ test("repeat apply inserts nothing twice and uses only review-boundary RPCs", as
           (candidate) => candidate.evidence?.transform_version === "launch-candidate-v2",
         ).length,
         risk_current_count: [...storedCandidates.values()].filter(
-          (candidate) => candidate.evidence?.corpus_review_risk_version === "entity-risk-v1",
+          (candidate) => candidate.evidence?.corpus_review_risk_version === "entity-risk-v2",
         ).length,
         matrix: [...matrix.values()].sort((left, right) =>
           `${left.city}\u0000${left.category}`.localeCompare(
@@ -223,7 +223,7 @@ test("repeat apply inserts nothing twice and uses only review-boundary RPCs", as
         screening_reasons: [],
         evidence: {
           transform_version: "launch-candidate-v2",
-          corpus_review_risk_version: "entity-risk-v1",
+          corpus_review_risk_version: "entity-risk-v2",
         },
       },
     ],
@@ -250,7 +250,7 @@ test("repeat apply inserts nothing twice and uses only review-boundary RPCs", as
     calls
       .filter(({ name }) => name === "reconcile_listing_candidate_screening")
       .every(({ body }) =>
-        /^listing-import:[a-f0-9]{64}:launch-candidate-v2:entity-risk-v1$/.test(
+        /^listing-import:[a-f0-9]{64}:launch-candidate-v2:entity-risk-v2$/.test(
           body.requested_correlation_id,
         ),
       ),

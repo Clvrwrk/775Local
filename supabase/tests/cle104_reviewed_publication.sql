@@ -1,7 +1,7 @@
 begin;
 
 create extension if not exists pgtap with schema extensions;
-select extensions.plan(13);
+select extensions.plan(20);
 
 insert into private.source_batches (
   id, source_name, source_sha256, workbook_row_count, imported_by
@@ -76,6 +76,23 @@ select extensions.ok(
   'service role can reconcile candidate screening'
 );
 
+select extensions.ok(
+  has_table_privilege('authenticated', 'app.listing_candidates', 'select'),
+  'authenticated operators retain read access to the private review queue'
+);
+select extensions.ok(
+  not has_table_privilege('authenticated', 'app.listing_candidates', 'insert'),
+  'authenticated operators cannot insert listing candidates directly'
+);
+select extensions.ok(
+  not has_table_privilege('authenticated', 'app.listing_candidates', 'update'),
+  'authenticated operators cannot bypass review commands with direct updates'
+);
+select extensions.ok(
+  not has_table_privilege('authenticated', 'app.listing_candidates', 'delete'),
+  'authenticated operators cannot delete listing candidates directly'
+);
+
 select extensions.throws_ok(
   $$
     select public.reconcile_listing_candidate_screening(
@@ -106,6 +123,45 @@ select extensions.throws_ok(
   $$
     select public.reconcile_listing_candidate_screening(
       '10000000-0000-4000-8000-000000000001',
+      '[{"worksheet":"businesses-89502","source_row":2,"launch_category_slug":"hvac","screening_status":"eligible","screening_reasons":["website_missing"],"evidence":{}}]'::jsonb,
+      'cle104-eligible-with-reason'
+    )
+  $$,
+  'P0001',
+  'screening status and reasons are inconsistent',
+  'eligible screening cannot retain unresolved reasons'
+);
+
+select extensions.throws_ok(
+  $$
+    select public.reconcile_listing_candidate_screening(
+      '10000000-0000-4000-8000-000000000001',
+      '[{"worksheet":"businesses-89502","source_row":2,"launch_category_slug":"hvac","screening_status":"needs_review","screening_reasons":[],"evidence":{}}]'::jsonb,
+      'cle104-review-without-reason'
+    )
+  $$,
+  'P0001',
+  'screening status and reasons are inconsistent',
+  'needs-review screening requires an explicit reason'
+);
+
+select extensions.throws_ok(
+  $$
+    select public.reconcile_listing_candidate_screening(
+      '10000000-0000-4000-8000-000000000001',
+      '[{"worksheet":"businesses-89502","source_row":2,"launch_category_slug":"hvac","screening_status":"ineligible","screening_reasons":[],"evidence":{}}]'::jsonb,
+      'cle104-ineligible-without-reason'
+    )
+  $$,
+  'P0001',
+  'screening status and reasons are inconsistent',
+  'ineligible screening requires an explicit reason'
+);
+
+select extensions.throws_ok(
+  $$
+    select public.reconcile_listing_candidate_screening(
+      '10000000-0000-4000-8000-000000000001',
       '[
         {"worksheet":"businesses-89502","source_row":2,"launch_category_slug":"hvac","screening_status":"eligible","screening_reasons":[],"evidence":{}},
         {"worksheet":"businesses-89502","source_row":2,"launch_category_slug":"electrical","screening_status":"needs_review","screening_reasons":["launch_category_ambiguity"],"evidence":{}}
@@ -121,7 +177,7 @@ select extensions.throws_ok(
 select extensions.is(
   public.reconcile_listing_candidate_screening(
     '10000000-0000-4000-8000-000000000001',
-    '[{"worksheet":"businesses-89502","source_row":2,"launch_category_slug":"electrical","screening_status":"needs_review","screening_reasons":["launch_category_ambiguity"],"evidence":{"transform_version":"launch-candidate-v2","corpus_review_risk_version":"entity-risk-v1"}}]'::jsonb,
+    '[{"worksheet":"businesses-89502","source_row":2,"launch_category_slug":"electrical","screening_status":"needs_review","screening_reasons":["launch_category_ambiguity"],"evidence":{"transform_version":"launch-candidate-v2","corpus_review_risk_version":"entity-risk-v2"}}]'::jsonb,
     'cle104-current'
   ),
   1,
@@ -152,7 +208,7 @@ select extensions.is(
 select extensions.is(
   public.reconcile_listing_candidate_screening(
     '10000000-0000-4000-8000-000000000001',
-    '[{"worksheet":"businesses-89502","source_row":2,"launch_category_slug":"electrical","screening_status":"needs_review","screening_reasons":["launch_category_ambiguity"],"evidence":{"transform_version":"launch-candidate-v2","corpus_review_risk_version":"entity-risk-v1"}}]'::jsonb,
+    '[{"worksheet":"businesses-89502","source_row":2,"launch_category_slug":"electrical","screening_status":"needs_review","screening_reasons":["launch_category_ambiguity"],"evidence":{"transform_version":"launch-candidate-v2","corpus_review_risk_version":"entity-risk-v2"}}]'::jsonb,
     'cle104-current'
   ),
   0,
@@ -194,7 +250,7 @@ select extensions.throws_ok(
   $$
     select public.reconcile_listing_candidate_screening(
       '10000000-0000-4000-8000-000000000001',
-      '[{"worksheet":"businesses-89502","source_row":3,"launch_category_slug":"hvac","screening_status":"needs_review","screening_reasons":["website_missing"],"evidence":{"transform_version":"launch-candidate-v2","corpus_review_risk_version":"entity-risk-v1"}}]'::jsonb,
+      '[{"worksheet":"businesses-89502","source_row":3,"launch_category_slug":"hvac","screening_status":"needs_review","screening_reasons":["website_missing"],"evidence":{"transform_version":"launch-candidate-v2","corpus_review_risk_version":"entity-risk-v2"}}]'::jsonb,
       'cle104-reviewed'
     )
   $$,

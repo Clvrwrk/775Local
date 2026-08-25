@@ -25,7 +25,7 @@ function screeningMatrix(candidates) {
     if (candidate.evidence?.transform_version === "launch-candidate-v2") {
       row.transform_current_count += 1;
     }
-    if (candidate.evidence?.corpus_review_risk_version === "entity-risk-v1") {
+    if (candidate.evidence?.corpus_review_risk_version === "entity-risk-v2") {
       row.risk_current_count += 1;
     }
     if (candidate.screening_status === "eligible") row.eligible_count += 1;

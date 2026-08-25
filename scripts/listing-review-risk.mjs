@@ -1,4 +1,4 @@
-const CORPUS_RISK_VERSION = "entity-risk-v1";
+const CORPUS_RISK_VERSION = "entity-risk-v2";
 
 function normalized(value) {
   return String(value ?? "")
@@ -49,17 +49,24 @@ export function applyCorpusReviewRisks(candidates) {
   const nameGroups = groupedIndexes(candidates, (candidate) =>
     normalized(candidate.normalized_name),
   );
+  for (const indexes of nameGroups.values()) {
+    const distinctAddresses = new Set(
+      indexes.map((index) => addressKey(candidates[index])).filter(Boolean),
+    );
+    if (distinctAddresses.size > 1) {
+      addRisk(risks, indexes, "multi_location_review");
+    }
+  }
+
   const domainGroups = groupedIndexes(candidates, (candidate) =>
-    normalized(candidate.diversity_key),
+    normalized(candidate.evidence?.website_host),
   );
-  for (const groups of [nameGroups, domainGroups]) {
-    for (const indexes of groups.values()) {
-      const distinctAddresses = new Set(
-        indexes.map((index) => addressKey(candidates[index])).filter(Boolean),
-      );
-      if (distinctAddresses.size > 1) {
-        addRisk(risks, indexes, "multi_location_chain_or_franchise_review");
-      }
+  for (const indexes of domainGroups.values()) {
+    const distinctAddresses = new Set(
+      indexes.map((index) => addressKey(candidates[index])).filter(Boolean),
+    );
+    if (distinctAddresses.size > 1) {
+      addRisk(risks, indexes, "shared_business_domain_entity_review");
     }
   }
 

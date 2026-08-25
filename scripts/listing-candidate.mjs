@@ -82,37 +82,39 @@ function categoryMatches(value, { allowScreenRepair = true, allowRestaurant = fa
 }
 
 /** @param {Record<string, unknown>} row */
-export function launchCategoriesFor(row) {
+function classifyLaunchCategories(row) {
   const primary = lower(row.category);
   const group = lower(row.group);
+  const additional = lower(row.additional_categories);
   const allowScreenRepair = !/(mobile|phone|computer|electronics)/.test(primary);
   const primaryMatches = categoryMatches(primary, {
     allowScreenRepair,
     allowRestaurant: group === "restaurants & food",
   });
-  const additionalMatches = categoryMatches(lower(row.additional_categories), {
+  const additionalMatches = categoryMatches(additional, {
     allowScreenRepair,
     allowRestaurant: true,
   });
-  return [...new Set([...primaryMatches, ...additionalMatches])];
+  const matches = [...new Set([...primaryMatches, ...additionalMatches])];
+  const selectedCategory =
+    primaryMatches[0] === "screen-repair"
+      ? "screen-repair"
+      : /(hvac|air conditioning contractor|heating contractor|air duct cleaning)/.test(
+            `${primary} | ${additional}`,
+          )
+        ? "hvac"
+        : (primaryMatches.find((match) => match !== "hvac") ?? null);
+  return { matches, selectedCategory };
+}
+
+/** @param {Record<string, unknown>} row */
+export function launchCategoriesFor(row) {
+  return classifyLaunchCategories(row).matches;
 }
 
 /** @param {Record<string, unknown>} row */
 export function launchCategoryFor(row) {
-  const primary = lower(row.category);
-  const primaryMatches = categoryMatches(primary, {
-    allowScreenRepair: !/(mobile|phone|computer|electronics)/.test(primary),
-    allowRestaurant: lower(row.group) === "restaurants & food",
-  });
-  if (primaryMatches[0] === "screen-repair") return "screen-repair";
-  if (
-    /(hvac|air conditioning contractor|heating contractor|air duct cleaning)/.test(
-      `${primary} | ${lower(row.additional_categories)}`,
-    )
-  ) {
-    return "hvac";
-  }
-  return primaryMatches.find((match) => match !== "hvac") ?? null;
+  return classifyLaunchCategories(row).selectedCategory;
 }
 
 function e164(value) {
@@ -190,8 +192,8 @@ function normalizedName(value) {
  * @param {Record<string, any>} row
  */
 export function classifyListingRow(worksheet, sourceRow, row) {
-  const launchCategoryMatches = launchCategoriesFor(row);
-  const launchCategory = launchCategoryFor(row);
+  const { matches: launchCategoryMatches, selectedCategory: launchCategory } =
+    classifyLaunchCategories(row);
   const city = lower(row.city);
   if (!launchCategory || (city !== "reno" && city !== "sparks")) return null;
 
