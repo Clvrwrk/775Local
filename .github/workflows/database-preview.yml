@@ -1,6 +1,10 @@
 name: Preview Database Migration
 
 on:
+  pull_request:
+    paths:
+      - "supabase/**"
+      - ".github/workflows/database-preview.yml"
   workflow_dispatch:
     inputs:
       apply:
@@ -17,8 +21,36 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  database-contract:
+    name: Isolated Database Contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: 2.105.0
+
+      - name: Start isolated Supabase
+        run: supabase start
+
+      - name: Test database contracts
+        run: supabase test db
+
+      - name: Lint local schemas
+        run: supabase db lint --local --level warning --fail-on error
+
+      - name: Stop isolated Supabase
+        if: ${{ always() }}
+        run: supabase stop --no-backup
+
   preview-migrations:
     name: Preview Migration Gate
+    if: ${{ github.event_name == 'workflow_dispatch' }}
+    needs: database-contract
     runs-on: ubuntu-latest
     environment: local775-preview
     timeout-minutes: 15
@@ -33,7 +65,7 @@ jobs:
       - name: Install Supabase CLI
         uses: supabase/setup-cli@v1
         with:
-          version: latest
+          version: 2.105.0
 
       - name: Link the Preview database
         run: supabase link --project-ref "$PREVIEW_PROJECT_ID"

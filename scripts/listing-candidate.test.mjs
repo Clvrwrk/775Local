@@ -1,6 +1,10 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { classifyListingRow, launchCategoryFor } from "./listing-candidate.mjs";
+import {
+  classifyListingRow,
+  launchCategoriesFor,
+  launchCategoryFor,
+} from "./listing-candidate.mjs";
 
 const base = {
   title: "Example Heating",
@@ -68,7 +72,7 @@ test("a fully evidenced row enters the private eligible review queue", () => {
   assert.equal(candidate.screening_status, "eligible");
   assert.deepEqual(candidate.screening_reasons, []);
   assert.match(candidate.proposed_slug, /^example-heating-[a-f0-9]{8}$/);
-  assert.equal(candidate.evidence.transform_version, "launch-candidate-v1");
+  assert.equal(candidate.evidence.transform_version, "launch-candidate-v2");
 });
 
 test("closure and missing first-party contact evidence never become eligible", () => {
@@ -93,4 +97,60 @@ test("fringe geography is excluded instead of silently relabeled", () => {
     classifyListingRow("businesses-89436", 4, { ...base, city: "Spanish Springs" }),
     null,
   );
+});
+
+test("ambiguous launch categories fail closed into review", () => {
+  const row = {
+    ...base,
+    category: "HVAC contractor",
+    additional_categories: "Electrician",
+  };
+  assert.deepEqual(launchCategoriesFor(row), ["hvac", "electrical"]);
+  const candidate = classifyListingRow("businesses-89431", 5, row);
+  assert.equal(candidate.screening_status, "needs_review");
+  assert.ok(candidate.screening_reasons.includes("launch_category_ambiguity"));
+  assert.deepEqual(candidate.evidence.launch_category_matches, ["hvac", "electrical"]);
+
+  const screenRepair = classifyListingRow("businesses-89431", 8, {
+    ...base,
+    additional_categories: "Window screen repair service",
+  });
+  assert.equal(screenRepair.launch_category_slug, "hvac");
+  assert.equal(screenRepair.screening_status, "needs_review");
+  assert.deepEqual(screenRepair.evidence.launch_category_matches, ["hvac", "screen-repair"]);
+
+  const restaurant = classifyListingRow("businesses-89431", 9, {
+    ...base,
+    additional_categories: "Restaurant",
+  });
+  assert.equal(restaurant.launch_category_slug, "hvac");
+  assert.equal(restaurant.screening_status, "needs_review");
+  assert.deepEqual(restaurant.evidence.launch_category_matches, ["hvac", "restaurants"]);
+
+  assert.equal(
+    classifyListingRow("businesses-89431", 10, {
+      ...base,
+      category: "General contractor",
+      additional_categories: "Electrician",
+    }),
+    null,
+  );
+});
+
+test("practitioner and service-area entity risks require review", () => {
+  const practitioner = classifyListingRow("businesses-89431", 6, {
+    ...base,
+    title: "Example Dental",
+    category: "Dentist",
+    additional_categories: "Dental clinic",
+  });
+  assert.equal(practitioner.screening_status, "needs_review");
+  assert.ok(practitioner.screening_reasons.includes("practitioner_entity_review"));
+
+  const serviceArea = classifyListingRow("businesses-89431", 7, {
+    ...base,
+    street_address: null,
+  });
+  assert.equal(serviceArea.screening_status, "needs_review");
+  assert.ok(serviceArea.screening_reasons.includes("service_area_address_review"));
 });

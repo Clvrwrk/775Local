@@ -119,7 +119,7 @@ test("the corpus fails closed when an included row is outside Reno", async () =>
 test("repeat apply inserts nothing twice and uses only review-boundary RPCs", async () => {
   const calls = [];
   const storedRows = new Set();
-  const storedCandidates = new Set();
+  const storedCandidates = new Map();
   const rpc = async (_target, name, body) => {
     calls.push({ name, body });
     if (name === "register_source_batch") return "batch-1";
@@ -134,10 +134,30 @@ test("repeat apply inserts nothing twice and uses only review-boundary RPCs", as
     if (name === "ingest_listing_candidates") {
       let inserted = 0;
       for (const candidate of body.requested_candidates) {
-        if (!storedCandidates.has(candidate.proposed_slug)) inserted += 1;
-        storedCandidates.add(candidate.proposed_slug);
+        if (!storedCandidates.has(candidate.proposed_slug)) {
+          inserted += 1;
+          storedCandidates.set(candidate.proposed_slug, structuredClone(candidate));
+        }
       }
       return inserted;
+    }
+    if (name === "reconcile_listing_candidate_screening") {
+      let updated = 0;
+      for (const candidate of body.requested_candidates) {
+        const stored = storedCandidates.get(candidate.proposed_slug);
+        if (!stored) throw new Error("candidate missing");
+        if (
+          stored.launch_category_slug !== candidate.launch_category_slug ||
+          stored.screening_status !== candidate.screening_status ||
+          JSON.stringify(stored.screening_reasons) !==
+            JSON.stringify(candidate.screening_reasons) ||
+          JSON.stringify(stored.evidence) !== JSON.stringify(candidate.evidence)
+        ) {
+          storedCandidates.set(candidate.proposed_slug, structuredClone(candidate));
+          updated += 1;
+        }
+      }
+      return updated;
     }
     if (name === "source_batch_status") {
       return {
@@ -146,7 +166,45 @@ test("repeat apply inserts nothing twice and uses only review-boundary RPCs", as
       };
     }
     if (name === "listing_candidate_batch_status") {
-      return { candidate_count: storedCandidates.size };
+      const matrix = new Map();
+      for (const candidate of storedCandidates.values()) {
+        const key = `${candidate.city_slug}\u0000${candidate.launch_category_slug}`;
+        const row = matrix.get(key) ?? {
+          city: candidate.city_slug,
+          category: candidate.launch_category_slug,
+          candidate_count: 0,
+          transform_current_count: 0,
+          risk_current_count: 0,
+          eligible_count: 0,
+          needs_review_count: 0,
+          ineligible_count: 0,
+        };
+        row.candidate_count += 1;
+        if (candidate.evidence?.transform_version === "launch-candidate-v2") {
+          row.transform_current_count += 1;
+        }
+        if (candidate.evidence?.corpus_review_risk_version === "entity-risk-v1") {
+          row.risk_current_count += 1;
+        }
+        if (candidate.screening_status === "eligible") row.eligible_count += 1;
+        if (candidate.screening_status === "needs_review") row.needs_review_count += 1;
+        if (candidate.screening_status === "ineligible") row.ineligible_count += 1;
+        matrix.set(key, row);
+      }
+      return {
+        candidate_count: storedCandidates.size,
+        transform_current_count: [...storedCandidates.values()].filter(
+          (candidate) => candidate.evidence?.transform_version === "launch-candidate-v2",
+        ).length,
+        risk_current_count: [...storedCandidates.values()].filter(
+          (candidate) => candidate.evidence?.corpus_review_risk_version === "entity-risk-v1",
+        ).length,
+        matrix: [...matrix.values()].sort((left, right) =>
+          `${left.city}\u0000${left.category}`.localeCompare(
+            `${right.city}\u0000${right.category}`,
+          ),
+        ),
+      };
     }
     throw new Error(`Unexpected RPC ${name}`);
   };
@@ -156,7 +214,19 @@ test("repeat apply inserts nothing twice and uses only review-boundary RPCs", as
     sourceName: "fixture",
     sourceSha256: "a".repeat(64),
     receipts: [{ row_sha256: "b".repeat(64) }, { row_sha256: "c".repeat(64) }],
-    candidates: [{ proposed_slug: "fixture-1" }],
+    candidates: [
+      {
+        proposed_slug: "fixture-1",
+        city_slug: "reno",
+        launch_category_slug: "hvac",
+        screening_status: "eligible",
+        screening_reasons: [],
+        evidence: {
+          transform_version: "launch-candidate-v2",
+          corpus_review_risk_version: "entity-risk-v1",
+        },
+      },
+    ],
     importedBy: "test",
     notes: "review-only",
     rpc,
@@ -172,6 +242,26 @@ test("repeat apply inserts nothing twice and uses only review-boundary RPCs", as
   );
   assert.equal(first.insertedThisRun, 2);
   assert.equal(first.candidatesInsertedThisRun, 1);
+  assert.equal(first.candidatesReconciledThisRun, 0);
   assert.equal(second.insertedThisRun, 0);
   assert.equal(second.candidatesInsertedThisRun, 0);
+  assert.equal(second.candidatesReconciledThisRun, 0);
+  assert.ok(
+    calls
+      .filter(({ name }) => name === "reconcile_listing_candidate_screening")
+      .every(({ body }) =>
+        /^listing-import:[a-f0-9]{64}:launch-candidate-v2:entity-risk-v1$/.test(
+          body.requested_correlation_id,
+        ),
+      ),
+  );
+
+  const changed = { ...input, candidates: structuredClone(input.candidates) };
+  changed.candidates[0].launch_category_slug = "electrical";
+  changed.candidates[0].screening_status = "needs_review";
+  changed.candidates[0].screening_reasons = ["launch_category_ambiguity"];
+  const third = await applyReviewOnlyImport(changed);
+  assert.equal(third.candidatesInsertedThisRun, 0);
+  assert.equal(third.candidatesReconciledThisRun, 1);
+  assert.equal(third.candidateStatus.matrix[0].category, "electrical");
 });

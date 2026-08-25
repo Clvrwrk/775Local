@@ -38,6 +38,7 @@ test("repository instructions establish Local775 authority without inherited Gro
 test("local provider state is excluded from version control", () => {
   const gitignore = read(".gitignore");
   assert.match(gitignore, /^supabase\/\.temp\/$/m);
+  assert.match(gitignore, /^supabase\/\.branches\/$/m);
 });
 
 test("pull requests run the side-effect-free foundation gate on Node 24", () => {
@@ -60,7 +61,12 @@ test("pull requests run the side-effect-free foundation gate on Node 24", () => 
 
 test("database delivery is a separate target-explicit Preview workflow", () => {
   const workflow = read(".github/workflows/database-preview.yml");
+  assert.match(workflow, /pull_request:/);
   assert.match(workflow, /workflow_dispatch:/);
+  assert.match(workflow, /version: 2\.105\.0/);
+  assert.match(workflow, /supabase start/);
+  assert.match(workflow, /supabase test db/);
+  assert.match(workflow, /supabase db lint --local/);
   assert.match(workflow, /environment:\s*local775-preview/);
   assert.match(workflow, /supabase db push --dry-run/);
   assert.match(workflow, /supabase db push --linked/);
@@ -76,7 +82,11 @@ test("the application entrypoints contain no inherited preview-platform behavior
 
 test("the runtime has no inherited embedded database or synthetic auth fallback", () => {
   for (const dependency of ["@electric-sql/pglite", "better-auth", "kysely", "pg"]) {
-    assert.equal(packageJson.dependencies?.[dependency], undefined, `${dependency} must be removed`);
+    assert.equal(
+      packageJson.dependencies?.[dependency],
+      undefined,
+      `${dependency} must be removed`,
+    );
   }
   for (const path of [
     "src/lib/db.ts",

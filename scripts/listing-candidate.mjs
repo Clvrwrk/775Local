@@ -15,19 +15,16 @@ const FREE_MAIL = new Set([
 ]);
 
 function cellValue(value) {
-  if (
-    value &&
-    typeof value === "object" &&
-    "result" in value &&
-    value.result != null
-  ) {
+  if (value && typeof value === "object" && "result" in value && value.result != null) {
     return value.result;
   }
   return value;
 }
 
 function text(value) {
-  return String(cellValue(value) ?? "").normalize("NFKC").trim();
+  return String(cellValue(value) ?? "")
+    .normalize("NFKC")
+    .trim();
 }
 
 function lower(value) {
@@ -44,42 +41,78 @@ function parseJson(value, fallback) {
   }
 }
 
+function categoryMatches(value, { allowScreenRepair = true, allowRestaurant = false } = {}) {
+  const matches = [];
+
+  if (
+    allowScreenRepair &&
+    (value.includes("screen repair") ||
+      value.includes("window screen") ||
+      value === "window installation service")
+  )
+    matches.push("screen-repair");
+  if (/(hvac|air conditioning contractor|heating contractor|air duct cleaning)/.test(value)) {
+    matches.push("hvac");
+  }
+  if (/(^|\b)(plumber|plumbing service|plumbing contractor)(\b|$)/.test(value)) {
+    matches.push("plumbing");
+  }
+  if (/(electrician|electrical contractor|electrical installation service)/.test(value)) {
+    matches.push("electrical");
+  }
+  if (
+    /(auto repair shop|car repair and maintenance service|mechanic|transmission shop|brake shop|diesel engine repair service)/.test(
+      value,
+    )
+  ) {
+    matches.push("auto-repair");
+  }
+  if (
+    allowRestaurant &&
+    /(restaurant|cafe|coffee shop|diner|food court|bakery|bar & grill)/.test(value)
+  )
+    matches.push("restaurants");
+  if (/(dentist|dental clinic|orthodontist|endodontist|prosthodontist)/.test(value)) {
+    matches.push("dentists");
+  }
+  if (/(handyman|handywoman|handyperson|handy person)/.test(value)) matches.push("handyman");
+  if (/(roofing contractor|roofer|roof repair)/.test(value)) matches.push("roofing");
+  if (/(veterinarian|veterinary|animal hospital)/.test(value)) matches.push("veterinarians");
+  return matches;
+}
+
+/** @param {Record<string, unknown>} row */
+export function launchCategoriesFor(row) {
+  const primary = lower(row.category);
+  const group = lower(row.group);
+  const allowScreenRepair = !/(mobile|phone|computer|electronics)/.test(primary);
+  const primaryMatches = categoryMatches(primary, {
+    allowScreenRepair,
+    allowRestaurant: group === "restaurants & food",
+  });
+  const additionalMatches = categoryMatches(lower(row.additional_categories), {
+    allowScreenRepair,
+    allowRestaurant: true,
+  });
+  return [...new Set([...primaryMatches, ...additionalMatches])];
+}
+
 /** @param {Record<string, unknown>} row */
 export function launchCategoryFor(row) {
   const primary = lower(row.category);
-  const additional = lower(row.additional_categories);
-  const group = lower(row.group);
-  const all = `${primary} | ${additional}`;
-
+  const primaryMatches = categoryMatches(primary, {
+    allowScreenRepair: !/(mobile|phone|computer|electronics)/.test(primary),
+    allowRestaurant: lower(row.group) === "restaurants & food",
+  });
+  if (primaryMatches[0] === "screen-repair") return "screen-repair";
   if (
-    !/(mobile|phone|computer|electronics)/.test(primary) &&
-    (primary.includes("screen repair") ||
-      primary.includes("window screen") ||
-      primary === "window installation service")
-  ) return "screen-repair";
-  if (/(hvac|air conditioning contractor|heating contractor|air duct cleaning)/.test(all)) {
+    /(hvac|air conditioning contractor|heating contractor|air duct cleaning)/.test(
+      `${primary} | ${lower(row.additional_categories)}`,
+    )
+  ) {
     return "hvac";
   }
-  if (/(^|\b)(plumber|plumbing service|plumbing contractor)(\b|$)/.test(primary)) {
-    return "plumbing";
-  }
-  if (/(electrician|electrical contractor|electrical installation service)/.test(primary)) {
-    return "electrical";
-  }
-  if (/(auto repair shop|car repair and maintenance service|mechanic|transmission shop|brake shop|diesel engine repair service)/.test(primary)) {
-    return "auto-repair";
-  }
-  if (
-    group === "restaurants & food" &&
-    /(restaurant|cafe|coffee shop|diner|food court|bakery|bar & grill)/.test(primary)
-  ) return "restaurants";
-  if (/(dentist|dental clinic|orthodontist|endodontist|prosthodontist)/.test(primary)) {
-    return "dentists";
-  }
-  if (/(handyman|handywoman|handyperson|handy person)/.test(primary)) return "handyman";
-  if (/(roofing contractor|roofer|roof repair)/.test(primary)) return "roofing";
-  if (/(veterinarian|veterinary|animal hospital)/.test(primary)) return "veterinarians";
-  return null;
+  return primaryMatches.find((match) => match !== "hvac") ?? null;
 }
 
 function e164(value) {
@@ -134,10 +167,12 @@ function activeProfileStatus(row) {
 }
 
 function slugPart(value) {
-  return lower(value)
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 64) || "listing";
+  return (
+    lower(value)
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 64) || "listing"
+  );
 }
 
 function normalizedName(value) {
@@ -155,6 +190,7 @@ function normalizedName(value) {
  * @param {Record<string, any>} row
  */
 export function classifyListingRow(worksheet, sourceRow, row) {
+  const launchCategoryMatches = launchCategoriesFor(row);
   const launchCategory = launchCategoryFor(row);
   const city = lower(row.city);
   if (!launchCategory || (city !== "reno" && city !== "sparks")) return null;
@@ -173,12 +209,18 @@ export function classifyListingRow(worksheet, sourceRow, row) {
   if (!phone?.startsWith("+1775")) statusReasons.push("non_775_phone");
   if (!website.url) statusReasons.push("website_missing");
   if (!businessEmail) statusReasons.push("business_domain_email_missing");
+  if (launchCategoryMatches.length > 1) statusReasons.push("launch_category_ambiguity");
+  if (/(dentist|orthodontist|endodontist|prosthodontist|veterinarian)/.test(lower(row.category))) {
+    statusReasons.push("practitioner_entity_review");
+  }
+  if (!text(row.street_address)) statusReasons.push("service_area_address_review");
 
-  const screeningStatus = profileStatus === "closed_forever"
-    ? "ineligible"
-    : statusReasons.length === 0
-      ? "eligible"
-      : "needs_review";
+  const screeningStatus =
+    profileStatus === "closed_forever"
+      ? "ineligible"
+      : statusReasons.length === 0
+        ? "eligible"
+        : "needs_review";
   const suffix = createHash("sha256")
     .update(`${worksheet}:${sourceRow}:${text(row.cid || row.place_id || row.feature_id)}`)
     .digest("hex")
@@ -215,13 +257,14 @@ export function classifyListingRow(worksheet, sourceRow, row) {
     quality_score: qualityScore,
     diversity_key: website.host || slugPart(name),
     evidence: {
-      transform_version: "launch-candidate-v1",
+      transform_version: "launch-candidate-v2",
       source_check_url: text(row.check_url) || null,
       place_id_present: Boolean(placeId),
       profile_claimed: claimed,
       source_status: lower(parseJson(row.work_time, {})?.work_hours?.current_status) || "unknown",
       website_host: website.host || null,
       matching_business_domain_email: Boolean(businessEmail),
+      launch_category_matches: launchCategoryMatches,
       rating_present: Number.isFinite(Number(row.rating_value)),
       rating_count_present: Number.isFinite(Number(row.rating_votes_count)),
     },

@@ -11,6 +11,7 @@ import {
   validateImportTarget,
 } from "./import-listings-lib.mjs";
 import { classifyListingRow } from "./listing-candidate.mjs";
+import { applyCorpusReviewRisks } from "./listing-review-risk.mjs";
 
 const RAW_SHEET = /^businesses-89\d{3}$/;
 const CHUNK_SIZE = 500;
@@ -70,7 +71,7 @@ async function readRawRows(path) {
   if (Object.keys(sheetCounts).length !== 7) {
     throw new Error(`Expected 7 raw ZIP worksheets; found ${Object.keys(sheetCounts).length}.`);
   }
-  return { receipts, candidates, sheetCounts };
+  return { receipts, candidates: applyCorpusReviewRisks(candidates), sheetCounts };
 }
 
 async function readImportSource(path) {

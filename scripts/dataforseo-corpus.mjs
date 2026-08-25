@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { rowReceipt, sha256File } from "./import-listings-lib.mjs";
 import { classifyListingRow } from "./listing-candidate.mjs";
+import { applyCorpusReviewRisks } from "./listing-review-risk.mjs";
 
 export const DATAFORSEO_RENO_ZIPS = Object.freeze(["89502", "89509", "89511", "89521"]);
 
@@ -176,7 +177,7 @@ export async function readDataForSeoRenoCorpus(corpusRoot) {
     sourceName: "local775-dataforseo-reno-89502-89509-89511-89521",
     sourceSha256,
     receipts,
-    candidates,
+    candidates: applyCorpusReviewRisks(candidates),
     artifacts,
     sheetCounts,
   };
