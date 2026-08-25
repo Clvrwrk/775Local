@@ -1,7 +1,7 @@
 begin;
 
 create extension if not exists pgtap with schema extensions;
-select extensions.plan(20);
+select extensions.plan(25);
 
 insert into private.source_batches (
   id, source_name, source_sha256, workbook_row_count, imported_by
@@ -91,6 +91,26 @@ select extensions.ok(
 select extensions.ok(
   not has_table_privilege('authenticated', 'app.listing_candidates', 'delete'),
   'authenticated operators cannot delete listing candidates directly'
+);
+select extensions.ok(
+  has_table_privilege('service_role', 'app.listing_candidates', 'select'),
+  'service role retains read access to support command orchestration'
+);
+select extensions.ok(
+  not has_table_privilege('service_role', 'app.listing_candidates', 'insert'),
+  'service role cannot bypass ingest commands with direct inserts'
+);
+select extensions.ok(
+  not has_table_privilege('service_role', 'app.listing_candidates', 'update'),
+  'service role cannot bypass review commands with direct updates'
+);
+select extensions.ok(
+  not has_table_privilege('service_role', 'app.listing_candidates', 'delete'),
+  'service role cannot bypass review commands with direct deletes'
+);
+select extensions.ok(
+  not has_table_privilege('service_role', 'app.listing_candidates', 'truncate'),
+  'service role cannot truncate the candidate review queue'
 );
 
 select extensions.throws_ok(

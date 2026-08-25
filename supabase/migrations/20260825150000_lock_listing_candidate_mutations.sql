@@ -8,6 +8,9 @@ for select to authenticated using (app.is_operator());
 revoke insert, update, delete on app.listing_candidates from authenticated;
 grant select on app.listing_candidates to authenticated;
 
+revoke all privileges on app.listing_candidates from service_role;
+grant select on app.listing_candidates to service_role;
+
 comment on table app.listing_candidates is
   'Private review queue. Authenticated Operators may read candidates; all mutations must use audited command functions with scoped grants.';
 
