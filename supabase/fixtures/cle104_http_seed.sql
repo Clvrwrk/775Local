@@ -18,7 +18,7 @@ insert into app.operator_grants (
 ) values (
   '50000000-0000-4000-8000-000000000002',
   'chussey@aia4.io',
-  array['listing_publish'],
+  array['listing_review', 'listing_publish'],
   'active',
   'cle104-http-contract',
   statement_timestamp(),
@@ -35,7 +35,7 @@ insert into private.source_batches (
   '50000000-0000-4000-8000-000000000010',
   'cle104-http-contract',
   repeat('e', 64),
-  100,
+  101,
   'cle104-http-contract'
 );
 
@@ -52,7 +52,7 @@ select
   source_row,
   encode(extensions.digest('cle104-http-source-' || source_row::text, 'sha256'), 'hex'),
   jsonb_build_object('source_row', source_row)
-from generate_series(1, 100) source_row;
+from generate_series(1, 101) source_row;
 
 with launch_matrix as (
   select
@@ -119,6 +119,53 @@ join private.source_listing_rows source
   on source.batch_id = '50000000-0000-4000-8000-000000000010'
   and source.source_row = matrix.source_row;
 
+insert into app.listing_candidates (
+  id,
+  batch_id,
+  source_row_id,
+  normalized_name,
+  proposed_slug,
+  phone_e164,
+  business_email,
+  website_url,
+  street_address,
+  city_slug,
+  postal_code,
+  google_place_id,
+  source_category,
+  launch_category_slug,
+  active_profile_status,
+  screening_status,
+  screening_reasons,
+  quality_score,
+  diversity_key,
+  evidence
+)
+select
+  '50000000-0000-4000-8000-000000000011',
+  '50000000-0000-4000-8000-000000000010',
+  source.id,
+  'HTTP Review Candidate',
+  'http-review-candidate',
+  '+17755560999',
+  'hello@http-review.example',
+  'https://http-review.example/',
+  '101 HTTP Review Street',
+  'reno',
+  '89502',
+  'cle104-http-review-place',
+  'HVAC contractor',
+  'hvac',
+  'active',
+  'needs_review',
+  array['shared_business_domain_entity_review'],
+  80,
+  'http-review.example',
+  '{"http_contract":true}'::jsonb
+from private.source_listing_rows source
+where source.batch_id = '50000000-0000-4000-8000-000000000010'
+  and source.source_row = 101;
+
 insert into app.candidate_review_receipts (
   candidate_id,
   idempotency_key,
@@ -130,6 +177,7 @@ insert into app.candidate_review_receipts (
   source_checked_at,
   checks,
   duplicate_decision,
+  business_identity_key,
   entity_decisions,
   reason_codes,
   before_values,
@@ -153,6 +201,7 @@ select
     'source_urls_current', true
   ),
   'no_duplicate',
+  candidate.id::text,
   jsonb_build_object(
     'branch', 'not_branch',
     'chain', 'not_chain',
@@ -172,6 +221,7 @@ select
     'hex'
   )
 from app.listing_candidates candidate
-where candidate.batch_id = '50000000-0000-4000-8000-000000000010';
+where candidate.batch_id = '50000000-0000-4000-8000-000000000010'
+  and candidate.review_status = 'accepted';
 
 commit;

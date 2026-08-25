@@ -5,6 +5,8 @@ on:
     paths:
       - "supabase/**"
       - "scripts/operator-publication-http.integration.mjs"
+      - "src/lib/directory/operator-publication-handler.mjs"
+      - "src/lib/directory/operator-publication.ts"
       - "src/lib/supabase/operator-publication.mjs"
       - ".github/workflows/database-preview.yml"
   workflow_dispatch:

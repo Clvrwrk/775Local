@@ -1,7 +1,7 @@
 begin;
 
 create extension if not exists pgtap with schema extensions;
-select extensions.plan(55);
+select extensions.plan(57);
 
 insert into app.actors (id, workos_user_id, primary_email, display_name)
 values
@@ -178,6 +178,122 @@ set latitude = 39.529600,
     longitude = -119.813800
 where batch_id = '30000000-0000-4000-8000-000000000010'
   and id <> '30000000-0000-4000-8000-000000000011';
+
+update app.listing_candidates
+set normalized_name = 'Shared HVAC Business'
+where proposed_slug in ('hvac-reno-2', 'hvac-sparks-2');
+
+insert into private.source_batches (
+  id, source_name, source_sha256, workbook_row_count, imported_by
+) values (
+  '30000000-0000-4000-8000-000000000020',
+  'cle104-stale-publication-test',
+  repeat('f', 64),
+  1,
+  'supabase-test'
+);
+
+insert into private.source_listing_rows (
+  batch_id, worksheet, source_row, row_sha256, raw_payload
+) values (
+  '30000000-0000-4000-8000-000000000020',
+  'cle104-stale-publication',
+  1,
+  repeat('1', 64),
+  '{"source_row":1}'::jsonb
+);
+
+insert into app.listing_candidates (
+  id,
+  batch_id,
+  source_row_id,
+  normalized_name,
+  proposed_slug,
+  phone_e164,
+  business_email,
+  website_url,
+  street_address,
+  city_slug,
+  postal_code,
+  google_place_id,
+  source_category,
+  launch_category_slug,
+  active_profile_status,
+  screening_status,
+  screening_reasons,
+  quality_score,
+  diversity_key,
+  evidence,
+  review_status,
+  review_reason_codes,
+  reviewed_by,
+  reviewed_at
+) values (
+  '30000000-0000-4000-8000-000000000012',
+  '30000000-0000-4000-8000-000000000020',
+  (select id from private.source_listing_rows where batch_id = '30000000-0000-4000-8000-000000000020'),
+  'Stale HVAC Business',
+  'stale-hvac-reno',
+  '+17755550999',
+  'hello@stale-hvac.example',
+  'https://stale-hvac.example/',
+  '99 Stale Street',
+  'reno',
+  '89502',
+  'cle104-stale-place',
+  'HVAC contractor',
+  'hvac',
+  'active',
+  'eligible',
+  '{}',
+  90,
+  'stale-hvac.example',
+  '{"website_host":"stale-hvac.example"}'::jsonb,
+  'accepted',
+  array['operator_verified_stale'],
+  '30000000-0000-4000-8000-000000000001',
+  statement_timestamp() - interval '31 days'
+);
+
+insert into app.candidate_review_receipts (
+  candidate_id,
+  idempotency_key,
+  request_fingerprint,
+  reviewer_id,
+  outcome,
+  resolved_screening_reasons,
+  source_urls,
+  source_checked_at,
+  checks,
+  duplicate_decision,
+  business_identity_key,
+  entity_decisions,
+  reason_codes,
+  before_values,
+  after_values,
+  reviewed_candidate,
+  reviewed_candidate_fingerprint
+)
+select
+  candidate.id,
+  'cle104-stale-review-receipt',
+  repeat('2', 64),
+  '30000000-0000-4000-8000-000000000001',
+  'accepted',
+  '{}',
+  jsonb_build_array(candidate.website_url),
+  statement_timestamp() - interval '31 days',
+  '{"nap_verified":true,"category_verified":true,"active_status_verified":true,"source_urls_current":true}'::jsonb,
+  'no_duplicate',
+  candidate.id::text,
+  '{"branch":"not_branch","chain":"not_chain","practitioner":"not_practitioner","franchise":"not_franchise","service_area":"fixed_location"}'::jsonb,
+  array['operator_verified_stale'],
+  '{}'::jsonb,
+  '{"review_status":"accepted"}'::jsonb,
+  private.candidate_publication_snapshot(candidate),
+  encode(extensions.digest(private.candidate_publication_snapshot(candidate)::text, 'sha256'), 'hex')
+from app.listing_candidates candidate
+where candidate.id = '30000000-0000-4000-8000-000000000012';
 
 select extensions.ok(
   not has_function_privilege(
@@ -379,6 +495,7 @@ select extensions.throws_ok(
           'source_urls_current', true
         ),
         'duplicate_decision', 'no_duplicate',
+        'business_identity_key', '30000000-0000-4000-8000-000000000011',
         'entity_decisions', jsonb_build_object(
           'branch', 'not_branch',
           'chain', 'not_chain',
@@ -412,6 +529,7 @@ select extensions.throws_ok(
           'source_urls_current', true
         ),
         'duplicate_decision', 'no_duplicate',
+        'business_identity_key', '30000000-0000-4000-8000-000000000011',
         'entity_decisions', jsonb_build_object(
           'branch', 'national_branch',
           'chain', 'not_chain',
@@ -445,6 +563,7 @@ select extensions.throws_ok(
           'source_urls_current', true
         ),
         'duplicate_decision', 'no_duplicate',
+        'business_identity_key', '30000000-0000-4000-8000-000000000011',
         'entity_decisions', jsonb_build_object(
           'branch', 'not_branch',
           'chain', 'not_chain',
@@ -478,6 +597,7 @@ select extensions.lives_ok(
           'source_urls_current', true
         ),
         'duplicate_decision', 'no_duplicate',
+        'business_identity_key', '30000000-0000-4000-8000-000000000011',
         'entity_decisions', jsonb_build_object(
           'branch', 'not_branch',
           'chain', 'not_chain',
@@ -550,6 +670,7 @@ select extensions.is(
         'source_urls_current', true
       ),
       'duplicate_decision', 'no_duplicate',
+      'business_identity_key', '30000000-0000-4000-8000-000000000011',
       'entity_decisions', jsonb_build_object(
         'branch', 'not_branch',
         'chain', 'not_chain',
@@ -579,6 +700,7 @@ select extensions.throws_ok(
         'source_checked_at', statement_timestamp(),
         'checks', '{}'::jsonb,
         'duplicate_decision', 'duplicate_rejected',
+        'business_identity_key', '30000000-0000-4000-8000-000000000011',
         'entity_decisions', jsonb_build_object(
           'branch', 'not_branch',
           'chain', 'not_chain',
@@ -612,7 +734,16 @@ select extensions.is(
             'active_status_verified', true,
             'source_urls_current', true
           ),
-          'duplicate_decision', 'no_duplicate',
+          'duplicate_decision', case
+            when candidate.proposed_slug in ('hvac-reno-2', 'hvac-sparks-2')
+              then 'distinct_location'
+            else 'no_duplicate'
+          end,
+          'business_identity_key', case
+            when candidate.proposed_slug in ('hvac-reno-2', 'hvac-sparks-2')
+              then 'multi-location:shared-hvac'
+            else candidate.id::text
+          end,
           'entity_decisions', jsonb_build_object(
             'branch', 'not_branch',
             'chain', 'not_chain',
@@ -638,7 +769,7 @@ select extensions.is(
 
 select extensions.is(
   (select count(*)::integer from app.candidate_review_receipts),
-  101,
+  102,
   'every terminal candidate decision has one append-only review receipt'
 );
 
@@ -678,6 +809,26 @@ set normalized_name = receipt.reviewed_candidate ->> 'normalized_name'
 from app.candidate_review_receipts receipt
 where receipt.candidate_id = candidate.id;
 set local role authenticated;
+
+select extensions.throws_ok(
+  $$
+    select public.publish_launch_selection(
+      array(
+        select candidate.id
+        from app.listing_candidates candidate
+        where candidate.batch_id = '30000000-0000-4000-8000-000000000010'
+          and candidate.id <> '30000000-0000-4000-8000-000000000011'
+          and candidate.proposed_slug <> 'hvac-reno-5'
+        union all
+        select '30000000-0000-4000-8000-000000000012'::uuid
+      ),
+      'cle104-stale-evidence-publication'
+    )
+  $$,
+  'P0001',
+  'launch selection contains an unreviewed or ineligible candidate',
+  'publication refuses review evidence older than 30 days'
+);
 
 select set_config(
   'request.jwt.claims',
@@ -834,6 +985,19 @@ select extensions.is(
   (select count(*)::integer from app.business_listings),
   100,
   'publication creates exactly 100 canonical Business Listings'
+);
+
+select extensions.ok(
+  (select count(*) = 99 from app.businesses)
+  and exists (
+    select 1
+    from app.businesses business
+    join app.business_listings listing on listing.business_id = business.id
+    where business.import_identity_key = 'multi-location:shared-hvac'
+    group by business.id
+    having count(*) = 2
+  ),
+  'two reviewed distinct locations share one canonical Business and retain separate Listings'
 );
 
 select extensions.is(

@@ -1,39 +1,23 @@
 import { createServerFn } from "@tanstack/react-start";
-import { getAuthKitContextOrNull } from "@workos/authkit-tanstack-react-start";
 import {
-  publishLaunchSelection as publishLaunchSelectionRpc,
-  reviewListingCandidate as reviewListingCandidateRpc,
-  transitionListingPublicationState as transitionListingPublicationStateRpc,
-  validateCandidateReviewInput,
-  validateLaunchPublicationInput,
-  validateListingPublicationTransitionInput,
-} from "@/lib/supabase/operator-publication.mjs";
+  handleListingPublicationTransition,
+  handlePublishLaunchSelection,
+  handleReviewListingCandidate,
+} from "@/lib/directory/operator-publication-handler.mjs";
 
-function currentAccessToken() {
-  const auth = getAuthKitContextOrNull()?.auth();
-  return auth?.user && "accessToken" in auth ? auth.accessToken : "";
+const preserveUntrustedInput = (input: unknown) => input;
+
+type JsonValue = null | boolean | number | string | JsonValue[] | { [key: string]: JsonValue };
+type OperatorCommandResult = { ok: boolean; code?: string; receipt?: JsonValue };
+
+function createOperatorCommand(handler: (input: unknown) => Promise<OperatorCommandResult>) {
+  return createServerFn({ method: "POST" })
+    .validator(preserveUntrustedInput)
+    .handler(({ data }) => handler(data));
 }
 
-export const reviewListingCandidate = createServerFn({ method: "POST" })
-  .validator(validateCandidateReviewInput)
-  .handler(async ({ data }) => {
-    const accessToken = currentAccessToken();
-    if (!accessToken) return { ok: false as const, code: "authentication_required" };
-    return reviewListingCandidateRpc(data, { accessToken });
-  });
-
-export const publishLaunchSelection = createServerFn({ method: "POST" })
-  .validator(validateLaunchPublicationInput)
-  .handler(async ({ data }) => {
-    const accessToken = currentAccessToken();
-    if (!accessToken) return { ok: false as const, code: "authentication_required" };
-    return publishLaunchSelectionRpc(data, { accessToken });
-  });
-
-export const transitionListingPublicationState = createServerFn({ method: "POST" })
-  .validator(validateListingPublicationTransitionInput)
-  .handler(async ({ data }) => {
-    const accessToken = currentAccessToken();
-    if (!accessToken) return { ok: false as const, code: "authentication_required" };
-    return transitionListingPublicationStateRpc(data, { accessToken });
-  });
+export const reviewListingCandidate = createOperatorCommand(handleReviewListingCandidate);
+export const publishLaunchSelection = createOperatorCommand(handlePublishLaunchSelection);
+export const transitionListingPublicationState = createOperatorCommand(
+  handleListingPublicationTransition,
+);

@@ -1,5 +1,8 @@
 begin;
 
+alter table app.businesses
+  add column import_identity_key text unique;
+
 create table app.candidate_review_receipts (
   id uuid primary key default extensions.gen_random_uuid(),
   candidate_id uuid not null unique references app.listing_candidates(id),
@@ -16,6 +19,9 @@ create table app.candidate_review_receipts (
   checks jsonb not null check (jsonb_typeof(checks) = 'object'),
   duplicate_decision text not null check (
     duplicate_decision in ('no_duplicate', 'distinct_location', 'duplicate_rejected')
+  ),
+  business_identity_key text not null check (
+    business_identity_key ~ '^[a-z0-9][a-z0-9:_-]{7,199}$'
   ),
   entity_decisions jsonb not null check (jsonb_typeof(entity_decisions) = 'object'),
   reason_codes text[] not null check (cardinality(reason_codes) between 1 and 20),
@@ -66,6 +72,7 @@ for each row execute function private.reject_mutation();
 alter table app.publication_receipts
   add column publication_batch_id uuid not null references app.launch_publication_batches(id),
   add column entity_decisions jsonb not null default '{}'::jsonb,
+  add column business_identity_key text,
   add column reviewed_candidate_fingerprint text,
   add column published_by uuid references app.actors(id),
   add constraint publication_receipts_one_per_candidate unique (candidate_id),
@@ -148,6 +155,7 @@ declare
   source_checked timestamptz;
   checks_value jsonb;
   duplicate_decision_value text;
+  business_identity_key_value text;
   entity_decisions_value jsonb;
   reason_codes_value text[];
   normalized_decision jsonb;
@@ -192,6 +200,7 @@ begin
     'source_checked_at',
     'checks',
     'duplicate_decision',
+    'business_identity_key',
     'entity_decisions',
     'reason_codes'
   ] then
@@ -207,6 +216,7 @@ begin
       'source_checked_at',
       'checks',
       'duplicate_decision',
+      'business_identity_key',
       'entity_decisions',
       'reason_codes'
     )
@@ -294,9 +304,14 @@ begin
 
   checks_value := requested_decision -> 'checks';
   duplicate_decision_value := requested_decision ->> 'duplicate_decision';
+  business_identity_key_value := requested_decision ->> 'business_identity_key';
   entity_decisions_value := requested_decision -> 'entity_decisions';
   if duplicate_decision_value not in ('no_duplicate', 'distinct_location', 'duplicate_rejected') then
     raise exception 'duplicate decision is invalid';
+  end if;
+  if business_identity_key_value is null
+     or business_identity_key_value !~ '^[a-z0-9][a-z0-9:_-]{7,199}$' then
+    raise exception 'business identity key is invalid';
   end if;
   if not entity_decisions_value ?& array[
        'branch',
@@ -337,6 +352,7 @@ begin
     'source_checked_at', source_checked,
     'checks', checks_value,
     'duplicate_decision', duplicate_decision_value,
+    'business_identity_key', business_identity_key_value,
     'entity_decisions', entity_decisions_value,
     'reason_codes', to_jsonb(reason_codes_value)
   );
@@ -379,6 +395,10 @@ begin
        where receipt.candidate_id = target.id
      ) then
     raise exception 'candidate already has a terminal review';
+  end if;
+  if duplicate_decision_value = 'no_duplicate'
+     and business_identity_key_value <> target.id::text then
+    raise exception 'a no-duplicate review must use the candidate as its Business identity';
   end if;
 
   if outcome = 'accepted' then
@@ -480,6 +500,7 @@ begin
     source_checked_at,
     checks,
     duplicate_decision,
+    business_identity_key,
     entity_decisions,
     reason_codes,
     before_values,
@@ -497,6 +518,7 @@ begin
     source_checked,
     checks_value,
     duplicate_decision_value,
+    business_identity_key_value,
     entity_decisions_value,
     reason_codes_value,
     before_values_value,
@@ -636,6 +658,7 @@ begin
       and (
         candidate.review_status <> 'accepted'
         or candidate.reviewed_by is null
+        or candidate.reviewed_by <> review.reviewer_id
         or candidate.reviewed_at is null
         or candidate.screening_status <> 'eligible'
         or cardinality(candidate.screening_reasons) <> 0
@@ -644,6 +667,8 @@ begin
         or candidate.launch_category_slug is null
         or review.outcome <> 'accepted'
         or review.duplicate_decision not in ('no_duplicate', 'distinct_location')
+        or review.source_checked_at > statement_timestamp()
+        or review.source_checked_at < statement_timestamp() - interval '30 days'
         or review.entity_decisions ->> 'branch' = 'national_branch'
         or review.entity_decisions ->> 'chain' = 'national_chain'
         or review.entity_decisions ->> 'practitioner' = 'individual_practitioner'
@@ -656,6 +681,26 @@ begin
       )
   ) then
     raise exception 'launch selection contains an unreviewed or ineligible candidate';
+  end if;
+
+  if exists (
+    select 1
+    from app.candidate_review_receipts review
+    join app.listing_candidates candidate on candidate.id = review.candidate_id
+    where candidate.id = any(normalized_candidate_ids)
+      and review.duplicate_decision = 'distinct_location'
+      and not exists (
+        select 1
+        from app.candidate_review_receipts related_review
+        join app.listing_candidates related_candidate
+          on related_candidate.id = related_review.candidate_id
+        where related_candidate.id = any(normalized_candidate_ids)
+          and related_candidate.id <> candidate.id
+          and related_review.business_identity_key = review.business_identity_key
+          and related_candidate.normalized_name = candidate.normalized_name
+      )
+  ) then
+    raise exception 'distinct-location candidates require a shared reviewed Business identity';
   end if;
 
   if (select count(*) from app.categories where is_launch_category) <> 10
@@ -714,6 +759,7 @@ begin
       review.source_checked_at as review_source_checked_at,
       review.checks as review_checks,
       review.duplicate_decision as review_duplicate_decision,
+      review.business_identity_key as review_business_identity_key,
       review.entity_decisions as review_entity_decisions,
       review.reason_codes as review_reason_codes,
       review.reviewer_id as review_reviewer_id,
@@ -734,8 +780,24 @@ begin
       raise exception 'launch category does not exist';
     end if;
 
-    insert into app.businesses (id, canonical_name)
-    values (business_id_value, candidate_record.normalized_name);
+    insert into app.businesses (id, canonical_name, import_identity_key)
+    values (
+      business_id_value,
+      candidate_record.normalized_name,
+      candidate_record.review_business_identity_key
+    )
+    on conflict (import_identity_key) do nothing
+    returning id into business_id_value;
+
+    if business_id_value is null then
+      select business.id into business_id_value
+      from app.businesses business
+      where business.import_identity_key = candidate_record.review_business_identity_key
+        and business.canonical_name = candidate_record.normalized_name;
+      if business_id_value is null then
+        raise exception 'reviewed Business identity conflicts with an existing canonical Business';
+      end if;
+    end if;
 
     insert into app.business_listings (
       id,
@@ -915,6 +977,7 @@ begin
       source_checked_at,
       checks,
       duplicate_decision,
+      business_identity_key,
       entity_decision,
       entity_decisions,
       reviewer_id,
@@ -934,6 +997,7 @@ begin
       candidate_record.review_source_checked_at,
       candidate_record.review_checks || jsonb_build_object('launch_balance_verified', true),
       candidate_record.review_duplicate_decision,
+      candidate_record.review_business_identity_key,
       case
         when candidate_record.review_entity_decisions ->> 'service_area' = 'service_area_business'
           then 'service_area_business'
@@ -947,7 +1011,7 @@ begin
       current_actor,
       'published',
       candidate_record.review_reason_codes,
-      '{}'::jsonb,
+      pending_values_value,
       after_values_value,
       'rpc:transition_listing_publication_state:suspend:' || listing_id_value::text,
       publication_batch_id_value
