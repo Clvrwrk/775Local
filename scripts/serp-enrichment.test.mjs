@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import { test } from "node:test";
 import {
   categorySerpQueries,
@@ -7,6 +8,21 @@ import {
   extractWebsiteEvidence,
   planCategoryBatch,
 } from "./serp-enrichment-lib.mjs";
+
+test("runner imports query planning from the local library, not node fs", async () => {
+  const source = await readFile(
+    new URL("./serp-enrichment.mjs", import.meta.url),
+    "utf8",
+  );
+  const fsImport =
+    source.match(/import \{[\s\S]*?\} from "node:fs\/promises";/)?.[0] ?? "";
+  const libraryImport =
+    source.match(
+      /import \{[\s\S]*?\} from "\.\/serp-enrichment-lib\.mjs";/,
+    )?.[0] ?? "";
+  assert.doesNotMatch(fsImport, /categorySerpQueries/);
+  assert.match(libraryImport, /categorySerpQueries/);
+});
 
 test("SERP query aliases are explicit, unique, and bounded", () => {
   assert.deepEqual(

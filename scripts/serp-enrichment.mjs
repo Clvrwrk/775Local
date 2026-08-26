@@ -1,5 +1,5 @@
 import {
-  categorySerpQueries,
+  appendFile,
   mkdir,
   readFile,
   readdir,
@@ -9,6 +9,7 @@ import {
 } from "node:fs/promises";
 import { join } from "node:path";
 import {
+  categorySerpQueries,
   chooseBusinessResults,
   extractWebsiteEvidence,
   planCategoryBatch,
@@ -77,6 +78,12 @@ const atomicJson = async (path, value) => {
   });
   await rename(temporary, path);
 };
+const appendLedger = async (event) =>
+  appendFile(
+    join(outputRoot, "provider-ledger.jsonl"),
+    `${JSON.stringify({ recordedAt: new Date().toISOString(), ...event })}\n`,
+    { mode: 0o600 },
+  );
 const exists = async (path) =>
   stat(path).then(
     () => true,
@@ -298,6 +305,22 @@ async function runSearch() {
       shortfall: Math.max(0, 20 - serp.results.length),
     };
     await atomicJson(path, receipt);
+    await appendLedger({
+      type: "category_search",
+      categoryPriority: category.priority,
+      categorySlug: category.slug,
+      dataforseoCostUsd: serp.costUsd,
+      dataforseoTasks: serp.tasks.map(({ taskId, costUsd, query, city }) => ({
+        taskId,
+        costUsd,
+        query,
+        city,
+      })),
+      exaCostUsd: exaResult.costUsd ?? null,
+      tavilyStatus: tavilyResult.status,
+      resultCount: serp.results.length,
+      shortfall: receipt.shortfall,
+    });
     process.stdout.write(
       `${category.priority}\t${category.category}\t${serp.results.length}\t$${serp.costUsd.toFixed(4)}\n`,
     );
@@ -425,6 +448,16 @@ async function crawlResult(category, result) {
     }))
       if (!value) receipt.missingFields.push(field);
     await atomicJson(path, receipt);
+    await appendLedger({
+      type: "website_crawl",
+      categoryPriority: category.priority,
+      categorySlug: category.slug,
+      domain: result.domain,
+      firecrawlJobId: crawl.jobId,
+      firecrawlCreditsUsed: crawl.creditsUsed,
+      pageCount: crawl.pages.length,
+      status: "complete",
+    });
     process.stdout.write(
       `${category.priority}\t${result.domain}\t${crawl.pages.length} pages\n`,
     );

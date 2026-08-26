@@ -17,7 +17,7 @@ Large and potentially sensitive raw artifacts stay outside Git at:
 
 `/Users/chussey/Library/CloudStorage/Dropbox-AIA4/Cleverwork Main/Local775Directory/serp-enrichment`
 
-The root contains the immutable category queue and resumable `progress.json`. Each fixed 20-category batch contains provider search receipts, one JSON crawl/evidence receipt per candidate, and a summary. Failed crawls are retried inside their original batch; completed candidates are idempotently skipped. An evidence-backed SERP shortfall becomes a terminal blocked category instead of looping forever or being padded.
+The root contains the immutable category queue, resumable `progress.json`, and append-only `provider-ledger.jsonl`. The ledger preserves each future search/crawl cost or credit event even when a category receipt is replaced by a retry. Each fixed 20-category batch contains provider search receipts, one JSON crawl/evidence receipt per candidate, and a summary. Failed crawls are retried inside their original batch; completed candidates are idempotently skipped. An evidence-backed SERP shortfall becomes a terminal blocked category instead of looping forever or being padded.
 
 ## Operator command
 
