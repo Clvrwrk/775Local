@@ -18,6 +18,7 @@ import { Route as ClaimRouteImport } from './routes/claim'
 import { Route as ListYourBusinessRouteImport } from './routes/list-your-business'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as OffersRouteImport } from './routes/offers'
+import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as SearchRouteImport } from './routes/search'
@@ -74,6 +75,11 @@ const LoginRoute = LoginRouteImport.update({
 const OffersRoute = OffersRouteImport.update({
   id: '/offers',
   path: '/offers',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PricingRoute = PricingRouteImport.update({
+  id: '/pricing',
+  path: '/pricing',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PrivacyRoute = PrivacyRouteImport.update({
@@ -147,6 +153,7 @@ export interface FileRoutesByFullPath {
   '/list-your-business': typeof ListYourBusinessRoute
   '/login': typeof LoginRoute
   '/offers': typeof OffersRoute
+  '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/register': typeof RegisterRoute
   '/search': typeof SearchRoute
@@ -170,6 +177,7 @@ export interface FileRoutesByTo {
   '/list-your-business': typeof ListYourBusinessRoute
   '/login': typeof LoginRoute
   '/offers': typeof OffersRoute
+  '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/register': typeof RegisterRoute
   '/search': typeof SearchRoute
@@ -194,6 +202,7 @@ export interface FileRoutesById {
   '/list-your-business': typeof ListYourBusinessRoute
   '/login': typeof LoginRoute
   '/offers': typeof OffersRoute
+  '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/register': typeof RegisterRoute
   '/search': typeof SearchRoute
@@ -219,6 +228,7 @@ export interface FileRouteTypes {
     | '/list-your-business'
     | '/login'
     | '/offers'
+    | '/pricing'
     | '/privacy'
     | '/register'
     | '/search'
@@ -242,6 +252,7 @@ export interface FileRouteTypes {
     | '/list-your-business'
     | '/login'
     | '/offers'
+    | '/pricing'
     | '/privacy'
     | '/register'
     | '/search'
@@ -265,6 +276,7 @@ export interface FileRouteTypes {
     | '/list-your-business'
     | '/login'
     | '/offers'
+    | '/pricing'
     | '/privacy'
     | '/register'
     | '/search'
@@ -289,6 +301,7 @@ export interface RootRouteChildren {
   ListYourBusinessRoute: typeof ListYourBusinessRoute
   LoginRoute: typeof LoginRoute
   OffersRoute: typeof OffersRoute
+  PricingRoute: typeof PricingRoute
   PrivacyRoute: typeof PrivacyRoute
   RegisterRoute: typeof RegisterRoute
   SearchRoute: typeof SearchRoute
@@ -364,6 +377,13 @@ declare module '@tanstack/react-router' {
       path: '/offers'
       fullPath: '/offers'
       preLoaderRoute: typeof OffersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pricing': {
+      id: '/pricing'
+      path: '/pricing'
+      fullPath: '/pricing'
+      preLoaderRoute: typeof PricingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/privacy': {
@@ -486,6 +506,7 @@ const rootRouteChildren: RootRouteChildren = {
   ListYourBusinessRoute: ListYourBusinessRoute,
   LoginRoute: LoginRoute,
   OffersRoute: OffersRoute,
+  PricingRoute: PricingRoute,
   PrivacyRoute: PrivacyRoute,
   RegisterRoute: RegisterRoute,
   SearchRoute: SearchRoute,
