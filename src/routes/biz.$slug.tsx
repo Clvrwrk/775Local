@@ -7,6 +7,7 @@ import { SiteShell } from "@/components/layout/site-shell";
 import { useCurrentUser } from "@/lib/auth/use-current-user";
 import { listingCover } from "@/lib/directory/covers";
 import { getBusiness } from "@/lib/directory/queries";
+import { serializeStructuredData } from "@/lib/directory/structured-data.mjs";
 import { formatPhone } from "@/lib/utils";
 
 export const Route = createFileRoute("/biz/$slug")({
@@ -68,7 +69,7 @@ function BusinessPage() {
 
   return (
     <SiteShell wash>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeStructuredData(jsonLd) }} />
       <article className="app-page px-4 pb-14 pt-5 sm:px-6 sm:pt-8">
         <nav className="mb-5 flex flex-wrap items-center gap-2 text-xs text-muted" aria-label="Breadcrumb">
           <Link to="/">Directory</Link><span aria-hidden="true">/</span>

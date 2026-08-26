@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { test } from "node:test";
+import { serializeStructuredData } from "../src/lib/directory/structured-data.mjs";
 
 const files = [
   "src/routes/index.tsx",
@@ -51,4 +52,17 @@ test("SEO launch files index public discovery and exclude private or incomplete 
   assert.match(robots, /Disallow: \/studio\//);
   assert.match(sitemap, /https:\/\/775directory\.com\/nv\/reno\/screen-repair/);
   assert.doesNotMatch(sitemap, /pricing|claim|search|studio/);
+});
+
+test("listing JSON-LD cannot break out of its script element", () => {
+  const serialized = serializeStructuredData({
+    url: 'https://example.com/</script><script>alert("stored-xss")</script>',
+    name: "A&B > C",
+    separator: "\u2028\u2029",
+  });
+  assert.doesNotMatch(serialized, /[<>&\u2028\u2029]/u);
+  assert.match(serialized, /\\u003c\/script\\u003e/);
+  assert.match(serialized, /\\u0026/);
+  assert.match(serialized, /\\u2028\\u2029/);
+  assert.throws(() => serializeStructuredData(undefined), /must be JSON serializable/);
 });
