@@ -8,6 +8,7 @@ import {
   extractWebsiteEvidence,
   isCategoryRelevantResult,
   isEvidenceCompleteReceipt,
+  normalizeResultUrl,
   planCategoryBatch,
   planReconciliationWindow,
   summarizeCurrentSearchReceipts,
@@ -45,18 +46,22 @@ test("completion accounting reads only the current SERP result receipts", async 
   const source = await readFile(new URL("./serp-enrichment.mjs", import.meta.url), "utf8");
   assert.match(source, /summarizeCurrentSearchReceipts/);
   assert.match(source, /completedPriorities\.delete/);
+  assert.match(source, /priority \?\? 1\) \/ batchSize/);
+  assert.match(source, /superseded-listings/);
 });
 
 test("receipt reconciliation excludes stale successes and superseded failures", () => {
   const search = {
+    filterVersion: "business-controlled-domain-v3",
     shortfall: 0,
     results: Array.from({ length: 20 }, (_, index) => ({
       domain: `current-${index + 1}.example`,
+      url: `https://current-${index + 1}.example/`,
     })),
   };
   const successfulReceipt = (domain) => ({
     reviewStatus: "private_candidate",
-    serp: { domain },
+    serp: { domain, url: `https://${domain}/` },
     crawl: { pageCount: 1 },
     sourcePages: [{ url: `https://${domain}` }],
   });
@@ -64,7 +69,7 @@ test("receipt reconciliation excludes stale successes and superseded failures", 
     ...search.results.slice(0, 18).map((result) => successfulReceipt(result.domain)),
     {
       reviewStatus: "crawl_failed",
-      serp: { domain: "current-19.example" },
+      serp: { domain: "current-19.example", url: "https://current-19.example/" },
       crawl: { pageCount: 0 },
       sourcePages: [],
     },
@@ -83,9 +88,60 @@ test("receipt reconciliation excludes stale successes and superseded failures", 
     invalidReceiptCount: 0,
     staleReceiptCount: 2,
     shortfall: 0,
+    filterVersion: "business-controlled-domain-v3",
+    filterVersionAccepted: true,
     complete: false,
     blocked: false,
   });
+});
+
+test("same-domain evidence for a different result URL stays stale", () => {
+  const summary = summarizeCurrentSearchReceipts(
+    {
+      filterVersion: "business-controlled-domain-v3",
+      shortfall: 19,
+      results: [
+        {
+          domain: "example.com",
+          url: "https://example.com/locations/reno",
+        },
+      ],
+    },
+    [
+      {
+        reviewStatus: "private_candidate",
+        serp: { domain: "example.com", url: "https://example.com/services" },
+        crawl: { pageCount: 1 },
+        sourcePages: [{ url: "https://example.com/services" }],
+      },
+    ],
+  );
+  assert.equal(summary.evidenceCompleteCount, 0);
+  assert.equal(summary.missingReceiptCount, 1);
+  assert.equal(summary.staleReceiptCount, 1);
+  assert.equal(summary.blocked, false);
+});
+
+test("an obsolete search filter can never complete a category", () => {
+  const results = Array.from({ length: 20 }, (_, index) => ({
+    domain: `business-${index + 1}.example`,
+    url: `https://business-${index + 1}.example/`,
+  }));
+  const receipts = results.map((result) => ({
+    reviewStatus: "private_candidate",
+    serp: result,
+    crawl: { pageCount: 1 },
+    sourcePages: [{ url: result.url }],
+  }));
+  const summary = summarizeCurrentSearchReceipts(
+    { filterVersion: "business-controlled-domain-v2", shortfall: 0, results },
+    receipts,
+    { expectedFilterVersion: "business-controlled-domain-v3" },
+  );
+  assert.equal(summary.evidenceCompleteCount, 20);
+  assert.equal(summary.filterVersionAccepted, false);
+  assert.equal(summary.complete, false);
+  assert.equal(summary.blocked, false);
 });
 
 test("failed crawl retries are appended to the provider ledger", async () => {
@@ -148,6 +204,30 @@ test("SERP selection excludes aggregators, social networks, duplicates, and unsa
   assert.deepEqual(
     chooseBusinessResults(items, 20).map((item) => item.domain),
     ["alpha.example", "beta.example"],
+  );
+});
+
+test("merged SERP results preserve their provider rank", () => {
+  assert.deepEqual(
+    chooseBusinessResults([
+      { serpRank: 7, title: "Alpha", url: "https://alpha.example" },
+      { serpRank: 2, title: "Beta", url: "https://beta.example" },
+    ]).map(({ domain, serpRank }) => ({ domain, serpRank })),
+    [
+      { domain: "alpha.example", serpRank: 7 },
+      { domain: "beta.example", serpRank: 2 },
+    ],
+  );
+});
+
+test("result URL matching tolerates fragments and trailing slashes but not path changes", () => {
+  assert.equal(
+    normalizeResultUrl("https://example.com/services/#contact"),
+    "https://example.com/services",
+  );
+  assert.notEqual(
+    normalizeResultUrl("https://example.com/services"),
+    normalizeResultUrl("https://example.com/locations/reno"),
   );
 });
 

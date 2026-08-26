@@ -1,4 +1,5 @@
 import { appendFile, mkdir, readFile, readdir, rename, stat, writeFile } from "node:fs/promises";
+import { createHash } from "node:crypto";
 import { join } from "node:path";
 import {
   categorySerpQueries,
@@ -6,6 +7,7 @@ import {
   extractWebsiteEvidence,
   isCategoryRelevantResult,
   isEvidenceCompleteReceipt,
+  normalizeResultUrl,
   planCategoryBatch,
   planReconciliationWindow,
   summarizeCurrentSearchReceipts,
@@ -62,9 +64,10 @@ if (batch.length === 0) {
   );
   process.exit(0);
 }
-const batchId = `batch-${String(Math.ceil((batch[0]?.priority ?? 1) / 20)).padStart(2, "0")}`;
+const batchId = `batch-${String(Math.ceil((batch[0]?.priority ?? 1) / batchSize)).padStart(2, "0")}`;
 const batchRoot = join(outputRoot, batchId);
 const listingsRoot = join(batchRoot, "listings");
+const supersededListingsRoot = join(batchRoot, "superseded-listings");
 await mkdir(listingsRoot, { recursive: true });
 
 const atomicJson = async (path, value) => {
@@ -401,7 +404,23 @@ async function crawlResult(category, result) {
   );
   if (await exists(path)) {
     const prior = JSON.parse(await readFile(path, "utf8"));
-    if (isEvidenceCompleteReceipt(prior)) return;
+    if (
+      isEvidenceCompleteReceipt(prior) &&
+      normalizeResultUrl(prior.serp?.url) === normalizeResultUrl(result.url)
+    )
+      return;
+    if (isEvidenceCompleteReceipt(prior)) {
+      await mkdir(supersededListingsRoot, { recursive: true });
+      const fingerprint = createHash("sha256")
+        .update(String(prior.serp?.url ?? "missing-url"))
+        .digest("hex")
+        .slice(0, 16);
+      const archivePath = join(
+        supersededListingsRoot,
+        `${category.slug}--${result.domain.replace(/[^a-z0-9.-]/g, "-")}--${fingerprint}.json`,
+      );
+      if (!(await exists(archivePath))) await atomicJson(archivePath, prior);
+    }
   }
   let crawl;
   try {
@@ -521,7 +540,9 @@ if (["crawl", "all", "reconcile"].includes(stage)) {
         .filter((name) => name.startsWith(`${category.slug}--`) && name.endsWith(".json"))
         .map((name) => readFile(join(listingsRoot, name), "utf8").then(JSON.parse)),
     );
-    const receiptSummary = summarizeCurrentSearchReceipts(search, receipts);
+    const receiptSummary = summarizeCurrentSearchReceipts(search, receipts, {
+      expectedFilterVersion: FILTER_VERSION,
+    });
     categorySummaries.push({
       priority: category.priority,
       category: category.category,

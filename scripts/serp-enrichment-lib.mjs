@@ -76,6 +76,18 @@ export function normalizeDomain(value) {
   }
 }
 
+export function normalizeResultUrl(value) {
+  try {
+    const url = new URL(value);
+    if (!["http:", "https:"].includes(url.protocol)) return null;
+    url.hash = "";
+    if (url.pathname.length > 1) url.pathname = url.pathname.replace(/\/+$/, "");
+    return url.href;
+  } catch {
+    return null;
+  }
+}
+
 function isBlocked(domain) {
   return BLOCKED_HOSTS.some((blocked) => domain === blocked || domain.endsWith(`.${blocked}`));
 }
@@ -89,7 +101,9 @@ export function chooseBusinessResults(items, limit = 20) {
     if (!domain || isBlocked(domain) || domains.has(domain)) continue;
     domains.add(domain);
     selected.push({
-      serpRank: Number(item.rank_group ?? item.rank_absolute ?? selected.length + 1),
+      serpRank: Number(
+        item.serpRank ?? item.rank_group ?? item.rank_absolute ?? selected.length + 1,
+      ),
       title: String(item.title ?? "").trim() || null,
       description: String(item.description ?? "").trim() || null,
       url: item.url,
@@ -165,15 +179,18 @@ export function isEvidenceCompleteReceipt(receipt) {
   );
 }
 
-export function summarizeCurrentSearchReceipts(search, receipts) {
+export function summarizeCurrentSearchReceipts(search, receipts, options = {}) {
   const results = Array.isArray(search?.results) ? search.results : [];
-  const currentDomains = new Set(results.map((result) => result.domain).filter(Boolean));
-  const byDomain = new Map(
-    (receipts ?? [])
-      .filter((receipt) => receipt?.serp?.domain)
-      .map((receipt) => [receipt.serp.domain, receipt]),
+  const resultKey = (value) => {
+    const domain = value?.domain;
+    const url = normalizeResultUrl(value?.url);
+    return domain && url ? `${domain}\t${url}` : null;
+  };
+  const currentTargets = new Set(results.map(resultKey).filter(Boolean));
+  const byTarget = new Map(
+    (receipts ?? []).map((receipt) => [resultKey(receipt?.serp), receipt]).filter(([key]) => key),
   );
-  const currentReceipts = results.map((result) => byDomain.get(result.domain) ?? null);
+  const currentReceipts = results.map((result) => byTarget.get(resultKey(result)) ?? null);
   const evidenceCompleteCount = currentReceipts.filter(isEvidenceCompleteReceipt).length;
   const failureCount = currentReceipts.filter(
     (receipt) => receipt?.reviewStatus === "crawl_failed",
@@ -186,6 +203,9 @@ export function summarizeCurrentSearchReceipts(search, receipts) {
       !isEvidenceCompleteReceipt(receipt),
   ).length;
   const shortfall = Math.max(0, Number(search?.shortfall ?? 20 - results.length));
+  const filterVersion = search?.filterVersion ?? null;
+  const filterVersionAccepted =
+    !options.expectedFilterVersion || filterVersion === options.expectedFilterVersion;
 
   return {
     resultCount: results.length,
@@ -194,11 +214,14 @@ export function summarizeCurrentSearchReceipts(search, receipts) {
     missingReceiptCount,
     invalidReceiptCount,
     staleReceiptCount: (receipts ?? []).filter(
-      (receipt) => !currentDomains.has(receipt?.serp?.domain),
+      (receipt) => !currentTargets.has(resultKey(receipt?.serp)),
     ).length,
     shortfall,
-    complete: results.length === 20 && evidenceCompleteCount === 20,
+    filterVersion,
+    filterVersionAccepted,
+    complete: filterVersionAccepted && results.length === 20 && evidenceCompleteCount === 20,
     blocked:
+      filterVersionAccepted &&
       shortfall > 0 &&
       evidenceCompleteCount === results.length &&
       failureCount === 0 &&

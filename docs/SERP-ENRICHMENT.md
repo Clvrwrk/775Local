@@ -29,7 +29,7 @@ npm run enrich:serp -- \
   --batch-size 20
 ```
 
-The `reconcile` stage does not call DataForSEO, Exa, Tavily, or Firecrawl and does not append provider spend. It updates only `progress.json` and the batch `run-summary.json`; historical Listing receipts remain intact for audit.
+The `reconcile` stage does not call DataForSEO, Exa, Tavily, or Firecrawl and does not append provider spend. It updates only `progress.json` and the batch `run-summary.json`; historical Listing receipts remain intact for audit. A category cannot become complete or terminally blocked unless its search receipt uses the runner's current accepted filter version.
 
 ## Operator command
 
