@@ -1,4 +1,5 @@
 # Project Handoff — 775 Directory (Local775)
+
 **Project:** 775 Directory (Local775)
 **Repo:** https://github.com/Clvrwrk/775Local.git
 **Production URL:** not yet deployed; approved canonical target is https://775directory.com
@@ -7,6 +8,18 @@
 **Reason:** User-requested end of session
 
 ---
+
+## 2026-08-25 — CLE-104 multi-provider SERP enrichment in progress
+
+- **Accounting:** [CAT-76](https://linear.app/cleverwork/issue/CAT-76/trailcle-104-build-local775-multi-provider-serp-enrichment-pipeline) is the contemporaneous CAT trail for [CLE-104](https://linear.app/cleverwork/issue/CLE-104/launch-slice-seed-ingestion-and-reviewed-publication-set). The durable receipt is `/Users/chussey/Library/CloudStorage/Dropbox-AIA4/Cleverwork Main/CODEX/docs/linear/teams/CLE/2026-08-25-local775-serp-enrichment.md`.
+- **Git:** `codex/cle-104-publication-command` was fast-forward merged into `codex/launch-foundation` at `3a200a8`. Enrichment work is isolated on `codex/cle-104-serp-enrichment`.
+- **Implementation:** `scripts/serp-enrichment.mjs` is a resumable, receipt-producing DataForSEO/Exa/Tavily/Firecrawl pipeline. It processes no more than 20 pending categories, filters known aggregators/social/search platforms, retries only transient DataForSEO internal errors, crawls same-domain pages with robots respected and a 25-page cap, and writes private evidence outside Git. Tests and the operator contract live in `scripts/serp-enrichment.test.mjs` and `docs/SERP-ENRICHMENT.md`.
+- **Queue and first search:** 232 categories produce 12 batches. Batch 1 has 399 retained private candidates: 19 categories have 20 direct domains; Window/Home Screen Repair has 19 after Reno and Sparks SERPs. Do not pad this shortfall or reinterpret phone/electronics repair as home screen repair. DataForSEO cost for the strict batch was $0.2475.
+- **Artifacts:** `/Users/chussey/Library/CloudStorage/Dropbox-AIA4/Cleverwork Main/Local775Directory/serp-enrichment`. Firecrawl is currently enriching batch 1. All results remain private candidates and require the existing CLE-104 human review/publication gate.
+- **Automation:** `local775-nightly-serp-enrichment` is active daily at 01:30 America/Los_Angeles. Every run must reconcile CAT-76, CLE-104, this handoff, provider cost/credit receipts, and the batch artifact path. Nominal private-research completion is 2026-09-05; conservative completion is 2026-09-07. Human review/publication is separate.
+- **Hard boundaries:** No enrichment run may select/publish Listings, write Supabase, deploy, touch Production, weaken eligibility, expose credentials, or claim 20 when sources provide fewer than 20.
+
+**Resume here:** inspect `progress.json` and the latest `batch-*/run-summary.json`; let the idempotent crawl retry only `crawl_failed` receipts. When batch 1 finishes, verify exact candidate/page/cap/failure/credit counts, update CAT-76 and CLE-104, then allow the nightly automation to advance. Do not mark CLE-104 complete until the reviewed publication acceptance is actually satisfied.
 
 ## 2026-08-25 — CLE-104 audited publication command ready for merge
 
@@ -85,11 +98,13 @@
 - Linear CLE-106: Added a no-secret remediation receipt and retained In Progress for the human-authenticated callback test.
 
 ## Git State
+
 - **Branch:** `codex/cle-104-publication-command`, based on `origin/codex/launch-foundation` at `9bf9209`
 - **Last implementation commit:** `a3b2bb3` — "fix(CLE-104): enforce application publication boundary"
 - **Uncommitted changes:** none after the handoff documentation commit.
 
 ## Task Cut Off
+
 None — implementation and credential remediation ended at a clean boundary. CLE-106 remains intentionally open because completing a real test-user authentication requires human participation.
 
 ## Prior 2026-08-24 Next Task — CLE-106
@@ -98,6 +113,7 @@ This historical continuation remains valid but is superseded as the immediate ne
 
 **Task:** Complete the human-assisted WorkOS Preview callback and authorization acceptance for CLE-106.
 **What to check / do:**
+
 1. Open the stable branch Preview sign-in route and have Christopher authenticate as a controlled test user with Google or email Magic Auth; do not automate entry of another person's authentication credential.
 2. Confirm the callback returns to `/account`, creates a valid protected session cookie, and creates or updates exactly one minimal `app.actors` row through `public.sync_workos_actor` in Supabase Preview.
 3. Prove the ordinary authenticated test user has no Local775 Operator authority, cannot invoke Operator-only paths, and gains no Listing Participation or Business Listing authority from login alone.
@@ -128,6 +144,7 @@ This historical continuation remains valid but is superseded as the immediate ne
 3. **Production launch approval** — the Production Acceptance Packet and explicit approval are required before deploying to production or attaching `775Directory.com`.
 
 ## Verification Commands
+
 1. `git status --short --branch` — should show `codex/cle-104-publication-command` tracking its remote with no uncommitted changes after the handoff commit.
 2. `npm test` — should report 90 passing tests and zero failures.
 3. `npm run typecheck` — should exit successfully with no TypeScript errors.
@@ -141,6 +158,7 @@ This historical continuation remains valid but is superseded as the immediate ne
 ## Full Context
 
 ### What was built across ALL sessions (complete feature list)
+
 - Accepted PRD/specification, domain language, architecture decisions, approval gates, SEO/performance/accessibility/security targets, commercial model, and Wednesday production-beta boundary.
 - Linear portfolio with the `775 Directory — Product & Trust Foundation` initiative, `775 Directory — Production Foundation` and `775 Directory — Identity, Claims & Trust` projects, TRUST milestones, CLE-101 spec pointer, and tracer-bullet launch issues.
 - Local project authority and removal of inherited Grok/PGLite/Better Auth/runtime assumptions.
@@ -154,12 +172,15 @@ This historical continuation remains valid but is superseded as the immediate ne
 - Durable evidence in `docs/PROJECT-DECISIONS.md`, commits through `58843a7`, and the CLE-106 Linear remediation comment.
 
 ### Architecture decisions
+
 The application uses one source of truth per concern. Supabase owns directory records, participation, permissions, Claims, Leads, entitlements, audit events, media references, and integration state. WorkOS owns human authentication and session identity only. GoHighLevel is a projected operational system for CRM, email, SMS, phone, pipelines, invoices, and payments; it never overwrites public truth directly. Provider writes use durable outbox/inbox, signatures, idempotency, retries, receipts, dead-letter visibility, and reconciliation. Convex is intentionally absent from v1 because it duplicates Supabase capabilities without a bounded responsibility.
 
 ### Design system (if applicable)
+
 Preserve the existing Circle × Sierra visual direction and the tokens in `docs/DESIGN-SYSTEM.md`, components in `docs/COMPONENTS.md`, and intent in `docs/DESIGN.md`. The product is mobile-first because approximately 90% of expected use is mobile. Maintain WCAG 2.2 AA, Lighthouse category scores above 90, good Core Web Vitals, clear Sponsored labels, and truthful public data.
 
 ### Key invariants (never violate)
+
 - Authentication is not authorization: every privileged action requires server/database enforcement and explicit scoped authority.
 - Production is human-gated: Preview success never authorizes production, DNS, spend, messages, calls, payments, or privacy/security changes.
 - Supabase is the directory source of truth: GoHighLevel and provider payloads are projections or proposals, never co-equal owners.
@@ -172,19 +193,20 @@ Preserve the existing Circle × Sierra visual direction and the tokens in `docs/
 - Do not weaken a failing eligibility, RLS, auth, security, accessibility, or performance gate to make it pass.
 
 ### Service / deployment map (if applicable)
-| Service | Detail |
-|---------|--------|
-| Canonical checkout | `/Volumes/M1 Application SSD/Projects/Local775` on `codex/launch-foundation` |
-| GitHub | https://github.com/Clvrwrk/775Local.git |
-| Linear initiative | [775 Directory — Product & Trust Foundation](https://linear.app/cleverwork/initiative/775-directory-product-and-trust-foundation-9c300ffaeb3e) |
-| Linear identity project | [775 Directory — Identity, Claims & Trust](https://linear.app/cleverwork/project/775-directory-identity-claims-and-trust-432396f134d4) |
-| Linear active issue | [CLE-106](https://linear.app/cleverwork/issue/CLE-106/launch-slice-account-authentication-and-operator-authorization) — In Progress |
-| Vercel | `cleverwork/reno-local-directory`, project `prj_ZkcD7I7A6TDYLJ7Z4UAG2hfNoEth` |
-| Vercel Preview | https://reno-local-directory-git-codex-launch-foundation-cleverwork.vercel.app — protected; deployment `dpl_7HjSx64Yx2ZkurdNj26cRdZzpdk2` |
-| WorkOS | Isolated `Local775 Directory` project, Staging only; application `775Directory.com`; no Local775 Production environment activated |
-| Supabase Preview | `dpxeldzunfxmjahgvjhm` — migrations and private corpus applied |
-| Supabase Production | `hcfryjrajqftcnnbnybj` — infrastructure exists; schema/data untouched |
-| GoHighLevel | Dedicated Local775 location approved but not confirmed provisioned; do not use the Homeworks Advantage location |
-| Cloudflare | Public domains are managed in Cloudflare; no production DNS change was made |
-| Sentry | Existing account/tool available; Local775 production wiring is not yet accepted as complete |
-| Seed workbook | `/Users/chussey/Library/CloudStorage/Dropbox-AIA4/Cleverwork Main/Local775Directory` |
+
+| Service                 | Detail                                                                                                                                         |
+| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| Canonical checkout      | `/Volumes/M1 Application SSD/Projects/Local775` on `codex/launch-foundation`                                                                   |
+| GitHub                  | https://github.com/Clvrwrk/775Local.git                                                                                                        |
+| Linear initiative       | [775 Directory — Product & Trust Foundation](https://linear.app/cleverwork/initiative/775-directory-product-and-trust-foundation-9c300ffaeb3e) |
+| Linear identity project | [775 Directory — Identity, Claims & Trust](https://linear.app/cleverwork/project/775-directory-identity-claims-and-trust-432396f134d4)         |
+| Linear active issue     | [CLE-106](https://linear.app/cleverwork/issue/CLE-106/launch-slice-account-authentication-and-operator-authorization) — In Progress            |
+| Vercel                  | `cleverwork/reno-local-directory`, project `prj_ZkcD7I7A6TDYLJ7Z4UAG2hfNoEth`                                                                  |
+| Vercel Preview          | https://reno-local-directory-git-codex-launch-foundation-cleverwork.vercel.app — protected; deployment `dpl_7HjSx64Yx2ZkurdNj26cRdZzpdk2`      |
+| WorkOS                  | Isolated `Local775 Directory` project, Staging only; application `775Directory.com`; no Local775 Production environment activated              |
+| Supabase Preview        | `dpxeldzunfxmjahgvjhm` — migrations and private corpus applied                                                                                 |
+| Supabase Production     | `hcfryjrajqftcnnbnybj` — infrastructure exists; schema/data untouched                                                                          |
+| GoHighLevel             | Dedicated Local775 location approved but not confirmed provisioned; do not use the Homeworks Advantage location                                |
+| Cloudflare              | Public domains are managed in Cloudflare; no production DNS change was made                                                                    |
+| Sentry                  | Existing account/tool available; Local775 production wiring is not yet accepted as complete                                                    |
+| Seed workbook           | `/Users/chussey/Library/CloudStorage/Dropbox-AIA4/Cleverwork Main/Local775Directory`                                                           |
