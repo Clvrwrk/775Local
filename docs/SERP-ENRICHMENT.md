@@ -39,4 +39,4 @@ Every run must add a no-secret receipt to [CAT-76](https://linear.app/cleverwork
 
 ## Completion estimate
 
-The accepted queue currently has 232 categories, or 12 batches at 20 categories per run. After the initial batch, 11 nightly runs remain. At one successful batch per night, the nominal research-completion date is September 5, 2026; September 7 is the conservative estimate with two retry nights. This is an estimate for private research coverage only, not human review or publication.
+The accepted queue currently has 232 categories, or 12 batches at 20 categories per run. Because the August 26 run may need to finish transient Firecrawl retries in batch 1 before the fixed-window planner advances, the scheduled-only nominal research-completion date is September 6, 2026; September 8 is the conservative estimate with two additional retry nights. If batch 1 clears manually before the first nightly run, those dates move one day earlier. This is an estimate for private research coverage only, not human review or publication.
