@@ -1,4 +1,5 @@
 import {
+  categorySerpQueries,
   mkdir,
   readFile,
   readdir,
@@ -110,7 +111,7 @@ async function fetchJson(url, options, label) {
   return body;
 }
 
-async function dataForSeoTask(category, city, attempt = 1) {
+async function dataForSeoTask(category, city, query, attempt = 1) {
   if (!process.env.DATAFORSEO_LOGIN || !process.env.DATAFORSEO_PASSWORD)
     throw new Error("DataForSEO credentials are unavailable");
   const body = await fetchJson(
@@ -123,7 +124,7 @@ async function dataForSeoTask(category, city, attempt = 1) {
       },
       body: JSON.stringify([
         {
-          keyword: `${category.query} ${city} NV`,
+          keyword: `${query} ${city} NV`,
           location_name: `${city},Nevada,United States`,
           language_code: "en",
           device: "mobile",
@@ -138,7 +139,7 @@ async function dataForSeoTask(category, city, attempt = 1) {
   const task = body.tasks?.[0];
   if (task?.status_code === 40101 && attempt < 4) {
     await sleep(2000 * attempt);
-    return dataForSeoTask(category, city, attempt + 1);
+    return dataForSeoTask(category, city, query, attempt + 1);
   }
   if (task?.status_code !== 20000) {
     throw new Error(
@@ -150,6 +151,8 @@ async function dataForSeoTask(category, city, attempt = 1) {
     taskId: task.id,
     costUsd: Number(task.cost ?? 0),
     checkUrl: task.result?.[0]?.check_url ?? null,
+    query,
+    city,
     results: chooseBusinessResults(
       items.map((item) => ({ ...item, serpCity: city })),
       20,
@@ -159,19 +162,23 @@ async function dataForSeoTask(category, city, attempt = 1) {
 
 async function dataForSeo(category) {
   const tasks = [];
-  const reno = await dataForSeoTask(category, "Reno");
-  tasks.push(reno);
-  let results = chooseBusinessResults(reno.results, 20);
-  if (results.length < 20) {
-    const sparks = await dataForSeoTask(category, "Sparks");
-    tasks.push(sparks);
-    results = chooseBusinessResults([...reno.results, ...sparks.results], 20);
+  let results = [];
+  for (const query of categorySerpQueries(category)) {
+    for (const city of ["Reno", "Sparks"]) {
+      if (results.length >= 20) break;
+      const task = await dataForSeoTask(category, city, query);
+      tasks.push(task);
+      results = chooseBusinessResults([...results, ...task.results], 20);
+    }
+    if (results.length >= 20) break;
   }
   return {
-    tasks: tasks.map(({ taskId, costUsd, checkUrl }) => ({
+    tasks: tasks.map(({ taskId, costUsd, checkUrl, query, city }) => ({
       taskId,
       costUsd,
       checkUrl,
+      query,
+      city,
     })),
     costUsd: tasks.reduce((sum, task) => sum + task.costUsd, 0),
     results,

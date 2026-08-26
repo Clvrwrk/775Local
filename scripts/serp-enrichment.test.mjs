@@ -1,11 +1,38 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
+  categorySerpQueries,
   chooseBusinessResults,
   completionEstimate,
   extractWebsiteEvidence,
   planCategoryBatch,
 } from "./serp-enrichment-lib.mjs";
+
+test("SERP query aliases are explicit, unique, and bounded", () => {
+  assert.deepEqual(
+    categorySerpQueries({
+      query: "window screen repair service",
+      queryAliases: [
+        "screen door repair service",
+        "screen door repair service",
+        "patio screen repair",
+      ],
+    }),
+    [
+      "window screen repair service",
+      "screen door repair service",
+      "patio screen repair",
+    ],
+  );
+  assert.throws(
+    () =>
+      categorySerpQueries({
+        query: "plumber",
+        queryAliases: ["one", "two", "three"],
+      }),
+    /at most two aliases/,
+  );
+});
 
 test("SERP selection excludes aggregators, social networks, duplicates, and unsafe URLs", () => {
   const items = [

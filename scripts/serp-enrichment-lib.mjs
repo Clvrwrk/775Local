@@ -87,6 +87,21 @@ export function planCategoryBatch(queue, batchSize = 20) {
   );
 }
 
+export function categorySerpQueries(category) {
+  const primary = String(category?.query ?? "").trim();
+  if (!primary) throw new Error("category query is required");
+  const aliases = [
+    ...new Set(
+      (category?.queryAliases ?? [])
+        .map((value) => String(value).trim())
+        .filter(Boolean),
+    ),
+  ];
+  if (aliases.length > 2)
+    throw new Error("a category may define at most two aliases");
+  return [...new Set([primary, ...aliases])];
+}
+
 function uniqueMatches(text, pattern) {
   return [
     ...new Set([...text.matchAll(pattern)].map((match) => match[0])),
