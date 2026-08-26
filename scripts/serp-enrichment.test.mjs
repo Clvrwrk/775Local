@@ -6,6 +6,7 @@ import {
   chooseBusinessResults,
   completionEstimate,
   extractWebsiteEvidence,
+  isCategoryRelevantResult,
   isEvidenceCompleteReceipt,
   planCategoryBatch,
 } from "./serp-enrichment-lib.mjs";
@@ -30,18 +31,27 @@ test("zero-page crawls never count as enriched candidates", () => {
 });
 
 test("runner imports query planning from the local library, not node fs", async () => {
-  const source = await readFile(
-    new URL("./serp-enrichment.mjs", import.meta.url),
-    "utf8",
-  );
-  const fsImport =
-    source.match(/import \{[\s\S]*?\} from "node:fs\/promises";/)?.[0] ?? "";
+  const source = await readFile(new URL("./serp-enrichment.mjs", import.meta.url), "utf8");
+  const fsImport = source.match(/import \{[\s\S]*?\} from "node:fs\/promises";/)?.[0] ?? "";
   const libraryImport =
-    source.match(
-      /import \{[\s\S]*?\} from "\.\/serp-enrichment-lib\.mjs";/,
-    )?.[0] ?? "";
+    source.match(/import \{[\s\S]*?\} from "\.\/serp-enrichment-lib\.mjs";/)?.[0] ?? "";
   assert.doesNotMatch(fsImport, /categorySerpQueries/);
   assert.match(libraryImport, /categorySerpQueries/);
+});
+
+test("completion accounting reads only the current SERP result receipts", async () => {
+  const source = await readFile(new URL("./serp-enrichment.mjs", import.meta.url), "utf8");
+  assert.match(source, /search\.results\.map/);
+  assert.doesNotMatch(source, /listingFiles\.filter/);
+  assert.match(source, /completedPriorities\.delete/);
+});
+
+test("failed crawl retries are appended to the provider ledger", async () => {
+  const source = await readFile(new URL("./serp-enrichment.mjs", import.meta.url), "utf8");
+  assert.match(source, /status: "failed"/);
+  assert.match(source, /failureRecordedAt/);
+  assert.match(source, /error\.firecrawlJobId/);
+  assert.match(source, /crawl\?\.creditsUsed/);
 });
 
 test("SERP query aliases are explicit, unique, and bounded", () => {
@@ -54,11 +64,7 @@ test("SERP query aliases are explicit, unique, and bounded", () => {
         "patio screen repair",
       ],
     }),
-    [
-      "window screen repair service",
-      "screen door repair service",
-      "patio screen repair",
-    ],
+    ["window screen repair service", "screen door repair service", "patio screen repair"],
   );
   assert.throws(
     () =>
@@ -86,10 +92,52 @@ test("SERP selection excludes aggregators, social networks, duplicates, and unsa
     { rank_group: 4, title: "Facebook", url: "https://facebook.com/alpha" },
     { rank_group: 5, title: "Beta", url: "http://beta.example/" },
     { rank_group: 6, title: "Unsafe", url: "ftp://unsafe.example/" },
+    {
+      rank_group: 7,
+      title: "Restaurant guide",
+      url: "https://vegas.eater.com/maps/best-restaurants-reno",
+    },
+    {
+      rank_group: 8,
+      title: "Attorney directory",
+      url: "https://www.justia.com/lawyers/nevada/reno",
+    },
   ];
   assert.deepEqual(
     chooseBusinessResults(items, 20).map((item) => item.domain),
     ["alpha.example", "beta.example"],
+  );
+});
+
+test("screen repair candidates exclude phone, auto-glass, and generic window results", () => {
+  const category = { slug: "screen-repair" };
+  assert.equal(
+    isCategoryRelevantResult(category, {
+      title: "Patio Screen Door Repair in Reno",
+      description: "Window rescreening and retractable screens",
+    }),
+    true,
+  );
+  assert.equal(
+    isCategoryRelevantResult(category, {
+      title: "Cracked iPhone Screen Repair",
+      description: "Phone and tablet service",
+    }),
+    false,
+  );
+  assert.equal(
+    isCategoryRelevantResult(category, {
+      title: "Windshield Repair and Replacement",
+      description: "Auto glass service",
+    }),
+    false,
+  );
+  assert.equal(
+    isCategoryRelevantResult(category, {
+      title: "Window Replacement in Reno",
+      description: "Install new windows",
+    }),
+    false,
   );
 });
 
@@ -121,8 +169,7 @@ test("website evidence aggregates pages without inventing missing fields", () =>
     {
       url: "https://alpha.example/",
       title: "Alpha Plumbing",
-      markdown:
-        "Call (775) 555-0100. Open Mon-Fri 8am-5pm. Serving Reno and Sparks.",
+      markdown: "Call (775) 555-0100. Open Mon-Fri 8am-5pm. Serving Reno and Sparks.",
     },
     {
       url: "https://alpha.example/contact",

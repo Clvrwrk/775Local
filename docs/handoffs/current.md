@@ -3,11 +3,24 @@
 **Project:** 775 Directory (Local775)
 **Repo:** https://github.com/Clvrwrk/775Local.git
 **Production URL:** not yet deployed; approved canonical target is https://775directory.com
-**Date:** 2026-08-25
+**Date:** 2026-08-26
 **Agent:** Project Lead / Lead Orchestrator
 **Reason:** User-requested end of session
 
 ---
+
+## 2026-08-26 — CLE-104 batch-01 retry completed; filter-v2 completion invalidated
+
+- **Receipt:** The no-secret run receipt is `docs/CLE-104-SERP-ENRICHMENT-BATCH-01-2026-08-26.md`. Private artifacts remain under `/Users/chussey/Library/CloudStorage/Dropbox-AIA4/Cleverwork Main/Local775Directory/serp-enrichment`.
+- **Bounded provider run:** The fixed batch-01 planner attempted five pending categories and issued no new DataForSEO, Exa, or Tavily searches because it reused the existing receipts. Firecrawl made 22 retries: 16 succeeded, 6 failed, 334 pages were retained, 10 successful jobs hit the 25-page cap, and 335 successful-job credits were measured. Failed-job credits were unavailable and are explicitly null.
+- **Accounting repair:** Six failed retry events were reconciled into the append-only ledger. Future failures retain their domain, timestamp, error, Firecrawl job ID when available, measured credits when available, and zero-page state.
+- **Blocking finding:** The runner initially counted stale crawl files from superseded SERP domains and marked 19 categories complete. A strict current-receipt join found only 382/400 evidence-complete current domains and 18 failures. The v2 search receipts also contain known aggregators/directories and off-category Screen Repair results, so even the 13 apparent 20/20 crawl categories cannot be accepted under the business-controlled-domain contract.
+- **Correction:** `progress.json` now has zero accepted completed priorities for batch 01. All priorities 1–20 remain pending. Filter v3 counts only current SERP-domain receipts, removes stale completion markers, archives superseded search receipts, blocks the newly identified aggregators, and rejects phone/device repair, auto glass, and generic window replacement for Screen Repair.
+- **Verification:** On Node 24, all 100 repository tests, typecheck, lint, secret scan, supported-file Prettier, diff check, and the production build pass. No post-fix provider rerun occurred.
+- **Estimate:** If filter-v3 batch 01 clears on August 27, scheduled-only nominal private-research completion is 2026-09-07; conservative completion is 2026-09-09. Human review/publication remains separate.
+- **Hard boundary retained:** Nothing was selected or published, no Supabase environment was written, no deployment or message occurred, and no directory/off-category result may be used to reach 20.
+
+**Resume here:** run the same documented bounded command. It must remain in batch 01, archive the v2 search receipts, execute filter-v3 DataForSEO/Exa/Tavily revalidation for at most priorities 1–20, and crawl only the resulting business-controlled domains. Treat any strict shortfall as pending or terminal source-shortfall evidence; do not pad it or advance to batch 02.
 
 ## 2026-08-25 — CLE-104 multi-provider SERP enrichment in progress
 

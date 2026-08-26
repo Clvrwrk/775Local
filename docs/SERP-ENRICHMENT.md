@@ -6,7 +6,7 @@ This workflow creates private research candidates. It never selects, publishes, 
 
 - The queue is derived from the licensed Local775 workbook. A category must have at least 20 source rows, except for the explicitly accepted launch categories.
 - Each run processes at most 20 pending categories.
-- DataForSEO is the Google mobile-organic ranking source. The runner requests depth 100, removes directory, social, search, and duplicate domains, and retains the first 20 business-controlled domains.
+- DataForSEO is the Google mobile-organic ranking source. The runner requests depth 100, removes directory, social, search, and duplicate domains, applies bounded category relevance rules, and retains the first 20 business-controlled domains. Screen Repair explicitly rejects phone/device repair, auto glass, and generic window-replacement results.
 - Tavily and Exa provide category-level corroboration. Their results never replace DataForSEO rank.
 - Firecrawl recursively crawls each retained domain with robots respected, same-domain links only, discovery depth 3, query parameters ignored, and a hard 25-page cap. A receipt records when the cap is hit.
 - Every result remains `private_candidate` until the existing CLE-104 human review and audited publication command accepts it. Login, payment, a successful crawl, or category completion grants no authority.
@@ -17,7 +17,7 @@ Large and potentially sensitive raw artifacts stay outside Git at:
 
 `/Users/chussey/Library/CloudStorage/Dropbox-AIA4/Cleverwork Main/Local775Directory/serp-enrichment`
 
-The root contains the immutable category queue, resumable `progress.json`, and append-only `provider-ledger.jsonl`. The ledger preserves each future search/crawl cost or credit event even when a category receipt is replaced by a retry. Each fixed 20-category batch contains provider search receipts, one JSON crawl/evidence receipt per candidate, and a summary. Failed crawls are retried inside their original batch; completed candidates are idempotently skipped. An evidence-backed SERP shortfall becomes a terminal blocked category instead of looping forever or being padded.
+The root contains the immutable category queue, resumable `progress.json`, and append-only `provider-ledger.jsonl`. The ledger preserves each future search/crawl cost or credit event, including failures and unavailable-cost flags, even when a category receipt is replaced by a retry. Superseded search receipts are archived before replacement. Each fixed 20-category batch contains provider search receipts, one JSON crawl/evidence receipt per candidate, and a summary. Completion counts only evidence receipts for domains in the current search receipt; stale or superseded domains cannot satisfy the target. Failed crawls are retried inside their original batch; completed candidates are idempotently skipped. An evidence-backed SERP shortfall becomes a terminal blocked category instead of looping forever or being padded.
 
 ## Operator command
 
@@ -39,4 +39,4 @@ Every run must add a no-secret receipt to [CAT-76](https://linear.app/cleverwork
 
 ## Completion estimate
 
-The accepted queue currently has 232 categories, or 12 batches at 20 categories per run. Because the August 26 run may need to finish transient Firecrawl retries in batch 1 before the fixed-window planner advances, the scheduled-only nominal research-completion date is September 6, 2026; September 8 is the conservative estimate with two additional retry nights. If batch 1 clears manually before the first nightly run, those dates move one day earlier. This is an estimate for private research coverage only, not human review or publication.
+The accepted queue currently has 232 categories, or 12 batches at 20 categories per run. The August 26 reconciliation invalidated the filter-v2 batch-01 completion claim because stale receipts and known non-business domains were counted. Assuming filter-v3 revalidation and the remaining crawls clear in the August 27 run, the scheduled-only nominal research-completion date is September 7, 2026; September 9 is the conservative estimate with two additional retry nights. This is an estimate for private research coverage only, not human review or publication.

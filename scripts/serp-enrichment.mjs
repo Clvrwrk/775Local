@@ -1,17 +1,10 @@
-import {
-  appendFile,
-  mkdir,
-  readFile,
-  readdir,
-  rename,
-  stat,
-  writeFile,
-} from "node:fs/promises";
+import { appendFile, mkdir, readFile, rename, stat, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import {
   categorySerpQueries,
   chooseBusinessResults,
   extractWebsiteEvidence,
+  isCategoryRelevantResult,
   isEvidenceCompleteReceipt,
   planCategoryBatch,
 } from "./serp-enrichment-lib.mjs";
@@ -41,9 +34,7 @@ if (!queuePath || !outputRoot || !["search", "crawl", "all"].includes(stage)) {
 if (!Number.isInteger(batchSize) || batchSize < 1 || batchSize > 20)
   throw new Error("invalid batch size");
 if (queuePath !== expectedQueuePath || outputRoot !== expectedOutputRoot)
-  throw new Error(
-    "queue and output must use the approved Local775 enrichment paths",
-  );
+  throw new Error("queue and output must use the approved Local775 enrichment paths");
 
 const queueReceipt = JSON.parse(await readFile(queuePath, "utf8"));
 const progressPath = join(outputRoot, "progress.json");
@@ -55,8 +46,7 @@ const blockedPriorities = new Set(progress.blockedPriorities ?? []);
 const effectiveQueue = queueReceipt.queue.map((entry) => ({
   ...entry,
   status:
-    completedPriorities.has(entry.priority) ||
-    blockedPriorities.has(entry.priority)
+    completedPriorities.has(entry.priority) || blockedPriorities.has(entry.priority)
       ? "complete"
       : "pending",
 }));
@@ -90,11 +80,10 @@ const exists = async (path) =>
     () => true,
     () => false,
   );
-const sleep = (milliseconds) =>
-  new Promise((resolve) => setTimeout(resolve, milliseconds));
+const sleep = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
 const authorization = () =>
   `Basic ${Buffer.from(`${process.env.DATAFORSEO_LOGIN}:${process.env.DATAFORSEO_PASSWORD}`).toString("base64")}`;
-const FILTER_VERSION = "business-controlled-domain-v2";
+const FILTER_VERSION = "business-controlled-domain-v3";
 let privateProviderConfig;
 
 async function providerKey(envName, provider) {
@@ -103,9 +92,7 @@ async function providerKey(envName, provider) {
     const configPath = "/Users/chussey/.config/global-web-intel/config.json";
     const configStat = await stat(configPath);
     if ((configStat.mode & 0o077) !== 0)
-      throw new Error(
-        "Global Web Intel config permissions must be owner-only (0600)",
-      );
+      throw new Error("Global Web Intel config permissions must be owner-only (0600)");
     privateProviderConfig = JSON.parse(await readFile(configPath, "utf8"));
   }
   return privateProviderConfig.providers?.[provider]?.apiKey ?? null;
@@ -114,8 +101,7 @@ async function providerKey(envName, provider) {
 async function fetchJson(url, options, label) {
   const response = await fetch(url, options);
   const body = await response.json().catch(() => ({}));
-  if (!response.ok)
-    throw new Error(`${label} failed with HTTP ${response.status}`);
+  if (!response.ok) throw new Error(`${label} failed with HTTP ${response.status}`);
   return body;
 }
 
@@ -162,7 +148,9 @@ async function dataForSeoTask(category, city, query, attempt = 1) {
     query,
     city,
     results: chooseBusinessResults(
-      items.map((item) => ({ ...item, serpCity: city })),
+      items
+        .map((item) => ({ ...item, serpCity: city }))
+        .filter((item) => isCategoryRelevantResult(category, item)),
       20,
     ),
   };
@@ -264,8 +252,11 @@ async function runSearch() {
     const path = join(batchRoot, `${category.slug}-search.json`);
     if (await exists(path)) {
       const prior = JSON.parse(await readFile(path, "utf8"));
-      if (prior.filterVersion === FILTER_VERSION && prior.shortfall === 0)
-        continue;
+      if (prior.filterVersion === FILTER_VERSION && prior.shortfall === 0) continue;
+      if (prior.filterVersion && prior.filterVersion !== FILTER_VERSION) {
+        const archivePath = join(batchRoot, `${category.slug}-search.${prior.filterVersion}.json`);
+        if (!(await exists(archivePath))) await atomicJson(archivePath, prior);
+      }
     }
     const [serp, tavilyResult, exaResult] = await Promise.all([
       dataForSeo(category),
@@ -273,9 +264,7 @@ async function runSearch() {
       exa(category),
     ]);
     const corroboratingDomains = new Set(
-      [...tavilyResult.results, ...exaResult.results].map(
-        (item) => item.domain,
-      ),
+      [...tavilyResult.results, ...exaResult.results].map((item) => item.domain),
     );
     const receipt = {
       schemaVersion: 1,
@@ -354,48 +343,49 @@ async function collectFirecrawlPages(url) {
     "Firecrawl submit",
   );
   if (!submitted.id) throw new Error("Firecrawl did not return a job id");
-  const deadline = Date.now() + 12 * 60 * 1000;
-  let status;
-  while (Date.now() < deadline) {
-    status = await fetchJson(
-      `https://api.firecrawl.dev/v2/crawl/${submitted.id}`,
-      { headers },
-      "Firecrawl poll",
-    );
-    if (status.status === "completed") break;
-    if (["failed", "cancelled"].includes(status.status))
-      throw new Error(`Firecrawl job ${submitted.id} ${status.status}`);
-    await sleep(3000);
+  try {
+    const deadline = Date.now() + 12 * 60 * 1000;
+    let status;
+    while (Date.now() < deadline) {
+      status = await fetchJson(
+        `https://api.firecrawl.dev/v2/crawl/${submitted.id}`,
+        { headers },
+        "Firecrawl poll",
+      );
+      if (status.status === "completed") break;
+      if (["failed", "cancelled"].includes(status.status))
+        throw new Error(`Firecrawl job ${submitted.id} ${status.status}`);
+      await sleep(3000);
+    }
+    if (status?.status !== "completed") throw new Error(`Firecrawl job ${submitted.id} timed out`);
+    const pages = [...(status.data ?? [])];
+    let next = status.next;
+    while (next && pages.length < 25) {
+      const page = await fetchJson(next, { headers }, "Firecrawl pagination");
+      pages.push(...(page.data ?? []));
+      next = page.next;
+    }
+    return {
+      jobId: submitted.id,
+      pages: pages.slice(0, 25),
+      creditsUsed: status.creditsUsed ?? null,
+      expiresAt: status.expiresAt ?? null,
+    };
+  } catch (error) {
+    error.firecrawlJobId = submitted.id;
+    throw error;
   }
-  if (status?.status !== "completed")
-    throw new Error(`Firecrawl job ${submitted.id} timed out`);
-  const pages = [...(status.data ?? [])];
-  let next = status.next;
-  while (next && pages.length < 25) {
-    const page = await fetchJson(next, { headers }, "Firecrawl pagination");
-    pages.push(...(page.data ?? []));
-    next = page.next;
-  }
-  return {
-    jobId: submitted.id,
-    pages: pages.slice(0, 25),
-    creditsUsed: status.creditsUsed ?? null,
-    expiresAt: status.expiresAt ?? null,
-  };
 }
 
 async function mapConcurrent(items, concurrency, operation) {
   let cursor = 0;
-  const workers = Array.from(
-    { length: Math.min(concurrency, items.length) },
-    async () => {
-      while (cursor < items.length) {
-        const index = cursor;
-        cursor += 1;
-        await operation(items[index]);
-      }
-    },
-  );
+  const workers = Array.from({ length: Math.min(concurrency, items.length) }, async () => {
+    while (cursor < items.length) {
+      const index = cursor;
+      cursor += 1;
+      await operation(items[index]);
+    }
+  });
   await Promise.all(workers);
 }
 
@@ -408,10 +398,10 @@ async function crawlResult(category, result) {
     const prior = JSON.parse(await readFile(path, "utf8"));
     if (isEvidenceCompleteReceipt(prior)) return;
   }
+  let crawl;
   try {
-    const crawl = await collectFirecrawlPages(result.url);
-    if (crawl.pages.length === 0)
-      throw new Error("Firecrawl returned zero pages");
+    crawl = await collectFirecrawlPages(result.url);
+    if (crawl.pages.length === 0) throw new Error("Firecrawl returned zero pages");
     const receipt = {
       schemaVersion: 1,
       category: {
@@ -461,10 +451,10 @@ async function crawlResult(category, result) {
       pageCount: crawl.pages.length,
       status: "complete",
     });
-    process.stdout.write(
-      `${category.priority}\t${result.domain}\t${crawl.pages.length} pages\n`,
-    );
+    process.stdout.write(`${category.priority}\t${result.domain}\t${crawl.pages.length} pages\n`);
   } catch (error) {
+    const failureRecordedAt = new Date().toISOString();
+    const failureMessage = String(error.message).slice(0, 200);
     await atomicJson(path, {
       schemaVersion: 1,
       category: {
@@ -474,12 +464,31 @@ async function crawlResult(category, result) {
       },
       reviewStatus: "crawl_failed",
       serp: result,
-      error: String(error.message),
-      failedAt: new Date().toISOString(),
+      crawl: {
+        provider: "firecrawl",
+        jobId: crawl?.jobId ?? error.firecrawlJobId ?? null,
+        pageLimit: 25,
+        pageCount: crawl?.pages.length ?? 0,
+        hitPageLimit: false,
+        creditsUsed: crawl?.creditsUsed ?? null,
+        expiresAt: crawl?.expiresAt ?? null,
+      },
+      error: failureMessage,
+      failedAt: failureRecordedAt,
     });
-    process.stderr.write(
-      `${category.priority}\t${result.domain}\tFAILED ${error.message}\n`,
-    );
+    await appendLedger({
+      type: "website_crawl",
+      categoryPriority: category.priority,
+      categorySlug: category.slug,
+      domain: result.domain,
+      firecrawlJobId: crawl?.jobId ?? error.firecrawlJobId ?? null,
+      firecrawlCreditsUsed: crawl?.creditsUsed ?? null,
+      pageCount: crawl?.pages.length ?? 0,
+      status: "failed",
+      error: failureMessage,
+      failureRecordedAt,
+    });
+    process.stderr.write(`${category.priority}\t${result.domain}\tFAILED ${failureMessage}\n`);
   }
 }
 
@@ -489,32 +498,33 @@ async function runCrawl() {
     if (!(await exists(searchPath)))
       throw new Error(`missing search receipt for ${category.category}`);
     const search = JSON.parse(await readFile(searchPath, "utf8"));
-    await mapConcurrent(search.results, 4, (result) =>
-      crawlResult(category, result),
-    );
+    await mapConcurrent(search.results, 4, (result) => crawlResult(category, result));
   }
 }
 
 if (["search", "all"].includes(stage)) await runSearch();
 if (["crawl", "all"].includes(stage)) await runCrawl();
 if (["crawl", "all"].includes(stage)) {
-  const listingFiles = await readdir(listingsRoot);
   for (const category of batch) {
-    const matching = listingFiles.filter(
-      (name) => name.startsWith(`${category.slug}--`) && name.endsWith(".json"),
-    );
-    const receipts = await Promise.all(
-      matching.map((name) =>
-        readFile(join(listingsRoot, name), "utf8").then(JSON.parse),
-      ),
-    );
-    const enrichedCount = receipts.filter(isEvidenceCompleteReceipt).length;
-    if (enrichedCount >= 20) completedPriorities.add(category.priority);
     const search = JSON.parse(
       await readFile(join(batchRoot, `${category.slug}-search.json`), "utf8"),
     );
+    const receipts = await Promise.all(
+      search.results.map(async (result) => {
+        const path = join(
+          listingsRoot,
+          `${category.slug}--${result.domain.replace(/[^a-z0-9.-]/g, "-")}.json`,
+        );
+        if (!(await exists(path))) return null;
+        return readFile(path, "utf8").then(JSON.parse);
+      }),
+    );
+    const enrichedCount = receipts.filter(isEvidenceCompleteReceipt).length;
+    if (enrichedCount >= 20) completedPriorities.add(category.priority);
+    else completedPriorities.delete(category.priority);
     if (search.shortfall > 0 && enrichedCount === search.results.length)
       blockedPriorities.add(category.priority);
+    else blockedPriorities.delete(category.priority);
   }
   await atomicJson(progressPath, {
     schemaVersion: 1,
