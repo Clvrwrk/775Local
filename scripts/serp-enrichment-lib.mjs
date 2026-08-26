@@ -132,6 +132,16 @@ export function extractWebsiteEvidence(pages) {
   };
 }
 
+export function isEvidenceCompleteReceipt(receipt) {
+  return (
+    receipt?.reviewStatus === "private_candidate" &&
+    Number.isInteger(receipt?.crawl?.pageCount) &&
+    receipt.crawl.pageCount > 0 &&
+    Array.isArray(receipt.sourcePages) &&
+    receipt.sourcePages.length > 0
+  );
+}
+
 export function completionEstimate({ categoryCount, batchSize, currentBatch }) {
   const totalBatches = Math.ceil(categoryCount / batchSize);
   return {

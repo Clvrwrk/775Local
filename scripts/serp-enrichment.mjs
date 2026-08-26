@@ -12,6 +12,7 @@ import {
   categorySerpQueries,
   chooseBusinessResults,
   extractWebsiteEvidence,
+  isEvidenceCompleteReceipt,
   planCategoryBatch,
 } from "./serp-enrichment-lib.mjs";
 
@@ -405,10 +406,12 @@ async function crawlResult(category, result) {
   );
   if (await exists(path)) {
     const prior = JSON.parse(await readFile(path, "utf8"));
-    if (prior.reviewStatus === "private_candidate") return;
+    if (isEvidenceCompleteReceipt(prior)) return;
   }
   try {
     const crawl = await collectFirecrawlPages(result.url);
+    if (crawl.pages.length === 0)
+      throw new Error("Firecrawl returned zero pages");
     const receipt = {
       schemaVersion: 1,
       category: {
@@ -505,9 +508,7 @@ if (["crawl", "all"].includes(stage)) {
         readFile(join(listingsRoot, name), "utf8").then(JSON.parse),
       ),
     );
-    const enrichedCount = receipts.filter(
-      (receipt) => receipt.reviewStatus === "private_candidate",
-    ).length;
+    const enrichedCount = receipts.filter(isEvidenceCompleteReceipt).length;
     if (enrichedCount >= 20) completedPriorities.add(category.priority);
     const search = JSON.parse(
       await readFile(join(batchRoot, `${category.slug}-search.json`), "utf8"),

@@ -6,8 +6,28 @@ import {
   chooseBusinessResults,
   completionEstimate,
   extractWebsiteEvidence,
+  isEvidenceCompleteReceipt,
   planCategoryBatch,
 } from "./serp-enrichment-lib.mjs";
+
+test("zero-page crawls never count as enriched candidates", () => {
+  assert.equal(
+    isEvidenceCompleteReceipt({
+      reviewStatus: "private_candidate",
+      crawl: { pageCount: 0 },
+      sourcePages: [],
+    }),
+    false,
+  );
+  assert.equal(
+    isEvidenceCompleteReceipt({
+      reviewStatus: "private_candidate",
+      crawl: { pageCount: 1 },
+      sourcePages: [{ url: "https://example.com" }],
+    }),
+    true,
+  );
+});
 
 test("runner imports query planning from the local library, not node fs", async () => {
   const source = await readFile(
