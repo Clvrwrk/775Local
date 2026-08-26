@@ -9,6 +9,17 @@
 
 ---
 
+## 2026-08-26 — CLE-104 no-provider checkpoint reconciliation
+
+- **Accounting:** [CAT-76](https://linear.app/cleverwork/issue/CAT-76/trailcle-104-build-local775-multi-provider-serp-enrichment-pipeline) and [CLE-104](https://linear.app/cleverwork/issue/CLE-104/launch-slice-seed-ingestion-and-reviewed-publication-set) carry the contemporaneous reconciliation and automation-pause receipts. The disk receipt remains `/Users/chussey/Library/CloudStorage/Dropbox-AIA4/Cleverwork Main/CODEX/docs/linear/teams/CLE/2026-08-25-local775-serp-enrichment.md`.
+- **Checkpoint repair:** `--stage reconcile` now rebuilds `progress.json` and `batch-01/run-summary.json` solely from existing artifacts. It rechecks the entire fixed 20-category window, joins only the current search-receipt domains, distinguishes complete, failed, missing, invalid, and stale receipts, preserves historical files, and calls no provider.
+- **Verified batch-01 state:** 382/400 current domains have valid non-empty evidence. Thirteen categories are complete and seven remain pending. The 18 unresolved domains comprise six current `crawl_failed` receipts and twelve present-but-invalid empty/zero-page receipts; zero current domains are missing a receipt. Stale/superseded receipts remain auditable but cannot count.
+- **Automation:** `local775-nightly-serp-enrichment` is paused. Its 01:30 America/Los_Angeles schedule remains configured, but it must not resume until this branch is reviewed and the bounded retry is explicitly allowed to operate from the reconciled checkpoint.
+- **Verification:** 102/102 Node tests, Node 24 typecheck, ESLint, secret scan, supported-file Prettier, diff check, and the Node 24 Vercel production build pass. The reconciliation itself made no DataForSEO, Exa, Tavily, or Firecrawl call and appended no provider spend.
+- **Effects:** only the private `progress.json` and `batch-01/run-summary.json` checkpoint receipts changed. No historical receipt was deleted; no Supabase write, candidate selection, Listing publication, Preview/Production deployment, DNS change, message, payment, or other business effect occurred.
+
+**Resume here:** review the reconciliation commit, keep the automation paused, and retry only the 18 unresolved current-domain receipts after the provider-effect gate is reconfirmed. Do not rerun search, pad results, count stale receipts, advance to batch 02, select candidates, or publish Listings.
+
 ## 2026-08-26 — CLE-104 batch-01 retry completed; filter-v2 completion invalidated
 
 - **Receipt:** The no-secret run receipt is `docs/CLE-104-SERP-ENRICHMENT-BATCH-01-2026-08-26.md`. Private artifacts remain under `/Users/chussey/Library/CloudStorage/Dropbox-AIA4/Cleverwork Main/Local775Directory/serp-enrichment`.

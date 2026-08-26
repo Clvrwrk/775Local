@@ -113,6 +113,15 @@ export function planCategoryBatch(queue, batchSize = 20) {
   return pending.filter((entry) => Math.ceil(entry.priority / batchSize) === batchNumber);
 }
 
+export function planReconciliationWindow(queue, batchSize = 20) {
+  const pending = planCategoryBatch(queue, batchSize);
+  if (pending.length === 0) return [];
+  const batchNumber = Math.ceil(pending[0].priority / batchSize);
+  return [...(queue ?? [])]
+    .filter((entry) => Math.ceil(entry.priority / batchSize) === batchNumber)
+    .sort((left, right) => left.priority - right.priority);
+}
+
 export function categorySerpQueries(category) {
   const primary = String(category?.query ?? "").trim();
   if (!primary) throw new Error("category query is required");
@@ -154,6 +163,48 @@ export function isEvidenceCompleteReceipt(receipt) {
     Array.isArray(receipt.sourcePages) &&
     receipt.sourcePages.length > 0
   );
+}
+
+export function summarizeCurrentSearchReceipts(search, receipts) {
+  const results = Array.isArray(search?.results) ? search.results : [];
+  const currentDomains = new Set(results.map((result) => result.domain).filter(Boolean));
+  const byDomain = new Map(
+    (receipts ?? [])
+      .filter((receipt) => receipt?.serp?.domain)
+      .map((receipt) => [receipt.serp.domain, receipt]),
+  );
+  const currentReceipts = results.map((result) => byDomain.get(result.domain) ?? null);
+  const evidenceCompleteCount = currentReceipts.filter(isEvidenceCompleteReceipt).length;
+  const failureCount = currentReceipts.filter(
+    (receipt) => receipt?.reviewStatus === "crawl_failed",
+  ).length;
+  const missingReceiptCount = currentReceipts.filter((receipt) => receipt === null).length;
+  const invalidReceiptCount = currentReceipts.filter(
+    (receipt) =>
+      receipt !== null &&
+      receipt.reviewStatus !== "crawl_failed" &&
+      !isEvidenceCompleteReceipt(receipt),
+  ).length;
+  const shortfall = Math.max(0, Number(search?.shortfall ?? 20 - results.length));
+
+  return {
+    resultCount: results.length,
+    evidenceCompleteCount,
+    failureCount,
+    missingReceiptCount,
+    invalidReceiptCount,
+    staleReceiptCount: (receipts ?? []).filter(
+      (receipt) => !currentDomains.has(receipt?.serp?.domain),
+    ).length,
+    shortfall,
+    complete: results.length === 20 && evidenceCompleteCount === 20,
+    blocked:
+      shortfall > 0 &&
+      evidenceCompleteCount === results.length &&
+      failureCount === 0 &&
+      missingReceiptCount === 0 &&
+      invalidReceiptCount === 0,
+  };
 }
 
 export function completionEstimate({ categoryCount, batchSize, currentBatch }) {

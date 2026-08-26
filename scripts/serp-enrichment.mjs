@@ -1,4 +1,4 @@
-import { appendFile, mkdir, readFile, rename, stat, writeFile } from "node:fs/promises";
+import { appendFile, mkdir, readFile, readdir, rename, stat, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import {
   categorySerpQueries,
@@ -7,6 +7,8 @@ import {
   isCategoryRelevantResult,
   isEvidenceCompleteReceipt,
   planCategoryBatch,
+  planReconciliationWindow,
+  summarizeCurrentSearchReceipts,
 } from "./serp-enrichment-lib.mjs";
 
 const args = new Map(
@@ -26,9 +28,9 @@ const expectedOutputRoot =
 const expectedQueuePath = `${expectedOutputRoot}/category-queue.json`;
 const stage = args.get("--stage") ?? "all";
 const batchSize = Number(args.get("--batch-size") ?? 20);
-if (!queuePath || !outputRoot || !["search", "crawl", "all"].includes(stage)) {
+if (!queuePath || !outputRoot || !["search", "crawl", "all", "reconcile"].includes(stage)) {
   throw new Error(
-    "usage: --queue PATH --output PATH [--stage search|crawl|all] [--batch-size 1..20]",
+    "usage: --queue PATH --output PATH [--stage search|crawl|all|reconcile] [--batch-size 1..20]",
   );
 }
 if (!Number.isInteger(batchSize) || batchSize < 1 || batchSize > 20)
@@ -50,7 +52,10 @@ const effectiveQueue = queueReceipt.queue.map((entry) => ({
       ? "complete"
       : "pending",
 }));
-const batch = planCategoryBatch(effectiveQueue, batchSize);
+const batch =
+  stage === "reconcile"
+    ? planReconciliationWindow(effectiveQueue, batchSize)
+    : planCategoryBatch(effectiveQueue, batchSize);
 if (batch.length === 0) {
   process.stdout.write(
     `${JSON.stringify({ status: blockedPriorities.size ? "terminal_with_shortfalls" : "complete", categoryCount: queueReceipt.categoryCount, blockedPriorities: [...blockedPriorities] })}\n`,
@@ -504,26 +509,28 @@ async function runCrawl() {
 
 if (["search", "all"].includes(stage)) await runSearch();
 if (["crawl", "all"].includes(stage)) await runCrawl();
-if (["crawl", "all"].includes(stage)) {
+const categorySummaries = [];
+if (["crawl", "all", "reconcile"].includes(stage)) {
+  const listingFiles = await readdir(listingsRoot);
   for (const category of batch) {
     const search = JSON.parse(
       await readFile(join(batchRoot, `${category.slug}-search.json`), "utf8"),
     );
     const receipts = await Promise.all(
-      search.results.map(async (result) => {
-        const path = join(
-          listingsRoot,
-          `${category.slug}--${result.domain.replace(/[^a-z0-9.-]/g, "-")}.json`,
-        );
-        if (!(await exists(path))) return null;
-        return readFile(path, "utf8").then(JSON.parse);
-      }),
+      listingFiles
+        .filter((name) => name.startsWith(`${category.slug}--`) && name.endsWith(".json"))
+        .map((name) => readFile(join(listingsRoot, name), "utf8").then(JSON.parse)),
     );
-    const enrichedCount = receipts.filter(isEvidenceCompleteReceipt).length;
-    if (enrichedCount >= 20) completedPriorities.add(category.priority);
+    const receiptSummary = summarizeCurrentSearchReceipts(search, receipts);
+    categorySummaries.push({
+      priority: category.priority,
+      category: category.category,
+      slug: category.slug,
+      ...receiptSummary,
+    });
+    if (receiptSummary.complete) completedPriorities.add(category.priority);
     else completedPriorities.delete(category.priority);
-    if (search.shortfall > 0 && enrichedCount === search.results.length)
-      blockedPriorities.add(category.priority);
+    if (receiptSummary.blocked) blockedPriorities.add(category.priority);
     else blockedPriorities.delete(category.priority);
   }
   await atomicJson(progressPath, {
@@ -540,11 +547,10 @@ const summary = {
   schemaVersion: 1,
   batchId,
   generatedAt: new Date().toISOString(),
-  categories: batch.map(({ priority, category, slug }) => ({
-    priority,
-    category,
-    slug,
-  })),
+  categories:
+    categorySummaries.length > 0
+      ? categorySummaries
+      : batch.map(({ priority, category, slug }) => ({ priority, category, slug })),
   stage,
   outputRoot: batchRoot,
 };

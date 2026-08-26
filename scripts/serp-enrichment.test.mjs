@@ -9,6 +9,8 @@ import {
   isCategoryRelevantResult,
   isEvidenceCompleteReceipt,
   planCategoryBatch,
+  planReconciliationWindow,
+  summarizeCurrentSearchReceipts,
 } from "./serp-enrichment-lib.mjs";
 
 test("zero-page crawls never count as enriched candidates", () => {
@@ -41,9 +43,49 @@ test("runner imports query planning from the local library, not node fs", async 
 
 test("completion accounting reads only the current SERP result receipts", async () => {
   const source = await readFile(new URL("./serp-enrichment.mjs", import.meta.url), "utf8");
-  assert.match(source, /search\.results\.map/);
-  assert.doesNotMatch(source, /listingFiles\.filter/);
+  assert.match(source, /summarizeCurrentSearchReceipts/);
   assert.match(source, /completedPriorities\.delete/);
+});
+
+test("receipt reconciliation excludes stale successes and superseded failures", () => {
+  const search = {
+    shortfall: 0,
+    results: Array.from({ length: 20 }, (_, index) => ({
+      domain: `current-${index + 1}.example`,
+    })),
+  };
+  const successfulReceipt = (domain) => ({
+    reviewStatus: "private_candidate",
+    serp: { domain },
+    crawl: { pageCount: 1 },
+    sourcePages: [{ url: `https://${domain}` }],
+  });
+  const receipts = [
+    ...search.results.slice(0, 18).map((result) => successfulReceipt(result.domain)),
+    {
+      reviewStatus: "crawl_failed",
+      serp: { domain: "current-19.example" },
+      crawl: { pageCount: 0 },
+      sourcePages: [],
+    },
+    successfulReceipt("stale-success.example"),
+    {
+      reviewStatus: "crawl_failed",
+      serp: { domain: "superseded-failure.example" },
+    },
+  ];
+
+  assert.deepEqual(summarizeCurrentSearchReceipts(search, receipts), {
+    resultCount: 20,
+    evidenceCompleteCount: 18,
+    failureCount: 1,
+    missingReceiptCount: 1,
+    invalidReceiptCount: 0,
+    staleReceiptCount: 2,
+    shortfall: 0,
+    complete: false,
+    blocked: false,
+  });
 });
 
 test("failed crawl retries are appended to the provider ledger", async () => {
@@ -162,6 +204,18 @@ test("category batches stay in a fixed 20-category window until retries finish",
   assert.equal(next.length, 20);
   assert.equal(next[0].priority, 21);
   assert.equal(next.at(-1).priority, 40);
+});
+
+test("reconciliation rechecks the entire fixed window including completed categories", () => {
+  const queue = Array.from({ length: 45 }, (_, index) => ({
+    priority: index + 1,
+    category: `Category ${index + 1}`,
+    status: index < 12 ? "complete" : "pending",
+  }));
+  const window = planReconciliationWindow(queue, 20);
+  assert.equal(window.length, 20);
+  assert.equal(window[0].priority, 1);
+  assert.equal(window.at(-1).priority, 20);
 });
 
 test("website evidence aggregates pages without inventing missing fields", () => {
