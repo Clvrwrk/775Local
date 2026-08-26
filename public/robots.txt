@@ -1,0 +1,14 @@
+User-agent: *
+Allow: /
+Disallow: /account
+Disallow: /api/
+Disallow: /claim
+Disallow: /list-your-business
+Disallow: /login
+Disallow: /pricing
+Disallow: /register
+Disallow: /search
+Disallow: /spec
+Disallow: /studio/
+
+Sitemap: https://775directory.com/sitemap.xml

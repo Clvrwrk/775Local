@@ -28,8 +28,8 @@ export function BusinessCardView({
             className="size-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
           />
           {biz.featured ? (
-            <span className="absolute right-3 top-3 rounded-full bg-gold px-2.5 py-1 text-[11px] font-medium text-ink">
-              Featured
+            <span className="absolute right-3 top-3 rounded-full bg-gold px-2.5 py-1 text-[11px] font-semibold text-ink">
+              Sponsored
             </span>
           ) : null}
         </div>
@@ -47,13 +47,13 @@ export function BusinessCardView({
     <Link
       to="/biz/$slug"
       params={{ slug: biz.slug }}
-      className="group relative block overflow-hidden rounded-[20px]"
+      className="group relative block overflow-hidden rounded-[22px] bg-card shadow-[0_10px_30px_rgba(28,26,22,0.08)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pine"
     >
       <img src={cover} alt="" className="h-40 w-full object-cover sm:h-44" />
       <div className="absolute inset-0 bg-gradient-to-t from-ink/80 via-ink/20 to-transparent" />
       {biz.featured ? (
-        <span className="absolute right-3 top-3 rounded-full bg-gold px-2.5 py-1 text-[11px] font-medium text-ink">
-          Featured
+        <span className="absolute right-3 top-3 rounded-full bg-gold px-2.5 py-1 text-[11px] font-semibold text-ink">
+          Sponsored
         </span>
       ) : null}
       <div className="absolute inset-x-0 bottom-0 p-4 text-paper">

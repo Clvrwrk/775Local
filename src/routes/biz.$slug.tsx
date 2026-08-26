@@ -1,18 +1,12 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
-import { Clock, Mail, MapPin, Phone } from "lucide-react";
-import { useState } from "react";
-import { ClaimListingPanel } from "@/components/directory/claim-listing";
+import { ArrowUpRight, BadgeCheck, CalendarCheck, Clock, Globe2, MapPin, Phone } from "lucide-react";
 import { PhotoGallery } from "@/components/directory/gallery";
 import { OfferBanner } from "@/components/directory/offer-card";
-import { SiteShell } from "@/components/layout/site-shell";
 import { Stars } from "@/components/directory/stars";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { SiteShell } from "@/components/layout/site-shell";
 import { useCurrentUser } from "@/lib/auth/use-current-user";
 import { listingCover } from "@/lib/directory/covers";
-import { getBusiness, submitLead } from "@/lib/directory/queries";
+import { getBusiness } from "@/lib/directory/queries";
 import { formatPhone } from "@/lib/utils";
 
 export const Route = createFileRoute("/biz/$slug")({
@@ -21,231 +15,148 @@ export const Route = createFileRoute("/biz/$slug")({
     if (!biz) throw notFound();
     return { biz };
   },
+  head: ({ loaderData, params }) => ({
+    meta: loaderData?.biz
+      ? [
+          { title: `${loaderData.biz.name} | 775Directory` },
+          { name: "description", content: loaderData.biz.description || `${loaderData.biz.primaryCategory} in ${loaderData.biz.cityName}, Nevada.` },
+        ]
+      : [],
+    links: [{ rel: "canonical", href: `https://775directory.com/biz/${params.slug}` }],
+  }),
   component: BusinessPage,
 });
+
+function safeHost(value: string) {
+  try {
+    return new URL(value).hostname.replace(/^www\./, "");
+  } catch {
+    return value;
+  }
+}
+
+function checkedLabel(value: string | null) {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.valueOf())) return null;
+  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(date);
+}
 
 function BusinessPage() {
   const { biz } = Route.useLoaderData();
   const user = useCurrentUser();
   const isOwner = Boolean(user && biz.claimedBy === user.id);
-  const showStreet = !biz.hideStreet;
-  const showEmail = Boolean(biz.publicEmail) || isOwner;
+  const showStreet = !biz.hideStreet && biz.street && biz.street !== "Service area";
+  const checked = checkedLabel(biz.informationCheckedAt);
+  const hero = biz.coverUrl || listingCover(biz.citySlug, biz.id);
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "LocalBusiness",
     name: biz.name,
-    description: biz.description,
-    telephone: biz.phone,
+    ...(biz.description ? { description: biz.description } : {}),
+    ...(biz.phone ? { telephone: biz.phone } : {}),
+    ...(biz.website ? { url: biz.website } : {}),
     address: {
       "@type": "PostalAddress",
       ...(showStreet ? { streetAddress: biz.street } : {}),
       addressLocality: biz.cityName,
       addressRegion: "NV",
-      postalCode: biz.zip,
+      ...(biz.zip ? { postalCode: biz.zip } : {}),
     },
-    ...(!showStreet ? { areaServed: `${biz.cityName}, NV ${biz.zip}` } : {}),
+    ...(!showStreet ? { areaServed: `${biz.cityName}, Nevada` } : {}),
   };
 
   return (
     <SiteShell wash>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
-      <article className="app-sheet px-4 pb-12 pt-4">
-        <PhotoGallery
-          photos={
-            biz.photos.length
-              ? biz.photos
-              : [{ id: 0, url: biz.coverUrl || listingCover(biz.citySlug, biz.id), caption: "", sortOrder: 0 }]
-          }
-          name={biz.name}
-        />
-        <p className="mt-4 text-[11px] font-medium uppercase tracking-[0.16em] text-teal">
-          {biz.primaryCategory} · {biz.cityName}
-        </p>
-        <h1 className="mt-1 font-display text-3xl font-semibold leading-tight">{biz.name}</h1>
-        <p className="mt-1 text-sm text-ink-soft">{biz.tagline}</p>
-        <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
-          {biz.rating != null && biz.reviewCount != null ? (
-            <>
-              <Stars rating={biz.rating} />
-              <span className="tabular-nums text-muted">
-                {biz.rating.toFixed(1)} ({biz.reviewCount})
-              </span>
-            </>
-          ) : null}
-          {biz.featured ? (
-            <span className="rounded-full bg-gold px-2.5 py-0.5 text-[11px] font-medium text-ink">Featured</span>
-          ) : biz.claimedBy ? (
-            <span className="rounded-full bg-sage/20 px-2.5 py-0.5 text-[11px] font-medium text-teal">Claimed</span>
-          ) : (
-            <span className="rounded-full border border-line px-2.5 py-0.5 text-[11px] text-muted">Unclaimed</span>
-          )}
-          {isOwner ? (
-            <Link to="/studio/$slug" params={{ slug: biz.slug }} className="text-xs font-medium text-teal">
-              Studio
-            </Link>
-          ) : null}
-        </div>
-        {biz.offer ? (
-          <div className="mt-4">
-            <OfferBanner offer={biz.offer} featured={biz.featured} />
-          </div>
-        ) : null}
-        <p className="mt-5 text-sm leading-relaxed text-ink-soft">{biz.description}</p>
-        <dl className="mt-6 grid gap-2 text-sm">
-          <div className="flex items-start gap-3 rounded-[16px] bg-card px-3 py-3">
-            <Phone className="mt-0.5 size-4 text-gold" />
-            <div>
-              <dt className="text-xs text-muted">Phone</dt>
-              <dd>
-                <a href={`tel:+1${biz.phone.replace(/\D/g, "")}`}>{formatPhone(biz.phone)}</a>
-              </dd>
-            </div>
-          </div>
-          <div className="flex items-start gap-3 rounded-[16px] bg-card px-3 py-3">
-            <MapPin className="mt-0.5 size-4 text-gold" />
-            <div>
-              <dt className="text-xs text-muted">Address</dt>
-              <dd className="text-ink-soft">
-                {showStreet ? `${biz.street}, ` : "Service area · "}
-                {biz.cityName}, NV {biz.zip}
-              </dd>
-            </div>
-          </div>
-          {showEmail && biz.email ? (
-            <div className="flex items-start gap-3 rounded-[16px] bg-card px-3 py-3">
-              <Mail className="mt-0.5 size-4 text-gold" />
-              <div>
-                <dt className="text-xs text-muted">Email</dt>
-                <dd>
-                  {biz.publicEmail === true ? (
-                    <a href={`mailto:${biz.email}`}>{biz.email}</a>
-                  ) : (
-                    <span className="text-ink-soft">{biz.email} <span className="text-xs text-muted">(private)</span></span>
-                  )}
-                </dd>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <article className="app-page px-4 pb-14 pt-5 sm:px-6 sm:pt-8">
+        <nav className="mb-5 flex flex-wrap items-center gap-2 text-xs text-muted" aria-label="Breadcrumb">
+          <Link to="/">Directory</Link><span aria-hidden="true">/</span>
+          <Link to="/nv/$city" params={{ city: biz.citySlug }}>{biz.cityName}</Link><span aria-hidden="true">/</span>
+          <Link to="/categories/$slug" params={{ slug: biz.primaryCategorySlug }}>{biz.primaryCategory}</Link>
+        </nav>
+
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1.45fr)_minmax(19rem,0.65fr)] lg:items-start">
+          <div className="min-w-0">
+            {biz.photos.length ? (
+              <PhotoGallery photos={biz.photos} name={biz.name} />
+            ) : (
+              <div className="relative aspect-[16/9] overflow-hidden rounded-[28px] bg-paper-2 sm:aspect-[2/1]">
+                <img src={hero} alt="" className="size-full object-cover" />
+                <div className="absolute inset-0 bg-gradient-to-t from-ink/55 via-transparent to-transparent" />
+                <span className="absolute bottom-4 left-4 rounded-full border border-white/20 bg-ink/65 px-3 py-1.5 text-xs font-medium text-paper backdrop-blur-sm">Regional image · {biz.cityName}</span>
+              </div>
+            )}
+
+            <div className="mt-7">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-teal">{biz.primaryCategory} · {biz.cityName}</p>
+              <h1 className="mt-2 font-display text-5xl font-semibold leading-[0.94] tracking-[-0.03em] sm:text-6xl">{biz.name}</h1>
+              {biz.tagline ? <p className="mt-3 text-lg leading-7 text-ink-soft">{biz.tagline}</p> : null}
+              <div className="mt-4 flex flex-wrap items-center gap-2 text-sm">
+                {biz.rating != null && biz.reviewCount != null ? (
+                  <><Stars rating={biz.rating} /><span className="tabular-nums text-muted">{biz.rating.toFixed(1)} ({biz.reviewCount})</span></>
+                ) : null}
+                {biz.featured ? (
+                  <span className="rounded-full bg-gold px-3 py-1 text-xs font-semibold text-ink">Sponsored</span>
+                ) : biz.ownerVerified ? (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-sage/20 px-3 py-1 text-xs font-semibold text-teal"><BadgeCheck className="size-3.5" /> Owner verified</span>
+                ) : (
+                  <span className="rounded-full border border-line bg-card px-3 py-1 text-xs text-muted">Unclaimed</span>
+                )}
+                {isOwner ? <Link to="/studio/$slug" params={{ slug: biz.slug }} className="text-xs font-semibold text-teal">Open listing studio</Link> : null}
               </div>
             </div>
-          ) : null}
-          <div className="flex items-start gap-3 rounded-[16px] bg-card px-3 py-3">
-            <Clock className="mt-0.5 size-4 text-gold" />
-            <div>
-              <dt className="text-xs text-muted">Hours</dt>
-              <dd className="text-ink-soft">{biz.hours}</dd>
-            </div>
+
+            {biz.offer ? <div className="mt-6"><OfferBanner offer={biz.offer} featured={biz.featured} /></div> : null}
+
+            <section className="mt-8 border-t border-line pt-8" aria-labelledby="about-business">
+              <h2 id="about-business" className="font-display text-3xl font-semibold">About this business</h2>
+              <p className="mt-3 max-w-3xl text-base leading-7 text-ink-soft">{biz.description || `${biz.name} is listed for ${biz.primaryCategory.toLowerCase()} in ${biz.cityName}. Contact the business directly for current service details.`}</p>
+              {checked ? <p className="mt-4 inline-flex items-center gap-2 text-xs text-muted"><CalendarCheck className="size-4 text-teal" /> Information checked {checked}</p> : null}
+            </section>
+
+            {!biz.ownerVerified ? (
+              <section className="mt-8 rounded-[24px] border border-line bg-card p-6" aria-labelledby="claim-heading">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-teal">Unclaimed listing</p>
+                <h2 id="claim-heading" className="mt-2 font-display text-2xl font-semibold">Own {biz.name}?</h2>
+                <p className="mt-2 max-w-2xl text-sm leading-6 text-ink-soft">Claim submissions are not open yet. The future workflow will require evidence connecting the requester to the business before account control is granted.</p>
+                <Link to="/claim" search={{ q: biz.name, city: biz.citySlug }} className="mt-4 inline-flex min-h-11 items-center rounded-full border border-line px-4 text-sm font-semibold text-ink hover:bg-paper-2">See Claim status</Link>
+              </section>
+            ) : null}
+
+            {biz.reviews.length ? (
+              <section className="mt-8 border-t border-line pt-8" aria-labelledby="reviews-heading">
+                <h2 id="reviews-heading" className="font-display text-3xl font-semibold">Reviews</h2>
+                <div className="mt-4 grid gap-3">
+                  {biz.reviews.map((review) => (
+                    <blockquote key={review.id} className="rounded-[20px] border border-line bg-card p-5">
+                      <Stars rating={review.rating} />
+                      <p className="mt-3 text-sm leading-6 text-ink-soft">{review.body}</p>
+                      <footer className="mt-2 text-xs text-muted">— {review.author}</footer>
+                    </blockquote>
+                  ))}
+                </div>
+              </section>
+            ) : null}
           </div>
-        </dl>
-        <div className="mt-6">
-          <QuoteForm businessId={biz.id} businessName={biz.name} />
+
+          <aside className="rounded-[26px] border border-line bg-card p-5 shadow-[0_14px_40px_rgba(28,26,22,0.07)] lg:sticky lg:top-24 sm:p-6" aria-label="Business contact details">
+            <h2 className="font-display text-2xl font-semibold">Contact {biz.name}</h2>
+            <p className="mt-2 text-sm leading-6 text-muted">Confirm availability, pricing, and current hours directly with the business.</p>
+            <dl className="mt-5 grid gap-4 text-sm">
+              {biz.phone ? <div className="flex items-start gap-3"><Phone className="mt-0.5 size-5 shrink-0 text-gold-2" /><div><dt className="text-xs text-muted">Phone</dt><dd className="mt-0.5 font-medium"><a href={`tel:+1${biz.phone.replace(/\D/g, "")}`}>{formatPhone(biz.phone)}</a></dd></div></div> : null}
+              <div className="flex items-start gap-3"><MapPin className="mt-0.5 size-5 shrink-0 text-gold-2" /><div><dt className="text-xs text-muted">{showStreet ? "Address" : "Service area"}</dt><dd className="mt-0.5 text-ink-soft">{showStreet ? `${biz.street}, ` : ""}{biz.cityName}, NV {biz.zip}</dd></div></div>
+              <div className="flex items-start gap-3"><Clock className="mt-0.5 size-5 shrink-0 text-gold-2" /><div><dt className="text-xs text-muted">Hours</dt><dd className="mt-0.5 text-ink-soft">{biz.hours}</dd></div></div>
+              {biz.website ? <div className="flex items-start gap-3"><Globe2 className="mt-0.5 size-5 shrink-0 text-gold-2" /><div className="min-w-0"><dt className="text-xs text-muted">Website</dt><dd className="mt-0.5 truncate font-medium">{safeHost(biz.website)}</dd></div></div> : null}
+            </dl>
+            <div className="mt-6 grid gap-2">
+              {biz.phone ? <a href={`tel:+1${biz.phone.replace(/\D/g, "")}`} className="inline-flex min-h-12 items-center justify-center rounded-full bg-gold px-4 text-sm font-semibold text-ink hover:bg-gold-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pine">Call {formatPhone(biz.phone)}</a> : null}
+              {biz.website ? <a href={biz.website} target="_blank" rel={biz.featured ? "sponsored noopener noreferrer" : "noopener noreferrer"} className="inline-flex min-h-12 items-center justify-center gap-1.5 rounded-full border border-line px-4 text-sm font-semibold text-ink hover:bg-paper-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pine">Visit website <ArrowUpRight className="size-4" /></a> : null}
+            </div>
+            <p className="mt-5 border-t border-line pt-4 text-xs leading-5 text-muted">775Directory publishes reviewed business information. It does not guarantee pricing, availability, or service outcomes.</p>
+          </aside>
         </div>
-        <ClaimListingPanel
-          businessId={biz.id}
-          businessName={biz.name}
-          slug={biz.slug}
-          claimedBy={biz.claimedBy}
-          website={biz.website}
-          listingEmail={biz.email}
-        />
-        {biz.reviews.length ? (
-          <div className="mt-8">
-            <h2 className="font-display text-2xl font-semibold">Reviews</h2>
-            <div className="mt-3 grid gap-2">
-              {biz.reviews.map((r) => (
-                <blockquote key={r.id} className="rounded-[16px] bg-card p-4">
-                  <Stars rating={r.rating} />
-                  <p className="mt-2 text-sm text-ink-soft">{r.body}</p>
-                  <footer className="mt-2 text-xs text-muted">— {r.author}</footer>
-                </blockquote>
-              ))}
-            </div>
-          </div>
-        ) : null}
       </article>
     </SiteShell>
-  );
-}
-
-function QuoteForm({
-  businessId,
-  businessName,
-}: {
-  businessId: number;
-  businessName: string;
-}) {
-  const [status, setStatus] = useState<"idle" | "saving" | "done" | "err">("idle");
-  const [error, setError] = useState("");
-
-  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    const fd = new FormData(e.currentTarget);
-    setStatus("saving");
-    setError("");
-    try {
-      await submitLead({
-        data: {
-          businessId,
-          name: String(fd.get("name") ?? ""),
-          phone: String(fd.get("phone") ?? ""),
-          email: String(fd.get("email") ?? ""),
-          zip: String(fd.get("zip") ?? ""),
-          message: String(fd.get("message") ?? ""),
-        },
-      });
-      setStatus("done");
-      e.currentTarget.reset();
-    } catch (err) {
-      setStatus("err");
-      setError(err instanceof Error ? err.message : "Could not send.");
-    }
-  }
-
-  return (
-    <form
-      onSubmit={onSubmit}
-      className="rounded-[28px] border border-line bg-card p-5 lg:sticky lg:top-24"
-    >
-      <h2 className="font-display text-2xl font-semibold">Request a quote</h2>
-      <p className="mt-1 text-sm text-muted">
-        Tell {businessName} what you need. Your name, phone, and email go only to this shop — they
-        are not published on the listing.
-      </p>
-      <div className="mt-4 grid gap-3">
-        <div className="grid gap-1.5">
-          <Label htmlFor="name">Name</Label>
-          <Input id="name" name="name" required placeholder="Your name" />
-        </div>
-        <div className="grid gap-1.5">
-          <Label htmlFor="phone">Phone</Label>
-          <Input id="phone" name="phone" type="tel" placeholder="775…" />
-        </div>
-        <div className="grid gap-1.5">
-          <Label htmlFor="email">Email</Label>
-          <Input id="email" name="email" type="email" placeholder="you@email.com" />
-        </div>
-        <div className="grid gap-1.5">
-          <Label htmlFor="zip">ZIP</Label>
-          <Input id="zip" name="zip" inputMode="numeric" placeholder="89502" />
-        </div>
-        <div className="grid gap-1.5">
-          <Label htmlFor="message">What happened?</Label>
-          <Textarea
-            id="message"
-            name="message"
-            required
-            placeholder="Cat tore through the patio screen this morning…"
-          />
-        </div>
-        {error ? <p className="text-sm text-danger">{error}</p> : null}
-        {status === "done" ? (
-          <p className="text-sm text-sage">Sent. They’ll follow up from the 775.</p>
-        ) : (
-          <Button type="submit" disabled={status === "saving"} className="w-full">
-            {status === "saving" ? "Sending…" : "Send request"}
-          </Button>
-        )}
-      </div>
-    </form>
   );
 }
