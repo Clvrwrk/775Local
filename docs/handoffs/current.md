@@ -9,6 +9,18 @@
 
 ---
 
+## 2026-08-27 — CLE-104 filter-v10 batch-01 bounded enrichment
+
+- **Receipt:** `docs/CLE-104-SERP-ENRICHMENT-BATCH-01-2026-08-27.md`; private artifacts remain under `/Users/chussey/Library/CloudStorage/Dropbox-AIA4/Cleverwork Main/Local775Directory/serp-enrichment`.
+- **Eligibility correction:** the first resumed filter-v3 search was stopped when a Porch directory result reached Firecrawl. Audited filters v4–v10 progressively removed the observed directory, marketplace, editorial, employment, union, lead-generation, synthetic reserved-phone, generic national, off-region, and off-category results. Superseded search receipts and costs remain archived. Clean receipts were promoted only after current-filter revalidation, with explicit zero-provider ledger events.
+- **Strict Screen Repair result:** the accepted v10 receipt requires both local Reno/Sparks/Northern Nevada evidence and explicit repair/replacement language. The bounded primary and alias SERPs produced 14 eligible domains, a source shortfall of six. It is still pending rather than terminally blocked because one retained domain has a crawl failure.
+- **Batch state:** 394 current private candidates, 383 evidence-complete, 11 current failures, 15 completed categories, 5 pending categories, and zero terminal blocked categories. Completed priorities are 2–6, 9, and 11–19. Pending priorities are 1, 7, 8, 10, and 20; do not advance to batch 02.
+- **Provider accounting:** 52 completed category-search events; 82 successful DataForSEO tasks; $0.9315 known DataForSEO cost including two recorded transient retries; four pre-fix failed attempts have explicitly unavailable cost/task IDs. Exa cost was $0.3640. Tavily completed 52 corroboration requests without exposing cost/credits. Firecrawl recorded 96 events: 84 complete, 12 failed attempts, 1,768 pages, 60 cap flags, 1,775 measured credits, and one unavailable failed-event credit value.
+- **Implementation:** filter v10, zero-cost receipt promotion, reserved-fictional-phone rejection, strict Screen Repair locality/category relevance, expanded observed-host exclusions, and DataForSEO retry/failure ledgering. The full Node 24 suite passes 108/108 before final repository verification.
+- **Effects:** no Listing review/selection/publication, Supabase write, deployment, DNS change, external message/call, payment, or Production effect occurred. Provider effects were limited to the approved bounded research.
+
+**Resume here:** rerun the same fixed-window command. It must remain in batch 01, reuse v10 searches, and retry only current failures for priorities 1, 7, 8, 10, and 20. Screen Repair may become terminal with a six-result source shortfall only after all 14 retained domains have valid evidence. Do not pad, advance, select, publish, write Supabase, or deploy.
+
 ## 2026-08-26 — CLE-104 no-provider checkpoint reconciliation
 
 - **Accounting:** [CAT-76](https://linear.app/cleverwork/issue/CAT-76/trailcle-104-build-local775-multi-provider-serp-enrichment-pipeline) and [CLE-104](https://linear.app/cleverwork/issue/CLE-104/launch-slice-seed-ingestion-and-reviewed-publication-set) carry the contemporaneous reconciliation, pause, and user-directed reactivation receipts. The disk receipt remains `/Users/chussey/Library/CloudStorage/Dropbox-AIA4/Cleverwork Main/CODEX/docs/linear/teams/CLE/2026-08-25-local775-serp-enrichment.md`.

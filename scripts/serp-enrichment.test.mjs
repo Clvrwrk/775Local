@@ -11,6 +11,7 @@ import {
   normalizeResultUrl,
   planCategoryBatch,
   planReconciliationWindow,
+  revalidateSearchResults,
   summarizeCurrentSearchReceipts,
 } from "./serp-enrichment-lib.mjs";
 
@@ -52,7 +53,7 @@ test("completion accounting reads only the current SERP result receipts", async 
 
 test("receipt reconciliation excludes stale successes and superseded failures", () => {
   const search = {
-    filterVersion: "business-controlled-domain-v3",
+    filterVersion: "business-controlled-domain-v10",
     shortfall: 0,
     results: Array.from({ length: 20 }, (_, index) => ({
       domain: `current-${index + 1}.example`,
@@ -88,7 +89,7 @@ test("receipt reconciliation excludes stale successes and superseded failures", 
     invalidReceiptCount: 0,
     staleReceiptCount: 2,
     shortfall: 0,
-    filterVersion: "business-controlled-domain-v3",
+    filterVersion: "business-controlled-domain-v10",
     filterVersionAccepted: true,
     complete: false,
     blocked: false,
@@ -98,7 +99,7 @@ test("receipt reconciliation excludes stale successes and superseded failures", 
 test("same-domain evidence for a different result URL stays stale", () => {
   const summary = summarizeCurrentSearchReceipts(
     {
-      filterVersion: "business-controlled-domain-v3",
+      filterVersion: "business-controlled-domain-v10",
       shortfall: 19,
       results: [
         {
@@ -136,7 +137,7 @@ test("an obsolete search filter can never complete a category", () => {
   const summary = summarizeCurrentSearchReceipts(
     { filterVersion: "business-controlled-domain-v2", shortfall: 0, results },
     receipts,
-    { expectedFilterVersion: "business-controlled-domain-v3" },
+    { expectedFilterVersion: "business-controlled-domain-v10" },
   );
   assert.equal(summary.evidenceCompleteCount, 20);
   assert.equal(summary.filterVersionAccepted, false);
@@ -150,6 +151,14 @@ test("failed crawl retries are appended to the provider ledger", async () => {
   assert.match(source, /failureRecordedAt/);
   assert.match(source, /error\.firecrawlJobId/);
   assert.match(source, /crawl\?\.creditsUsed/);
+});
+
+test("DataForSEO retries and terminal task failures are appended to the provider ledger", async () => {
+  const source = await readFile(new URL("./serp-enrichment.mjs", import.meta.url), "utf8");
+  assert.match(source, /category_search_task_retry/);
+  assert.match(source, /category_search_task_failure/);
+  assert.match(source, /dataforseoTaskId: task\?\.id \?\? null/);
+  assert.match(source, /dataforseoCostUsd: task\?\.cost == null \? null : Number\(task\.cost\)/);
 });
 
 test("SERP query aliases are explicit, unique, and bounded", () => {
@@ -200,6 +209,32 @@ test("SERP selection excludes aggregators, social networks, duplicates, and unsa
       title: "Attorney directory",
       url: "https://www.justia.com/lawyers/nevada/reno",
     },
+    {
+      rank_group: 9,
+      title: "Contractor marketplace",
+      url: "https://pro.porch.com/reno-nv/door-contractors/reno-screen-repair-1/pp",
+    },
+    {
+      rank_group: 10,
+      title: "Provider directory",
+      url: "https://www.zocdoc.com/dentists/reno-nv-274596pm",
+    },
+    {
+      rank_group: 11,
+      title: "Google redirect",
+      url: "https://google.com/goto?url=opaque",
+    },
+    {
+      rank_group: 12,
+      title: "Synthetic handyman",
+      description: "Call (775) 555-0176",
+      url: "https://synthetic-handyman.example/",
+    },
+    {
+      rank_group: 13,
+      title: "Screen contractor directory",
+      url: "https://www.superpages.com/reno-nv/screens",
+    },
   ];
   assert.deepEqual(
     chooseBusinessResults(items, 20).map((item) => item.domain),
@@ -218,6 +253,31 @@ test("merged SERP results preserve their provider rank", () => {
       { domain: "beta.example", serpRank: 2 },
     ],
   );
+});
+
+test("search receipt revalidation preserves clean metadata and removes newly blocked results", () => {
+  const category = { slug: "dentists" };
+  const results = [
+    {
+      serpRank: 1,
+      title: "Reno Family Dental",
+      url: "https://reno-family.example/",
+      domain: "reno-family.example",
+      corroboratedBySemanticSearch: true,
+    },
+    {
+      serpRank: 2,
+      title: "Dentist directory",
+      url: "https://www.zocdoc.com/dentists/reno-nv",
+      domain: "zocdoc.com",
+      corroboratedBySemanticSearch: false,
+    },
+  ];
+  const revalidated = revalidateSearchResults(category, results, 20);
+  assert.equal(revalidated.length, 1);
+  assert.equal(revalidated[0].domain, "reno-family.example");
+  assert.equal(revalidated[0].serpRank, 1);
+  assert.equal(revalidated[0].corroboratedBySemanticSearch, true);
 });
 
 test("result URL matching tolerates fragments and trailing slashes but not path changes", () => {
@@ -249,6 +309,38 @@ test("screen repair candidates exclude phone, auto-glass, and generic window res
   );
   assert.equal(
     isCategoryRelevantResult(category, {
+      title: "Fireplace Screen Replacement in Sparks",
+      description: "Chimney and fireplace services",
+      url: "https://example.com/fireplace-screen-replacement",
+    }),
+    false,
+  );
+  assert.equal(
+    isCategoryRelevantResult(category, {
+      title: "Mobile Screen Repair in Placer and Nevada City",
+      description: "Serving Grass Valley and Rocklin",
+      url: "https://www.screenmobile.com/locations/placer-and-sierra-counties/",
+    }),
+    false,
+  );
+  assert.equal(
+    isCategoryRelevantResult(category, {
+      title: "Retractable Screen Doors in Reno",
+      description: "Custom new screens and installation",
+      url: "https://example.com/retractable-screens",
+    }),
+    false,
+  );
+  assert.equal(
+    isCategoryRelevantResult(category, {
+      title: "Window Screen Repair Services",
+      description: "We repair and replace damaged screens nationwide",
+      url: "https://example.com/screen-repair",
+    }),
+    false,
+  );
+  assert.equal(
+    isCategoryRelevantResult(category, {
       title: "Windshield Repair and Replacement",
       description: "Auto glass service",
     }),
@@ -258,6 +350,22 @@ test("screen repair candidates exclude phone, auto-glass, and generic window res
     isCategoryRelevantResult(category, {
       title: "Window Replacement in Reno",
       description: "Install new windows",
+    }),
+    false,
+  );
+  assert.equal(
+    isCategoryRelevantResult(category, {
+      title: "Window Replacement in Reno",
+      description: "Contractors also repair window screens",
+      url: "https://example.com/services/window-replacement",
+    }),
+    false,
+  );
+  assert.equal(
+    isCategoryRelevantResult(category, {
+      title: "Cracked Screen Repair in Reno",
+      description: "Same-day repair",
+      url: "https://www.ubreakifix.com/locations/reno/cracked-screen",
     }),
     false,
   );

@@ -1,69 +1,143 @@
 const BLOCKED_HOSTS = Object.freeze([
+  "2news.com",
+  "7axis.agency",
   "aaa.com",
+  "ac.gd",
   "angi.com",
+  "ask-reno.com",
+  "baonail.com",
+  "baristamagazine.com",
   "bestlawyers.com",
   "bbb.org",
   "bing.com",
   "booksy.com",
   "carfax.com",
+  "cedur.com",
   "chamberofcommerce.com",
   "cityof.com",
   "clearlyrated.com",
   "consumeraffairs.com",
+  "cozymeal.com",
   "craigslist.org",
+  "cylex.us.com",
+  "dailycoffeenews.com",
   "davestravelcorner.com",
   "deltadental.com",
+  "dinersdriveinsdiveslocations.com",
   "downtobid.com",
   "eater.com",
   "ediblerenotahoe.com",
+  "expertise.com",
   "facebook.com",
   "fresha.com",
   "gaf.com",
+  "google.com",
+  "getpatioscreenrepair.com",
+  "gymswithsauna.com",
+  "handy.com",
   "homeadvisor.com",
   "homeguide.com",
+  "homes-reno.com",
   "hotels.com",
   "houzz.com",
   "hirerush.com",
   "instagram.com",
+  "ibew401.com",
   "indeed.com",
   "justia.com",
+  "joe.coffee",
   "law.cornell.edu",
+  "lensa.com",
   "linkedin.com",
   "local.yahoo.com",
   "mapquest.com",
+  "manta.com",
+  "meetahandyman.com",
   "modernize.com",
+  "mountainluxury.com",
   "nextdoor.com",
+  "napaonline.com",
   "opentable.com",
+  "ourtownreno.com",
+  "phantomscreens.com",
+  "porch.com",
+  "procore.com",
   "reno.gov",
+  "renohandymanpros.com",
+  "renomidtown.com",
   "renotahoecoffee.com",
   "renothisweek.com",
   "restaurant.com",
+  "renorestaurantguide.com",
   "rgj.com",
   "reddit.com",
   "resy.com",
+  "roveratlas.com",
+  "saveur.com",
   "simon.com",
+  "screenedporchrepairexperts.com",
+  "superpages.com",
+  "superlawyers.com",
   "taskrabbit.com",
   "taxbuzz.com",
   "theadventuristmagazine.com",
+  "thebuilders.com",
   "thumbtack.com",
   "tiktok.com",
   "tripadvisor.com",
   "ubereats.com",
   "vagaro.com",
+  "visitreno.com",
   "visitrenotahoe.com",
+  "diningchannel.com",
+  "doorscreenreplacement.com",
+  "windowscreenrepairpros.com",
+  "wolfrunliving.com",
   "x.com",
   "yellowpages.com",
   "yelp.com",
   "youtube.com",
+  "zocdoc.com",
+  "zoominfo.com",
+  "ziprecruiter.com",
 ]);
+
+const SCREEN_REPAIR_BLOCKED_HOSTS = Object.freeze(["ubreakifix.com"]);
 
 export function isCategoryRelevantResult(category, item) {
   if (category?.slug !== "screen-repair") return true;
   const text = [item?.title, item?.description, item?.url].filter(Boolean).join(" ").toLowerCase();
+  const domain = normalizeDomain(item?.url);
   const hasScreenService = /\b(screen|screens|rescreen|rescreening)\b/.test(text);
+  const hasRepairOrReplacement =
+    /\b(repair|repairs|repairing|rescreen|rescreening|re-screen|replace|replacing|replacement|replacements|fix|fixes|fixed|torn|damaged)\b/.test(
+      text,
+    );
+  const hasLocality = /\b(reno|sparks|northern nevada)\b/.test(text);
   const isDeviceOrAutoGlass =
-    /\b(phone|iphone|ipad|tablet|samsung|device|windshield|auto glass)\b/.test(text);
-  return hasScreenService && !isDeviceOrAutoGlass;
+    /\b(phone|iphone|ipad|tablet|samsung|device|windshield|auto glass|fireplace|chimney)\b/.test(
+      text,
+    );
+  const isGenericWindowReplacement = /\bwindow replacement\b|\/window-replacement(?:\/|$)/.test(
+    text,
+  );
+  const isBlockedHost =
+    domain &&
+    SCREEN_REPAIR_BLOCKED_HOSTS.some(
+      (blocked) => domain === blocked || domain.endsWith(`.${blocked}`),
+    );
+  const isOffRegion =
+    /\b(placer|grass valley|nevada city|roseville|rocklin)\b/.test(text) &&
+    !/\b(reno|sparks)\b/.test(text);
+  return (
+    hasScreenService &&
+    hasRepairOrReplacement &&
+    hasLocality &&
+    !isDeviceOrAutoGlass &&
+    !isGenericWindowReplacement &&
+    !isBlockedHost &&
+    !isOffRegion
+  );
 }
 
 export function normalizeDomain(value) {
@@ -92,13 +166,19 @@ function isBlocked(domain) {
   return BLOCKED_HOSTS.some((blocked) => domain === blocked || domain.endsWith(`.${blocked}`));
 }
 
+function containsReservedFictionalPhone(item) {
+  const text = [item?.title, item?.description, item?.url].filter(Boolean).join(" ");
+  return /\b(?:\d{3}[-.\s])?555[-.\s]01\d{2}\b/.test(text);
+}
+
 export function chooseBusinessResults(items, limit = 20) {
   const domains = new Set();
   const selected = [];
   for (const item of items ?? []) {
     if (item.type && item.type !== "organic") continue;
     const domain = normalizeDomain(item.url);
-    if (!domain || isBlocked(domain) || domains.has(domain)) continue;
+    if (!domain || isBlocked(domain) || containsReservedFictionalPhone(item) || domains.has(domain))
+      continue;
     domains.add(domain);
     selected.push({
       serpRank: Number(
@@ -113,6 +193,14 @@ export function chooseBusinessResults(items, limit = 20) {
     if (selected.length === limit) break;
   }
   return selected;
+}
+
+export function revalidateSearchResults(category, items, limit = 20) {
+  const priorByDomain = new Map((items ?? []).map((item) => [normalizeDomain(item.url), item]));
+  return chooseBusinessResults(
+    (items ?? []).filter((item) => isCategoryRelevantResult(category, item)),
+    limit,
+  ).map((result) => ({ ...priorByDomain.get(result.domain), ...result }));
 }
 
 export function planCategoryBatch(queue, batchSize = 20) {

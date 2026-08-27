@@ -10,6 +10,7 @@ import {
   normalizeResultUrl,
   planCategoryBatch,
   planReconciliationWindow,
+  revalidateSearchResults,
   summarizeCurrentSearchReceipts,
 } from "./serp-enrichment-lib.mjs";
 
@@ -91,7 +92,7 @@ const exists = async (path) =>
 const sleep = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
 const authorization = () =>
   `Basic ${Buffer.from(`${process.env.DATAFORSEO_LOGIN}:${process.env.DATAFORSEO_PASSWORD}`).toString("base64")}`;
-const FILTER_VERSION = "business-controlled-domain-v3";
+const FILTER_VERSION = "business-controlled-domain-v10";
 let privateProviderConfig;
 
 async function providerKey(envName, provider) {
@@ -140,10 +141,36 @@ async function dataForSeoTask(category, city, query, attempt = 1) {
   );
   const task = body.tasks?.[0];
   if (task?.status_code === 40101 && attempt < 4) {
+    await appendLedger({
+      type: "category_search_task_retry",
+      categoryPriority: category.priority,
+      categorySlug: category.slug,
+      query,
+      city,
+      attempt,
+      dataforseoTaskId: task.id ?? null,
+      dataforseoCostUsd: task.cost == null ? null : Number(task.cost),
+      statusCode: task.status_code,
+      statusMessage: String(task.status_message ?? "no provider message").slice(0, 200),
+      status: "retrying",
+    });
     await sleep(2000 * attempt);
     return dataForSeoTask(category, city, query, attempt + 1);
   }
   if (task?.status_code !== 20000) {
+    await appendLedger({
+      type: "category_search_task_failure",
+      categoryPriority: category.priority,
+      categorySlug: category.slug,
+      query,
+      city,
+      attempt,
+      dataforseoTaskId: task?.id ?? null,
+      dataforseoCostUsd: task?.cost == null ? null : Number(task.cost),
+      statusCode: task?.status_code ?? null,
+      statusMessage: String(task?.status_message ?? "no provider message").slice(0, 200),
+      status: "failed",
+    });
     throw new Error(
       `DataForSEO task failed with ${task?.status_code ?? "missing status"}: ${String(task?.status_message ?? "no provider message").slice(0, 200)}`,
     );
@@ -264,6 +291,32 @@ async function runSearch() {
       if (prior.filterVersion && prior.filterVersion !== FILTER_VERSION) {
         const archivePath = join(batchRoot, `${category.slug}-search.${prior.filterVersion}.json`);
         if (!(await exists(archivePath))) await atomicJson(archivePath, prior);
+        const revalidatedResults = revalidateSearchResults(category, prior.results, 20);
+        if (revalidatedResults.length === 20 && Number(prior.shortfall ?? 0) === 0) {
+          const revalidatedAt = new Date().toISOString();
+          await atomicJson(path, {
+            ...prior,
+            filterVersion: FILTER_VERSION,
+            revalidatedAt,
+            revalidatedFromFilterVersion: prior.filterVersion,
+            results: revalidatedResults,
+          });
+          await appendLedger({
+            type: "category_search_revalidation",
+            categoryPriority: category.priority,
+            categorySlug: category.slug,
+            fromFilterVersion: prior.filterVersion,
+            toFilterVersion: FILTER_VERSION,
+            providerCalls: 0,
+            dataforseoCostUsd: 0,
+            resultCount: revalidatedResults.length,
+            status: "complete",
+          });
+          process.stdout.write(
+            `${category.priority}\t${category.category}\t${revalidatedResults.length}\t$0.0000 revalidated\n`,
+          );
+          continue;
+        }
       }
     }
     const [serp, tavilyResult, exaResult] = await Promise.all([
