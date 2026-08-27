@@ -31,6 +31,36 @@ npm run enrich:serp -- \
 
 The `reconcile` stage does not call DataForSEO, Exa, Tavily, or Firecrawl and does not append provider spend. It updates only `progress.json` and the batch `run-summary.json`; historical Listing receipts remain intact for audit. A category cannot become complete or terminally blocked unless its search receipt uses the runner's current accepted filter version.
 
+## Supabase Preview archive and seed proposals
+
+The disk artifact tree remains the immutable provider receipt. `npm run sync:enrichment` creates a content-addressed, byte-verifiable copy in Supabase Preview so future enhancement work can reuse saved evidence instead of paying for a full crawl again. The archive stores every JSON/JSONL artifact, including superseded and failed receipts, with its exact UTF-8 text, parsed JSON when valid, SHA-256 digest, byte count, relative path, source batch, and snapshot manifest.
+
+The same deterministic pass builds private `seed-profile-v1` proposals for exactly the current 400 SERP results. It extracts source-linked business facts and ranks website-photo URL candidates with page provenance, alt text, role hints, same-site evidence, and an evidence score. It does not download or republish image bytes, assert photo rights, write canonical Listings, approve candidates, or change publication state. Human review must still verify identity, accuracy, image rights, and suitability before any field or photo is published.
+
+Run a no-write inventory first and retain the printed manifest SHA-256:
+
+```sh
+npm run sync:enrichment -- \
+  "/Users/chussey/Library/CloudStorage/Dropbox-AIA4/Cleverwork Main/Local775Directory/serp-enrichment"
+```
+
+An apply is permitted only against the persistent Preview ref `dpxeldzunfxmjahgvjhm`, with its branch-scoped service credential already in the process environment and the exact dry-run manifest supplied:
+
+```sh
+IMPORT_TARGET=preview \
+PREVIEW_SUPABASE_PROJECT_REF=dpxeldzunfxmjahgvjhm \
+SUPABASE_URL="https://dpxeldzunfxmjahgvjhm.supabase.co" \
+SUPABASE_SERVICE_ROLE_KEY="<Preview service role key>" \
+npm run sync:enrichment -- \
+  "/Users/chussey/Library/CloudStorage/Dropbox-AIA4/Cleverwork Main/Local775Directory/serp-enrichment" \
+  --apply \
+  --expected-manifest="<dry-run manifest SHA-256>"
+```
+
+The command validates that the URL contains the accepted Preview ref and rejects Production. Raw evidence is service-role-only; Operators may read only normalized profile/photo proposals through Row Level Security. If the archive sync fails, preserve the disk receipts and repair or retry the same manifest. Never call providers solely to repair a database-copy failure.
+
+On an idempotent retry, the command checks the registered snapshot status before retransmitting raw artifact bytes. A fully reconciled manifest returns a zero-insert receipt immediately; a partial snapshot resumes bounded artifact/profile ingestion and then rechecks independent artifact, byte, profile, and photo aggregates.
+
 ## Operator command
 
 Run only with DataForSEO credentials already present in the process environment. Exa, Tavily, and Firecrawl may use the private Global Web Intel config when their environment variables are absent; that config must be owner-only (`0600`) and is never printed or copied:
@@ -47,7 +77,7 @@ The process fails closed when credentials or provider responses are unavailable.
 
 ## Accounting
 
-Every run must add a no-secret receipt to [CAT-76](https://linear.app/cleverwork/issue/CAT-76/trailcle-104-build-local775-multi-provider-serp-enrichment-pipeline) and [CLE-104](https://linear.app/cleverwork/issue/CLE-104/launch-slice-seed-ingestion-and-reviewed-publication-set), linking the batch summary and recording category count, complete/failed candidate counts, provider task/job receipts, measured cost or credit usage, and unresolved shortfalls. The current project handoff must be updated whenever the queue, schedule, evidence boundary, or blocker changes.
+Every run must add a no-secret receipt to [CAT-76](https://linear.app/cleverwork/issue/CAT-76/trailcle-104-build-local775-multi-provider-serp-enrichment-pipeline) and [CLE-104](https://linear.app/cleverwork/issue/CLE-104/launch-slice-seed-ingestion-and-reviewed-publication-set), linking the batch summary and recording category count, complete/failed candidate counts, provider task/job receipts, measured cost or credit usage, unresolved shortfalls, archive manifest, and Preview sync status. The current project handoff must be updated whenever the queue, schedule, evidence boundary, or blocker changes.
 
 ## Completion estimate
 
