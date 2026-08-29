@@ -19,6 +19,7 @@
     "build:dev": "vite build --mode development",
     "import:listings": "node scripts/import-listings.mjs",
     "enrich:serp": "node scripts/serp-enrichment.mjs",
+    "indexnow:submit": "node scripts/submit-indexnow.mjs",
     "preview": "vite preview",
     "security:secrets": "node scripts/secret-scan.mjs",
     "typecheck": "tsc --noEmit",

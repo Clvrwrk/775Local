@@ -1,0 +1,23 @@
+import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
+import test from "node:test";
+import { indexNowPayload, sitemapUrls } from "./submit-indexnow.mjs";
+
+test("IndexNow publishes a valid same-host key and submits only sitemap canonicals", async () => {
+  const sitemap = await readFile(new URL("../public/sitemap.xml", import.meta.url), "utf8");
+  const urls = sitemapUrls(sitemap);
+  const payload = indexNowPayload(urls);
+  const keyFile = await readFile(new URL(`../public/${payload.key}.txt`, import.meta.url), "utf8");
+
+  assert.equal(keyFile.trim(), payload.key);
+  assert.match(payload.key, /^[a-f0-9]{32}$/);
+  assert.equal(payload.host, "775directory.com");
+  assert.equal(payload.keyLocation, `https://775directory.com/${payload.key}.txt`);
+  assert.ok(urls.length > 0);
+  assert.ok(urls.every((url) => url.startsWith("https://775directory.com/")));
+  assert.deepEqual(urls, [...new Set(urls)]);
+});
+
+test("IndexNow refuses an empty sitemap", () => {
+  assert.throws(() => indexNowPayload([]), /did not contain any canonical URLs/);
+});
