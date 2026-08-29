@@ -9,55 +9,55 @@
       "name": "775directory.com",
       "content": "192.64.119.251",
       "proxied": true,
-      "ttl": "auto"
+      "ttl": 1
     },
     {
       "type": "CNAME",
       "name": "www.775directory.com",
       "content": "parkingpage.namecheap.com",
       "proxied": true,
-      "ttl": "auto"
+      "ttl": 1
     },
     {
       "type": "MX",
       "name": "775directory.com",
       "content": "eforward1.registrar-servers.com",
       "priority": 10,
-      "ttl": "auto"
+      "ttl": 1
     },
     {
       "type": "MX",
       "name": "775directory.com",
       "content": "eforward2.registrar-servers.com",
       "priority": 10,
-      "ttl": "auto"
+      "ttl": 1
     },
     {
       "type": "MX",
       "name": "775directory.com",
       "content": "eforward3.registrar-servers.com",
       "priority": 10,
-      "ttl": "auto"
+      "ttl": 1
     },
     {
       "type": "MX",
       "name": "775directory.com",
       "content": "eforward4.registrar-servers.com",
       "priority": 15,
-      "ttl": "auto"
+      "ttl": 1
     },
     {
       "type": "MX",
       "name": "775directory.com",
       "content": "eforward5.registrar-servers.com",
       "priority": 20,
-      "ttl": "auto"
+      "ttl": 1
     },
     {
       "type": "TXT",
       "name": "775directory.com",
       "content": "v=spf1 include:spf.efwd.registrar-servers.com ~all",
-      "ttl": "auto"
+      "ttl": 1
     }
   ]
 }
