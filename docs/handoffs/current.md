@@ -3,302 +3,169 @@
 **Project:** 775 Directory (Local775)
 **Repo:** https://github.com/Clvrwrk/775Local.git
 **Production URL:** https://775directory.com
-**Date:** 2026-08-29
-**Agent:** Project Lead / Lead Orchestrator
-**Reason:** User-requested end of session
+**Date:** 2026-08-29 10:59 PDT
+**Agent:** Lead Orchestrator
+**Reason:** User-requested Linear handoff
 
 ---
-
-## 2026-08-29 — CLE-117 production go-live and indexing activation
-
-- **Live surface:** `https://775directory.com` is served by Vercel Production. The final indexing deployment is `dpl_GjXh6XffwxNfKUVT5udZXmsPpH3G`; `https://www.775directory.com/:path*` returns a permanent redirect to the apex while preserving the path and query. Public `*.vercel.app` aliases emit `X-Robots-Tag: noindex`.
-- **DNS cutover:** Cloudflare apex and `www` web records were changed from the former Namecheap parking/forwarding targets to the Vercel target as DNS-only CNAME records. The five registrar MX records and SPF TXT record were preserved. The sanitized durable rollback snapshot is [`docs/evidence/cle-117/2026-08-29-cloudflare-pre-cutover.json`](../evidence/cle-117/2026-08-29-cloudflare-pre-cutover.json).
-- **Indexability:** the live `robots.txt` allows the public site, blocks account/API/registration/studio paths, and declares the apex sitemap. The live sitemap contains exactly six currently indexable canonical URLs: home, about, categories, cities, privacy, and terms. Empty Listing/city/category leaves remain out of the sitemap and below-threshold discovery pages remain `noindex, follow`.
-- **Indexing activation:** [PR #6](https://github.com/Clvrwrk/775Local/pull/6), merged as `0d6065f`, hosts the IndexNow verification key and a bounded receipt-producing submission command. The live key returned HTTP 200 and matched the repository file. IndexNow accepted all six canonical URLs with HTTP 202 at `2026-08-29T15:44:31.313Z`.
-- **Google Search Console:** the connector is authenticated, but `sc-domain:775directory.com` is not owned by the connected account. Sitemap submission returned HTTP 403 and connector-side property creation is disabled. Confirmed Google indexing is therefore `not_available`; do not claim indexed status until the domain property is added/verified and the sitemap is submitted.
-- **Visual and technical acceptance:** desktop and mobile live probes returned HTTP 200, the apex canonical, no horizontal overflow, and zero console/page errors. Durable post-cutover captures are [`desktop`](../evidence/cle-117/2026-08-29-live-desktop.png) at `2026-08-29T08:59:16-07:00` and [`mobile`](../evidence/cle-117/2026-08-29-live-mobile.png) at `2026-08-29T08:59:41-07:00`. The final IndexNow fixed point passed 127/127 Node 24 tests, and the hosted Foundation Gate plus Vercel, Greptile, and CodeRabbit checks passed with every review thread resolved.
-- **Data and outreach boundary:** the public site is an honest empty-state beta. No unreviewed Listing was published and Supabase Production remains untouched. Claim/outreach work remains blocked by CLE-104 reviewed publication coverage and CLE-106 human authentication acceptance; no seed outreach was sent.
-- **Accounting:** [CAT-81](https://linear.app/cleverwork/issue/CAT-81/trailcle-117-launch-775directory-production-and-indexing) ↔ [CLE-117](https://linear.app/cleverwork/issue/CLE-117/launch-gate-production-acceptance-packet-and-controlled-go-live) ↔ `docs/CLE-117-PRODUCTION-GO-LIVE-2026-08-29.md` and the durable Dropbox receipt. Claim/outreach remains [CAT-82](https://linear.app/cleverwork/issue/CAT-82/trailcle-107-complete-local775-claim-flow-and-seed-outreach) ↔ [CLE-107](https://linear.app/cleverwork/issue/CLE-107/launch-slice-business-claim-through-approved-ownership).
-
-**Resume here:** add and verify `sc-domain:775directory.com` in Google Search Console, then submit `https://775directory.com/sitemap.xml` and inspect the six canonical URLs. In parallel, finish CLE-104 reviewed Listing coverage and the human-assisted CLE-106 callback/session/negative-authorization proof before enabling Claim or sending the seed outreach cohort. Do not equate the live site or IndexNow acceptance with Google indexing, Listing publication, Claim completion, or outreach completion.
-
----
-
-## 2026-08-26 — CLE-105 public directory design integration
-
-- **Accounting:** [CAT-78](https://linear.app/cleverwork/issue/CAT-78/trailcle-105-integrate-the-775-design-system-and-complete-the-public) is the contemporaneous CAT trail for [CLE-105](https://linear.app/cleverwork/issue/CLE-105/launch-slice-mobile-public-discovery-and-search-surfaces). The durable cross-team receipt is `/Users/chussey/Library/CloudStorage/Dropbox-AIA4/Cleverwork Main/CODEX/docs/linear/teams/CLE/2026-08-26-local775-full-directory-build.md`.
-- **Branch:** `codex/cle-105-design-system`, stacked on `origin/codex/cle-104-directory-pricing`. This preserves the reviewed-publication and future-pricing dependency chain without merging or deleting the active enrichment branch.
-- **Design authority:** `/Users/chussey/Library/CloudStorage/Dropbox-AIA4/Cleverwork Main/Local775Directory/Design system build guidance`. `docs/DESIGN-SOURCE-INVENTORY.md` records every design-source group reviewed, the applied visual contract, asset provenance, and the mock claims that are forbidden in public output.
-- **Implementation:** official Summit Seal and 775Directory lockups, approved high-desert imagery, responsive pine/paper public shell, redesigned home/search/category/city/listing/about/offers surfaces, truthful owner/claim/lead states, Sponsored disclosure and outbound-link treatment, public canonicals, bounded launch sitemap, and crawler exclusions for private/incomplete tools.
-- **Safety boundary:** no placeholder business, rating, review, count, address, license, hours, response-time, or verification claim was copied from the design mockups. Empty states remain visible. Quote, Claim, and new-listing forms backed by unavailable handlers are not presented as working. The isolated `/pricing` route retains its approved values, `noindex, nofollow`, and disabled paid actions.
-- **Verification:** 107 Node tests, TypeScript, ESLint, secret scan, diff check, and the Node 24 Vercel production build pass. Local HTML probes returned 200 for the home, category, city, about, listing-discovery, future-pricing, and canonical query routes. Greptile found a valid P1 JSON-LD script-breakout path at `50a2f73`; `c8ace93` added a fail-closed HTML-safe structured-data serializer and an executable stored-XSS regression test. Connected-browser visual QA remains unverified because the browser bridge rejected its own configured trusted runtime path; do not mark visual acceptance complete from source/build evidence alone.
-- **Effects:** no Supabase write, real publication, Vercel deployment, Production change, Cloudflare DNS mutation, domain attachment, provider spend, payment, message, or other external effect occurred during this implementation pass.
-
-**Next gate:** complete actual desktop/mobile browser inspection. CLE-104 reviewed corpus completion, CLE-106 human authentication acceptance, and CLE-116/CLE-117 launch acceptance/rollback evidence remain prerequisites for Production and the `775directory.com` Cloudflare cutover.
-
-## 2026-08-29 — CLE-104 batch-01 user-directed continuation
-
-- **Receipt:** `docs/CLE-104-SERP-ENRICHMENT-BATCH-01-2026-08-29-CONTINUATION.md`; private artifacts remain under `/Users/chussey/Library/CloudStorage/Dropbox-AIA4/Cleverwork Main/Local775Directory/serp-enrichment`.
-- **Bounded outcome:** after the scheduled August 29 checkpoint, the user explicitly directed another fixed-window retry. Screen Repair was re-searched under accepted filter v10; DataForSEO plus Exa/Tavily retained 12 eligible domains, one fewer than the scheduled run, and preserved an eight-result source shortfall without padding. Firecrawl retried the ten current failures, and all ten returned zero pages with retained job IDs and zero measured credits.
-- **Batch state:** 392 current private candidates, 382 evidence-complete, ten current failures, 16 completed categories, four pending categories, and zero terminal blocked categories. Pending priorities remain 1, 7, 10, and 20. Do not advance to batch 02.
-- **Provider accounting:** this continuation appended 13 ledger events: two DataForSEO retries plus one six-task Screen Repair search totaling $0.0490, $0.0070 Exa, one Tavily corroboration request with no exposed cost/credits, and ten zero-page Firecrawl failures. Cumulative known batch-01 accounting is $1.0990 DataForSEO plus four unavailable pre-fix attempt costs, $0.3850 Exa, and 55 Tavily requests. The current-filter Firecrawl lineage is 127 events with 1,773 pages, 60 cap flags, and 1,780 measured credits; the full append-only history also retains 22 superseded filter-v2 events.
-- **Effects:** no Listing review/selection/publication, Supabase write, deployment, DNS change, external message/call beyond required Linear accounting, payment, or Production effect occurred.
-
-**Resume here:** rerun the same fixed-window command. It must remain in batch 01 and retry only current failures for priorities 1, 7, 10, and 20. Screen Repair may become terminal with an eight-result source shortfall only after all 12 retained domains have valid evidence. Do not pad, advance, select, publish, write Supabase, or deploy.
-
-## 2026-08-29 — CLE-104 batch-01 bounded retry
-
-- **Receipt:** `docs/CLE-104-SERP-ENRICHMENT-BATCH-01-2026-08-29.md`; private artifacts remain under `/Users/chussey/Library/CloudStorage/Dropbox-AIA4/Cleverwork Main/Local775Directory/serp-enrichment`.
-- **Bounded outcome:** the pre-run reconciliation found 16 complete and four pending categories. Screen Repair was re-searched under accepted filter v10; DataForSEO plus Exa/Tavily retained 13 eligible domains, one fewer than the prior run, and preserved a seven-result source shortfall without padding. Firecrawl retried the ten current failures, and all ten returned zero pages with retained job IDs and zero measured credits.
-- **Batch state:** 393 current private candidates, 383 evidence-complete, ten current failures, 16 completed categories, four pending categories, and zero terminal blocked categories. Pending priorities remain 1, 7, 10, and 20. Do not advance to batch 02.
-- **Provider accounting:** this run appended 13 ledger events: two DataForSEO retries plus one six-task Screen Repair search totaling $0.0580, $0.0070 Exa, one Tavily corroboration request with no exposed cost/credits, and ten zero-page Firecrawl failures. Cumulative known batch-01 accounting is $1.0500 DataForSEO plus four unavailable pre-fix attempt costs, $0.3780 Exa, and 54 Tavily requests. The current-filter Firecrawl lineage is 117 events with 1,773 pages, 60 cap flags, and 1,780 measured credits; the full append-only history also retains 22 superseded filter-v2 events.
-- **Effects:** no Listing review/selection/publication, Supabase write, deployment, DNS change, external message/call beyond required Linear accounting, payment, or Production effect occurred.
-
-**Resume here:** rerun the same fixed-window command. It must remain in batch 01 and retry only current failures for priorities 1, 7, 10, and 20. Screen Repair may become terminal with a seven-result source shortfall only after all 13 retained domains have valid evidence. Do not pad, advance, select, publish, write Supabase, or deploy.
-
-## 2026-08-28 — CLE-104 batch-01 bounded retry
-
-- **Receipt:** `docs/CLE-104-SERP-ENRICHMENT-BATCH-01-2026-08-28.md`; private artifacts remain under `/Users/chussey/Library/CloudStorage/Dropbox-AIA4/Cleverwork Main/Local775Directory/serp-enrichment`.
-- **Bounded outcome:** the pre-run reconciliation found 15 complete and five pending categories. Screen Repair was re-searched under accepted filter v10 because of its retained shortfall; DataForSEO plus Exa/Tavily again found 14 eligible domains and preserved the six-result source shortfall without padding. Firecrawl retried 11 current failures; Handyman recovered with five pages, while ten domains returned zero pages.
-- **Batch state:** 394 current private candidates, 384 evidence-complete, ten current failures, 16 completed categories, four pending categories, and zero terminal blocked categories. Pending priorities are 1, 7, 10, and 20. Do not advance to batch 02.
-- **Provider accounting:** this run appended 13 ledger events: one DataForSEO retry and one six-task Screen Repair search totaling $0.0605, $0.0070 Exa, one Tavily corroboration request with no exposed cost/credits, and 11 Firecrawl attempts totaling five pages and five measured credits. One crawl succeeded and ten failed with zero pages. Cumulative known batch-01 accounting is $0.9920 DataForSEO plus four unavailable pre-fix attempt costs, $0.3710 Exa, 53 Tavily requests, and 107 Firecrawl events with 1,773 pages, 60 cap flags, and 1,780 measured credits.
-- **Effects:** no Listing review/selection/publication, Supabase write, deployment, DNS change, external message/call beyond required Linear accounting, payment, or Production effect occurred.
-
-**Resume here:** rerun the same fixed-window command. It must remain in batch 01 and retry only current failures for priorities 1, 7, 10, and 20. Screen Repair may become terminal with a six-result source shortfall only after all 14 retained domains have valid evidence. Do not pad, advance, select, publish, write Supabase, or deploy.
-
-## 2026-08-27 — CLE-104 filter-v10 batch-01 bounded enrichment
-
-- **Receipt:** `docs/CLE-104-SERP-ENRICHMENT-BATCH-01-2026-08-27.md`; private artifacts remain under `/Users/chussey/Library/CloudStorage/Dropbox-AIA4/Cleverwork Main/Local775Directory/serp-enrichment`.
-- **Eligibility correction:** the first resumed filter-v3 search was stopped when a Porch directory result reached Firecrawl. Audited filters v4–v10 progressively removed the observed directory, marketplace, editorial, employment, union, lead-generation, synthetic reserved-phone, generic national, off-region, and off-category results. Superseded search receipts and costs remain archived. Clean receipts were promoted only after current-filter revalidation, with explicit zero-provider ledger events.
-- **Strict Screen Repair result:** the accepted v10 receipt requires both local Reno/Sparks/Northern Nevada evidence and explicit repair/replacement language. The bounded primary and alias SERPs produced 14 eligible domains, a source shortfall of six. It is still pending rather than terminally blocked because one retained domain has a crawl failure.
-- **Batch state:** 394 current private candidates, 383 evidence-complete, 11 current failures, 15 completed categories, 5 pending categories, and zero terminal blocked categories. Completed priorities are 2–6, 9, and 11–19. Pending priorities are 1, 7, 8, 10, and 20; do not advance to batch 02.
-- **Provider accounting:** 52 completed category-search events; 82 successful DataForSEO tasks; $0.9315 known DataForSEO cost including two recorded transient retries; four pre-fix failed attempts have explicitly unavailable cost/task IDs. Exa cost was $0.3640. Tavily completed 52 corroboration requests without exposing cost/credits. Firecrawl recorded 96 events: 84 complete, 12 failed attempts, 1,768 pages, 60 cap flags, 1,775 measured credits, and one unavailable failed-event credit value.
-- **Implementation:** filter v10, zero-cost receipt promotion, reserved-fictional-phone rejection, strict Screen Repair locality/category relevance, expanded observed-host exclusions, and DataForSEO retry/failure ledgering. The full Node 24 suite passes 108/108 before final repository verification.
-- **Effects:** no Listing review/selection/publication, Supabase write, deployment, DNS change, external message/call, payment, or Production effect occurred. Provider effects were limited to the approved bounded research.
-
-**Resume here:** rerun the same fixed-window command. It must remain in batch 01, reuse v10 searches, and retry only current failures for priorities 1, 7, 8, 10, and 20. Screen Repair may become terminal with a six-result source shortfall only after all 14 retained domains have valid evidence. Do not pad, advance, select, publish, write Supabase, or deploy.
-
-## 2026-08-26 — CLE-104 no-provider checkpoint reconciliation
-
-- **Accounting:** [CAT-76](https://linear.app/cleverwork/issue/CAT-76/trailcle-104-build-local775-multi-provider-serp-enrichment-pipeline) and [CLE-104](https://linear.app/cleverwork/issue/CLE-104/launch-slice-seed-ingestion-and-reviewed-publication-set) carry the contemporaneous reconciliation, pause, and user-directed reactivation receipts. The disk receipt remains `/Users/chussey/Library/CloudStorage/Dropbox-AIA4/Cleverwork Main/CODEX/docs/linear/teams/CLE/2026-08-25-local775-serp-enrichment.md`.
-- **Checkpoint repair:** `--stage reconcile` now rebuilds `progress.json` and `batch-01/run-summary.json` solely from existing artifacts. It rechecks the entire fixed 20-category window, joins only the current search result URLs, distinguishes complete, failed, missing, invalid, and stale receipts, requires the accepted filter version, preserves provider rank across merged searches, archives superseded same-domain evidence, preserves historical files, and calls no provider. Implementation fixed point: `2124507`.
-- **Verified batch-01 state:** all 20 saved search receipts are still `business-controlled-domain-v2`, so zero categories are accepted complete and all priorities 1–20 remain pending for filter-v3 revalidation. Against the obsolete v2 target only, 380/400 current result URLs have valid non-empty evidence; the remaining 20 comprise six `crawl_failed`, twelve present-but-invalid empty/zero-page receipts, and two same-domain receipts for materially different result URLs. Stale/superseded receipts remain auditable but cannot count.
-- **Automation:** `local775-nightly-serp-enrichment` was explicitly reactivated by the user on 2026-08-26. It is active daily at 01:30 America/Los_Angeles; the next scheduled run is 2026-08-27 01:30 PDT. Reactivation made no provider call or spend. The first resumed run remains a bounded filter-v3 revalidation of priorities 1–20 from the reconciled zero-completion checkpoint.
-- **Verification:** 106/106 Node tests, Node 24 typecheck, ESLint, secret scan, supported-file Prettier, diff check, and the Node 24 Vercel production build pass. Foundation CI, CodeRabbit status, Vercel, and Vercel Preview Comments pass; the final Greptile rerun remains pending with no submitted review at this handoff. The reconciliation itself made no DataForSEO, Exa, Tavily, or Firecrawl call and appended no provider spend.
-- **Effects:** only the private `progress.json` and `batch-01/run-summary.json` checkpoint receipts changed. No historical receipt was deleted; no Supabase write, candidate selection, Listing publication, Preview/Production deployment, DNS change, message, payment, or other business effect occurred.
-
-**Resume here:** monitor the active automation's first filter-v3 run. It must remain in batch 01, archive the v2 searches, create filter-v3 search receipts for at most priorities 1–20, preserve provider ranks across the Reno/Sparks and alias merge, and crawl only the resulting current result URLs. Do not pad results, count stale receipts, advance to batch 02, select candidates, or publish Listings.
-
-## 2026-08-26 — CLE-104 batch-01 retry completed; filter-v2 completion invalidated
-
-- **Receipt:** The no-secret run receipt is `docs/CLE-104-SERP-ENRICHMENT-BATCH-01-2026-08-26.md`. Private artifacts remain under `/Users/chussey/Library/CloudStorage/Dropbox-AIA4/Cleverwork Main/Local775Directory/serp-enrichment`.
-- **Bounded provider run:** The fixed batch-01 planner attempted five pending categories and issued no new DataForSEO, Exa, or Tavily searches because it reused the existing receipts. Firecrawl made 22 retries: 16 succeeded, 6 failed, 334 pages were retained, 10 successful jobs hit the 25-page cap, and 335 successful-job credits were measured. Failed-job credits were unavailable and are explicitly null.
-- **Accounting repair:** Six failed retry events were reconciled into the append-only ledger. Future failures retain their domain, timestamp, error, Firecrawl job ID when available, measured credits when available, and zero-page state.
-- **Blocking finding:** The runner initially counted stale crawl files from superseded SERP domains and marked 19 categories complete. A strict current-receipt join found only 382/400 evidence-complete current domains and 18 failures. The v2 search receipts also contain known aggregators/directories and off-category Screen Repair results, so even the 13 apparent 20/20 crawl categories cannot be accepted under the business-controlled-domain contract.
-- **Correction:** `progress.json` now has zero accepted completed priorities for batch 01. All priorities 1–20 remain pending. Filter v3 counts only current SERP-domain receipts, removes stale completion markers, archives superseded search receipts, blocks the newly identified aggregators, and rejects phone/device repair, auto glass, and generic window replacement for Screen Repair.
-- **Verification:** On Node 24, all 100 repository tests, typecheck, lint, secret scan, supported-file Prettier, diff check, and the production build pass. No post-fix provider rerun occurred.
-- **Estimate:** If filter-v3 batch 01 clears on August 27, scheduled-only nominal private-research completion is 2026-09-07; conservative completion is 2026-09-09. Human review/publication remains separate.
-- **Hard boundary retained:** Nothing was selected or published, no Supabase environment was written, no deployment or message occurred, and no directory/off-category result may be used to reach 20.
-
-**Resume here:** run the same documented bounded command. It must remain in batch 01, archive the v2 search receipts, execute filter-v3 DataForSEO/Exa/Tavily revalidation for at most priorities 1–20, and crawl only the resulting business-controlled domains. Treat any strict shortfall as pending or terminal source-shortfall evidence; do not pad it or advance to batch 02.
-## 2026-08-25 — CLE-104 multi-provider SERP enrichment in progress
-
-- **Accounting:** [CAT-76](https://linear.app/cleverwork/issue/CAT-76/trailcle-104-build-local775-multi-provider-serp-enrichment-pipeline) is the contemporaneous CAT trail for [CLE-104](https://linear.app/cleverwork/issue/CLE-104/launch-slice-seed-ingestion-and-reviewed-publication-set). The durable receipt is `/Users/chussey/Library/CloudStorage/Dropbox-AIA4/Cleverwork Main/CODEX/docs/linear/teams/CLE/2026-08-25-local775-serp-enrichment.md`.
-- **Git:** `codex/cle-104-publication-command` was fast-forward merged into `codex/launch-foundation` at `3a200a8`. Enrichment work is isolated on `codex/cle-104-serp-enrichment`.
-- **Implementation:** `scripts/serp-enrichment.mjs` is a resumable, receipt-producing DataForSEO/Exa/Tavily/Firecrawl pipeline. It processes no more than 20 pending categories, filters known aggregators/social/search platforms, retries only transient DataForSEO internal errors, crawls same-domain pages with robots respected and a 25-page cap, and writes private evidence outside Git. Tests and the operator contract live in `scripts/serp-enrichment.test.mjs` and `docs/SERP-ENRICHMENT.md`.
-- **Queue and first search:** 232 categories produce 12 batches. Batch 1 has exactly 400 retained private candidates: 20 categories with 20 domains each. Window/Home Screen Repair reached 20 only through documented in-category `screen door repair service` and `patio screen repair` aliases after the narrower Reno/Sparks query returned 19; directories and phone/electronics repair still do not count. DataForSEO cost for the final strict batch receipts is $0.2530.
-- **Artifacts:** `/Users/chussey/Library/CloudStorage/Dropbox-AIA4/Cleverwork Main/Local775Directory/serp-enrichment`. Firecrawl is currently enriching batch 1. All results remain private candidates and require the existing CLE-104 human review/publication gate.
-- **Automation:** `local775-nightly-serp-enrichment` is active daily at 01:30 America/Los_Angeles. Every run must reconcile CAT-76, CLE-104, this handoff, provider cost/credit receipts, and the batch artifact path. Scheduled-only nominal private-research completion is 2026-09-06; conservative completion is 2026-09-08 because the first run may need to clear batch-1 Firecrawl retries before advancing. If batch 1 clears manually first, both dates move one day earlier. Human review/publication is separate.
-- **Hard boundaries:** No enrichment run may select/publish Listings, write Supabase, deploy, touch Production, weaken eligibility, expose credentials, or claim 20 when approved primary and in-category alias SERPs provide fewer than 20.
-
-**Resume here:** inspect `progress.json` and the latest `batch-*/run-summary.json`; let the idempotent crawl retry only `crawl_failed` receipts. When batch 1 finishes, verify exact candidate/page/cap/failure/credit counts, update CAT-76 and CLE-104, then allow the nightly automation to advance. Do not mark CLE-104 complete until the reviewed publication acceptance is actually satisfied.
-
-## 2026-08-25 — CLE-104 audited publication command ready for merge
-
-- **Accounting:** [CAT-74](https://linear.app/cleverwork/issue/CAT-74/trailcle-104-build-audited-operator-publication-command) is the Codex trail for [CLE-104](https://linear.app/cleverwork/issue/CLE-104/launch-slice-seed-ingestion-and-reviewed-publication-set). The durable cross-team receipt is `/Users/chussey/Library/CloudStorage/Dropbox-AIA4/Cleverwork Main/CODEX/docs/linear/teams/CLE/2026-08-25-local775-publication-command.md`.
-- **Branch:** `codex/cle-104-publication-command` is based on `origin/codex/launch-foundation` at `9bf9209`. Implementation commits are `a992217`, `696a543`, and reviewed fixed point `a3b2bb3`.
-- **Command boundary:** recent, non-impersonated WorkOS authentication plus an allowlisted, organization-scoped Operator Grant is required for candidate review, exact-100 publication, suspension, and restoration. The application uses the human bearer token and Supabase publishable key only; malformed input and transport/provider failures return stable redacted codes.
-- **Publication integrity:** publication is atomic, idempotent, singleton-locked, balanced at five Listings per launch category/city cell, bound to the immutable reviewed candidate snapshot, and rejected when evidence is older than 30 days. Distinct locations can share one reviewed canonical Business identity while retaining separate Business Listings. Service-area residential street and exact coordinates remain private.
-- **Evidence and rollback:** every published Listing records draft, pending-review, and published revisions; attributable review/publication receipts; audit events; and durable outbox entries. Publication receipts preserve the actual `pending_review` before-state. Guarded, idempotent suspend/restore commands append their own receipts, revisions, audits, and outbox entries.
-- **Independent review:** Standards and Spec independently approved exact commit `a3b2bb3` after three review passes. All review findings were remediated; no blocker remains.
-- **Verification:** a fresh isolated local Supabase reset applied all migrations. pgTAP passed 82/82, schema lint reported no errors, and the AuthKit application-handler HTTP contract proved review, exact-100 publication, idempotent replay, wrong-organization denial, suspend/restore, 100 public rows, 100 publication receipts, 100 publication audits, 100 publication outbox records, and 302 lifecycle revisions. All 90 Node tests, typecheck, lint, secret scan, supported-file Prettier, diff check, and the Node 24/Vercel production build pass.
-- **Effects:** no shared Preview or Production migration/data change, no source-batch apply, no real publication, no deployment, no DNS change, no provider call/spend, and no external send occurred. Verification used only the discarded local Supabase stack.
-- **Real-corpus gate:** the saved corpus remains 14,993 raw rows and 1,134 private candidates: 40 eligible, 980 requiring review, and 114 ineligible. It cannot yet supply the exact reviewed 100 without evidence enrichment; do not weaken eligibility or silently publish review rows.
-- **Next gate:** review and merge `codex/cle-104-publication-command` into `codex/launch-foundation`. After merge, continue CLE-104 with evidence enrichment and human review needed to assemble the real balanced 100. Shared Preview application and any real Listing publication remain separate, explicitly reconciled approvals.
-
-## 2026-08-25 — CLE-104 reviewed-publication foundation merged
-
-- **Accounting:** [CAT-73](https://linear.app/cleverwork/issue/CAT-73/trailcle-104-add-entity-risk-screening-and-reviewed-publication-gate) is the Codex trail for [CLE-104](https://linear.app/cleverwork/issue/CLE-104/launch-slice-seed-ingestion-and-reviewed-publication-set). The verified cross-team receipt is `/Users/chussey/Library/CloudStorage/Dropbox-AIA4/Cleverwork Main/CODEX/docs/linear/teams/CLE/2026-08-25-local775-reviewed-publication.md`.
-- **CLE-73 merge:** `codex/cle-73-idempotent-import` passed independent standards/spec review. The duplicate hashing helper was centralized in `1deecd2`, then the branch was fast-forward merged and pushed to `origin/codex/launch-foundation` at `1deecd2`.
-- **CLE-104 merge:** `codex/cle-104-reviewed-publication` passed fixed-point Standards and Spec review, then fast-forward merged and pushed to `origin/codex/launch-foundation` at `2be6c9c`. The implementation is `270322f`; merge-review remediations are `e35baf0` and `2be6c9c`.
-- **Implementation:** deterministic review reasons now cover duplicate title/address, same-name multi-location evidence, shared-domain entity evidence, practitioners, service-area rows, and ambiguous launch categories. `launch-candidate-v2` preserves the CLE-73 category boundary, reconciles only pending/unselected private candidates, appends before/after audit events, and rejects malformed, contradictory, duplicate, reviewed, or selected replay inputs.
-- **Selection gate:** `selected_for_launch` requires an attributable accepted review (`reviewed_by` and `reviewed_at`), `eligible` screening, and zero unresolved reasons. Authenticated Operators and `service_role` have read-only table privileges; ingestion and reconciliation mutations are limited to scoped command functions. No current path can create or mutate a canonical Business Listing or publish data.
-- **Real-corpus receipt:** the saved four-ZIP Reno corpus remains 14,993 raw rows and 1,134 private candidates: 40 eligible, 980 requiring review, and 114 ineligible. Two final dry runs produced identical output SHA-256 `c9ba586cbb9a038982ffc557d7b3b90c771fa90be786ef2ebd5139ee46dacfcd`.
-- **Verification:** independent Standards and Spec fixed-point reviews are clean at `1deecd2...2be6c9c`. All 82 Node tests, typecheck, lint, Prettier, secret scan, diff check, and production build pass. A fresh isolated local Supabase reset applied all migrations; pgTAP passed 25/25 and schema lint reported no errors. Relevant pull requests now run the pinned Supabase `2.105.0` database contract before any manual Preview migration dispatch.
-- **Effects:** no shared Preview or Production migration/data change, no source-batch apply, no publication, no provider call/spend, and no external send occurred. The local Supabase test stack was stopped and discarded after verification.
-- **Current next gate:** continue CLE-104 with the recent-authenticated, idempotent, audited Operator review/selection/publication command and structured receipt flow needed to choose the 100 human-reviewed launch Listings. Do not apply the duplicate Reno DataForSEO source batch to the populated shared Preview; Preview migration application and any real selection remain separate reconciled decisions.
-
-## 2026-08-25 — CLE-73 Reno source-corpus adapter
-
-- **Accounting:** [CAT-54](https://linear.app/cleverwork/issue/CAT-54/trailcle-73-build-and-verify-local775-idempotent-reno-seed-import) is the current Codex trail for [CLE-73](https://linear.app/cleverwork/issue/CLE-73/build-reproducible-import-for-the-reno-dataforseo-seed-corpus). The cross-team receipt is `/Users/chussey/Library/CloudStorage/Dropbox-AIA4/Cleverwork Main/CODEX/docs/linear/teams/CLE/2026-08-25-local775-dataforseo-seed-corpus.md`.
-- **Branch:** `codex/cle-73-idempotent-import`, commit `3a04707`, based on `origin/codex/launch-foundation`. Do not move this work to stale `main`.
-- **Implementation:** `scripts/import-listings.mjs` now accepts either the licensed seven-sheet workbook or the saved Local775 DataForSEO corpus directory. `scripts/dataforseo-corpus.mjs` binds the four Reno ZIPs (89502, 89509, 89511, 89521), validates provider/manifests/geography/counts/stable identities, hashes all 12 saved artifacts, preserves the four city-mismatch exclusions as immutable raw rows, and maps only qualified rows into the existing private candidate review transform.
-- **Protection boundary:** apply mode can invoke only source-batch registration, append-only raw-row ingestion, insert-only candidate ingestion, and reconciliation status RPCs. It has no canonical Business Listing, Claim, ownership, participation, or publication RPC. Owner-verified fields cannot be overwritten by this import path.
-- **Real-corpus dry-run receipt:** source SHA-256 `f8deefd620d7c406f6cd3cdabeeeb88a35facaef84d817ba28eae8b6aed77c98`; 14,989 qualified rows plus four preserved exclusions; 1,134 private launch-category candidates; zero canonical Listing writes. A repeated dry run returned the same hash and counts.
-- **Verification:** Node 24 focused/full tests, typecheck, lint, secret scan, Prettier check, and production build pass. No DataForSEO API call, Supabase write, production change, paid effect, or external send occurred.
-- **Next gate:** review/merge the committed branch. Do not apply this four-ZIP adapter to the already populated shared Preview without an explicit source-coexistence decision: the accepted seven-sheet workbook already contains the same Reno source records, and a second source batch would duplicate review candidates across batches. If an apply proof is later required, use a clean isolated Preview target with `--apply --expected-sha=f8deefd620d7c406f6cd3cdabeeeb88a35facaef84d817ba28eae8b6aed77c98`. Production remains prohibited without its retained approval.
 
 ## Accomplished This Session
 
-### Project authority, specification, and delivery system
+### Production launch and canonical domain
 
-- `AGENTS.md`: Replaced inherited Grok-only authority with Local775 provider, safety, testing, and production-approval boundaries.
-- `CONTEXT.md`: Established canonical product language for Businesses, Business Listings, Claims, Listing Participation, Leads, Lead Recipients, Featured entitlements, and Operators.
-- `docs/SPEC.md`: Converted 154 Grill decisions into the accepted production-beta implementation contract.
-- `docs/PROJECT-DECISIONS.md`: Preserved delegated reversible defaults, retained human gates, provider evidence, Preview activation receipts, and credential-remediation history.
-- `docs/adr/0001-local-project-authority.md`: Made this repository and canonical SSD checkout authoritative for Local775.
-- `docs/adr/0002-platform-ownership-and-integration-boundaries.md`: Assigned Vercel, WorkOS, Supabase, GoHighLevel, Stripe, and Cloudflare non-overlapping responsibilities; excluded Convex from v1.
-- `.github/workflows/ci.yml`, `.github/workflows/database-preview.yml`, `package.json`: Established Node 24, deterministic builds, target-explicit database delivery, tests, type checking, linting, and secret scanning.
-- Linear: Established the 775 Directory initiative/project/milestone structure and dependency-ready ticket frontier; CLE-101 is the spec pointer and CLE-106 is the active identity slice.
+- `src/`, `public/`, and `docs/`: Consolidated the reviewed Local775 public directory shell without inventing Listings, ratings, reviews, business facts, or working Claim/lead actions.
+- `src/lib/directory/indexability.mjs`: Added reviewed-Listing thresholds so thin city, category, and city/category pages remain `noindex, follow`.
+- `public/robots.txt` and `public/sitemap.xml`: Published the honest six-URL launch crawl contract.
+- `vercel.json`: Added the permanent `www` → apex redirect and `X-Robots-Tag: noindex` for public Vercel aliases.
+- Cloudflare: Cut apex and `www` from the former Namecheap forwarding/parking targets to Vercel while preserving all registrar MX and SPF records.
+- Vercel: Deployed reviewed `main`; final receipt-only production deployment `dpl_Biz96WB8ztHQk5PgU5quAT814HMd` is Ready and owns the apex and `www` aliases.
 
-### Supabase Preview foundation and licensed corpus
+### Indexing activation and durable evidence
 
-- `supabase/migrations/20260824194500_initial_directory_foundation.sql` through `20260824223000_add_candidate_fk_indexes.sql`: Added the secure directory model, RLS, reviewed public projection, import staging, candidate review, and supporting indexes.
-- `scripts/import-listings.mjs` and import/candidate libraries: Added deterministic, receipt-producing spreadsheet ingestion and launch-candidate transformation.
-- Supabase Preview `dpxeldzunfxmjahgvjhm`: Applied the forward-only migration set; security-advisor review returned no findings after policy corrections.
-- Seed workbook: Imported all 20,436 source rows from the authoritative Reno/Sparks workbook into immutable Preview staging with an exact reconciliation receipt and zero duplicates on rerun.
-- Launch transformation: Produced 1,798 private candidates: 128 eligible, 1,500 requiring review, and 170 ineligible. Nothing was selected or published automatically.
-- Supabase Production `hcfryjrajqftcnnbnybj`: Remains schema- and data-untouched.
+- `scripts/submit-indexnow.mjs`: Added bounded IndexNow submission with no-secret success/failure receipts and the provider's 10,000-URL request limit.
+- `scripts/indexnow.test.mjs`: Added success, empty-sitemap, provider-failure, sitemap-failure, and URL-boundary coverage.
+- `public/738605bcc41cbc13f8943448c1bdae49.txt`: Hosted the public IndexNow verification key.
+- IndexNow: Accepted all six current sitemap URLs with HTTP 202 at `2026-08-29T15:44:31.313Z`.
+- `docs/evidence/cle-117/2026-08-29-cloudflare-pre-cutover.json`: Retained the sanitized API-native DNS rollback snapshot.
+- `docs/evidence/cle-117/2026-08-29-live-desktop.png` and `2026-08-29-live-mobile.png`: Retained post-cutover visual acceptance artifacts with hashes in the launch receipt.
+- `docs/CLE-117-PRODUCTION-GO-LIVE-2026-08-29.md`: Recorded reviewed PR lineage, deployment, DNS, crawl, visual, IndexNow, and retained blocker evidence.
+- Google Search Console: Confirmed the connector is authenticated but the account does not own `sc-domain:775directory.com`; sitemap submission returned HTTP 403. Confirmed Google indexing is not claimed.
 
-### WorkOS authentication and authorization boundary
+### Review, verification, and accounting
 
-- `src/start.ts`, `src/routes/api/auth/sign-in.tsx`, `src/routes/api/auth/callback.tsx`: Added CSRF-ordered, fail-closed WorkOS AuthKit entry and callback handling.
-- `src/lib/auth/policy.mjs`: Enforced required configuration, exact callback shape, safe local return paths, and the accepted seven-day maximum session.
-- `src/lib/supabase/identity.server.ts`: Added server-only minimal WorkOS Actor projection through the service-role-only `sync_workos_actor` RPC.
-- `supabase/migrations/20260824224500_add_workos_identity_projection.sql`: Separated authentication from Operator Grants, required the Operations organization and allowlisted email, rejected impersonation, and added a 15-minute recent-auth gate.
-- `scripts/auth-contract.test.mjs` and `scripts/auth-policy.test.mjs`: Added contract tests for CSRF order, fail-closed behavior, controlled redirects, minimal identity projection, session limits, and authorization separation.
-- WorkOS: Created the isolated `Local775 Directory` project with Staging only and application `775Directory.com`; enabled email Magic Auth and Google only, disabled password/enterprise SSO/passkeys/other social providers, set seven-day maximum and one-day inactivity sessions, five-minute access tokens, the Supabase JWT claims template, required MFA for the `Local775 Operations` organization, and kept impersonation disabled.
-- Supabase Preview: Replaced the shared-Production issuer with only the isolated WorkOS Staging issuer and confirmed signing-key resolution.
+- [PR #4](https://github.com/Clvrwrk/775Local/pull/4): Merged the launch surface at `17e7808`.
+- [PR #5](https://github.com/Clvrwrk/775Local/pull/5): Merged canonical-host controls at `76d8d4d`.
+- [PR #6](https://github.com/Clvrwrk/775Local/pull/6): Merged IndexNow activation at `0d6065f` after all review findings were fixed.
+- [PR #7](https://github.com/Clvrwrk/775Local/pull/7): Merged the durable launch receipt and evidence at `4ec4166` after all review findings were fixed.
+- Local verification: 127/127 Node 24 tests, TypeScript, ESLint, secret scan, Prettier for new artifacts, JSON validation, and diff check passed.
+- Hosted verification: Foundation Gate, Vercel, Greptile, CodeRabbit, and Cursor Security checks passed at the reviewed fixed points.
+- Linear: Reconciled CAT-81/CLE-117 and CAT-82/CLE-107 in both directions and posted the disk receipt/current-state comments to all four issues.
+- Outreach boundary: No Listing was selected or published, Supabase Production was not written, and no seed outreach was sent.
 
-### Vercel Preview activation and secret containment
+## Linear Accounting
 
-- Canonical checkout: Linked `/Volumes/M1 Application SSD/Projects/Local775` to `cleverwork/reno-local-directory` without making provider state trackable.
-- Vercel branch environment: Installed the isolated WorkOS client and replacement API credential only for Preview branch `codex/launch-foundation`; the API credential is Sensitive/Secret.
-- Credential incident: The first isolated Staging key appeared in a browser accessibility tool result and was treated as disclosed. A replacement was generated without transcript exposure, transferred once, and removed from the clipboard. The disclosed key was scheduled for WorkOS's earliest one-hour expiration at 2026-08-24 17:13 America/Los_Angeles.
-- Preview deployment: `dpl_7HjSx64Yx2ZkurdNj26cRdZzpdk2` built successfully and owns `https://reno-local-directory-git-codex-launch-foundation-cleverwork.vercel.app`.
-- Acceptance: The protected sign-in endpoint returns `307` to WorkOS with the isolated client and exact branch callback. The isolated Staging AuthKit page shows email Magic Auth and Google, no password option, and no client, redirect, or configuration error.
-- Linear CLE-106: Added a no-secret remediation receipt and retained In Progress for the human-authenticated callback test.
+- **Project:** [775 Directory — Launch Ops & Learning](https://linear.app/cleverwork/project/775-directory-launch-ops-and-learning-7ca2c7426011)
+- **Related project:** [775 Directory — Identity, Claims & Trust](https://linear.app/cleverwork/project/775-directory-identity-claims-and-trust-432396f134d4)
+- **Milestones:** OPS-1 — Controlled 775 Launch; TRUST-1 — Claims & Evidence Production-Safe
+- **Issues created/updated:** CAT-81, CLE-117, CAT-82, CLE-107
+- **CAT issue/trails:**
+  - [CAT-81 — [trail][CLE-117] Launch 775Directory production and indexing](https://linear.app/cleverwork/issue/CAT-81/trailcle-117-launch-775directory-production-and-indexing)
+  - [CAT-82 — [trail][CLE-107] Complete Local775 Claim flow and seed outreach](https://linear.app/cleverwork/issue/CAT-82/trailcle-107-complete-local775-claim-flow-and-seed-outreach)
+- **Foreign issues:**
+  - [CLE-117 — Launch gate: production acceptance packet and controlled go-live](https://linear.app/cleverwork/issue/CLE-117/launch-gate-production-acceptance-packet-and-controlled-go-live) — Done
+  - [CLE-107 — Launch slice: business claim through approved ownership](https://linear.app/cleverwork/issue/CLE-107/launch-slice-business-claim-through-approved-ownership) — In Progress, blocked by CLE-104 and CLE-106
+- **Disk receipts:**
+  - `/Users/chussey/Library/CloudStorage/Dropbox-AIA4/Cleverwork Main/CODEX/docs/linear/teams/CLE/2026-08-29-local775-production-go-live.md`
+  - `/Users/chussey/Library/CloudStorage/Dropbox-AIA4/Cleverwork Main/CODEX/docs/linear/teams/CLE/2026-08-29-local775-claim-outreach.md`
+- **Artifact links:** `docs/CLE-117-PRODUCTION-GO-LIVE-2026-08-29.md`, `docs/evidence/cle-117/`, PRs #4–#7, and this handoff
+- **Coverage:** light ticket-only coverage using the existing owning projects/issues; no duplicate session project or foreign issue created
+- **Accounting timing:** contemporaneous
+- **Verified:** 2026-08-29 10:57 PDT
+- **Gate:** PASS — both `CAT trail ↔ foreign issue ↔ disk receipt` triples resolve in Linear and on disk
 
 ## Git State
 
-- **Branch:** `codex/cle-104-publication-command`, based on `origin/codex/launch-foundation` at `9bf9209`
-- **Last implementation commit:** `a3b2bb3` — "fix(CLE-104): enforce application publication boundary"
-- **Uncommitted changes:** none after the handoff documentation commit.
+- **Branch:** `codex/local775-linear-handoff-2026-08-29`, based on reviewed `origin/main`
+- **Last completed implementation commit:** `4ec4166` — "CLE-117: record 775Directory production go-live (#7)"
+- **Handoff commit:** this document and `docs/handoffs/archive/2026-08-29-1056.md` are committed together after verification
+- **Uncommitted changes after handoff commit:** none
 
 ## Task Cut Off
 
-None — implementation and credential remediation ended at a clean boundary. CLE-106 remains intentionally open because completing a real test-user authentication requires human participation.
+None — session ended at a clean boundary. The site is live, IndexNow submission is accepted, durable evidence is merged, and the accounting triples pass. Google Search Console ownership, reviewed Listing publication, Claim acceptance, and outreach remain explicitly incomplete.
 
-## Prior 2026-08-24 Next Task — CLE-106
+## Next Task — Start Here
 
-This historical continuation remains valid but is superseded as the immediate next task by the CLE-104 gate at the top of this handoff.
+**Task:** Verify the 775Directory Google Search Console domain property and submit the live sitemap.
 
-**Task:** Complete the human-assisted WorkOS Preview callback and authorization acceptance for CLE-106.
 **What to check / do:**
 
-1. Open the stable branch Preview sign-in route and have Christopher authenticate as a controlled test user with Google or email Magic Auth; do not automate entry of another person's authentication credential.
-2. Confirm the callback returns to `/account`, creates a valid protected session cookie, and creates or updates exactly one minimal `app.actors` row through `public.sync_workos_actor` in Supabase Preview.
-3. Prove the ordinary authenticated test user has no Local775 Operator authority, cannot invoke Operator-only paths, and gains no Listing Participation or Business Listing authority from login alone.
-4. If testing an Operator, add only an explicitly approved Supabase Operator Grant and WorkOS Operations-organization membership, then prove MFA, allowlist, organization, no-impersonation, and 15-minute recent-auth enforcement.
-5. Record no-secret receipts in `docs/PROJECT-DECISIONS.md` and CLE-106. Mark CLE-106 complete only after callback, session, Actor projection, and negative authorization checks pass.
+1. In the authenticated Google Search Console account, add and verify the domain property `sc-domain:775directory.com`; this may require Christopher to complete the Google identity/ownership step.
+2. Submit `https://775directory.com/sitemap.xml` and retain the provider response.
+3. Inspect the six sitemap canonicals and record indexed/not-indexed reasons without claiming indexing before Google confirms it.
+4. Update CAT-81 and the production go-live disk receipt with the Search Console receipt.
+5. Keep CLE-107/Claim/outreach blocked until CLE-104 reviewed Listing coverage and CLE-106 human authentication acceptance pass.
 
-**If authentication returns `invalid_client`, `redirect-uri-invalid`, or `not_configured`:** Verify the stable branch alias still resolves to the latest Preview deployment and inspect branch-scoped Vercel environment metadata. Do not reuse the shared Cleverwork Production WorkOS application, pull the entire Vercel environment, print a credential, or change Production.
+**If Search Console still returns HTTP 403:** Confirm the exact domain property is visible to the connected account. Do not create a URL-prefix substitute, change DNS blindly, expose OAuth credentials, or claim Google submission.
 
-**If Actor projection returns an HTTP error:** Inspect Vercel runtime logs and the Supabase Preview RPC/migration state. Do not weaken RLS, grant `sync_workos_actor` to authenticated users, or touch Supabase Production.
-
-**Prompt to use:** "Read docs/handoffs/current.md completely. Then continue CLE-106 by completing the human-assisted WorkOS Preview sign-in and verifying the callback, session cookie, minimal Actor projection, and negative Operator authorization. Do not touch Production or expose secrets."
+**Prompt to use:** "Read /Volumes/M1 Application SSD/Projects/Local775/docs/handoffs/current.md completely. Then verify sc-domain:775directory.com in Google Search Console, submit https://775directory.com/sitemap.xml, inspect the six canonical URLs, and update CAT-81 plus the production go-live receipt. Do not claim indexing until Google confirms it."
 
 ## Decisions Made This Session
 
-- **Canonical workspace:** GitHub `Clvrwrk/775Local` and `/Volumes/M1 Application SSD/Projects/Local775` are authoritative; the chat workspace is not the implementation checkout.
-- **Delegated defaults:** Reversible implementation choices use the documented recommendation; production, spending, real external effects, security/privacy/legal changes, and irreversible architecture remain explicitly human-gated.
-- **Provider ownership:** Vercel hosts; WorkOS authenticates; Supabase owns application truth and authorization; GoHighLevel owns CRM/communications/phone/payment operations; Stripe executes payments through GoHighLevel; Cloudflare controls public DNS.
-- **Identity is not authority:** WorkOS login never creates Operator, Business Owner, Agency Representative, Lead Recipient, Claim, Listing Participation, or Featured authority.
-- **Preview isolation:** WorkOS Staging and Supabase Preview are isolated from shared/Production environments; Preview has no real external effects.
-- **Credential handling:** Any credential that appears in task input or a tool transcript is disclosed and must be contained. Never print secrets, pull the complete Vercel environment, or place credentials in repository files.
-- **Data integrity:** The bulk workbook remains private and quarantined; only individually reviewed, evidence-complete rows may be selected for publication.
-- **Production boundary:** No production Vercel deployment, domain attachment, Cloudflare DNS mutation, Supabase Production migration, paid WorkOS feature, real GoHighLevel send/call, or financial effect is authorized by Preview acceptance.
+- **Live before corpus publication:** The honest empty-state directory may be public while Listings remain private; publication requires the existing reviewed-publication gate.
+- **Canonical host:** `https://775directory.com` is canonical; `www` permanently redirects and Vercel aliases are `noindex`.
+- **Thin-page policy:** Empty and below-threshold discovery pages remain out of the sitemap and `noindex, follow`.
+- **Indexing claims:** IndexNow HTTP 202 means accepted for processing, not indexed. Google indexing remains unconfirmed without Search Console ownership and inspection.
+- **Production data boundary:** Deployment and DNS were authorized and completed. Supabase Production schema/data, Listing selection/publication, Claim approval, outreach, calls, payments, and other financial effects remain separate gated actions.
+- **Identity is not authority:** WorkOS authentication never grants Operator, Listing, Claim, or owner authority by itself.
+- **Evidence durability:** DNS rollback state and visual acceptance must live in repository evidence, not temporary or user-specific paths.
 
 ## Blockers Requiring Human Action
 
-1. **Controlled test-user authentication** — Christopher must complete Google or Magic Auth on the isolated Staging AuthKit page so callback and session acceptance can be proven.
-2. **Launch corpus coverage** — the current eligible set cannot satisfy five reviewed Listings in every accepted category/city cell. Resolve through evidence enrichment or an explicit policy decision; do not weaken eligibility silently.
-3. **Production launch approval** — the Production Acceptance Packet and explicit approval are required before deploying to production or attaching `775Directory.com`.
+1. **Google Search Console ownership** — Christopher must add/verify `sc-domain:775directory.com` in the connected Google account before sitemap submission can succeed.
+2. **CLE-106 human authentication acceptance** — a controlled user must complete WorkOS Google or Magic Auth so callback, session, Actor projection, and negative authorization can be proven.
+3. **CLE-104 reviewed publication coverage** — the private candidate set has not produced the reviewed public Listings required for Claim and outreach; eligibility must not be weakened to force coverage.
 
 ## Verification Commands
 
-1. `git status --short --branch` — should show `codex/cle-104-publication-command` tracking its remote with no uncommitted changes after the handoff commit.
-2. `npm test` — should report 90 passing tests and zero failures.
-3. `npm run typecheck` — should exit successfully with no TypeScript errors.
-4. `npm run security:secrets` — should print `Secret scan passed.`
-5. `npm run build` — should complete the deterministic Vite/Nitro Vercel build without migrations or provider effects.
-6. `supabase db reset --local && supabase test db && supabase db lint --local --level warning --fail-on error` — should apply all migrations, pass 82 pgTAP assertions, and report no schema errors.
-7. `node scripts/operator-publication-http.integration.mjs` — should prove the AuthKit handler and isolated HTTP/RPC publication/rollback contract.
-8. `npx vercel@latest inspect reno-local-directory-git-codex-launch-foundation-cleverwork.vercel.app --scope cleverwork` — should resolve the stable alias to Ready deployment `dpl_7HjSx64Yx2ZkurdNj26cRdZzpdk2` until a newer accepted Preview replaces it.
-9. `npx vercel@latest curl '/api/auth/sign-in?returnPathname=%2Faccount' --deployment https://reno-local-directory-git-codex-launch-foundation-cleverwork.vercel.app -- --silent --show-error --max-redirs 0 --dump-header - --output /dev/null` — should return `307` with a WorkOS location; do not paste or log the full redirect state.
+1. `git status --short --branch` — should show the handoff branch clean after its reviewed merge, or `main...origin/main` clean after fast-forward.
+2. `/Users/chussey/.npm/_npx/387698761821791d/node_modules/node/bin/node --test 'scripts/**/*.test.mjs'` — should report 127 passing tests and zero failures.
+3. `npm run typecheck && npm run lint && npm run security:secrets` — should exit successfully and print `Secret scan passed.`
+4. `curl -I https://775directory.com` — should return HTTP 200 from Vercel.
+5. `curl -I https://www.775directory.com/handoff-check` — should return HTTP 308 to `https://775directory.com/handoff-check`.
+6. `curl -sS https://775directory.com/robots.txt` — should declare `https://775directory.com/sitemap.xml` and block private/runtime paths.
+7. `curl -sS https://775directory.com/sitemap.xml` — should contain exactly six apex canonical URLs.
+8. `npx vercel inspect https://reno-local-directory-ix9ce2hld-cleverwork.vercel.app --scope cleverwork` — should show Ready production deployment `dpl_Biz96WB8ztHQk5PgU5quAT814HMd` with apex and `www` aliases.
 
 ## Full Context
 
 ### What was built across ALL sessions (complete feature list)
 
-- Accepted PRD/specification, domain language, architecture decisions, approval gates, SEO/performance/accessibility/security targets, commercial model, and Wednesday production-beta boundary.
-- Linear portfolio with the `775 Directory — Product & Trust Foundation` initiative, `775 Directory — Production Foundation` and `775 Directory — Identity, Claims & Trust` projects, TRUST milestones, CLE-101 spec pointer, and tracer-bullet launch issues.
-- Local project authority and removal of inherited Grok/PGLite/Better Auth/runtime assumptions.
-- Node 24 deterministic CI, separate Preview database workflow, secret scanner, unit tests, and public-delivery contracts.
-- Secure Supabase directory schema, RLS, public projection, auditability, outbox/inbox foundations, review lifecycle, and private import staging.
-- Exact 20,436-row source import, immutable batch receipt, deterministic candidate transformation, eligibility classification, and category/city gap evidence.
-- Public directory runtime that reads only the reviewed Supabase public projection and fails safely when unconfigured; no synthetic production fallback.
-- WorkOS AuthKit server middleware, sign-in and callback routes, safe return paths, session policy, minimal Actor projection, separate Operator authorization, recent-auth gate, and impersonation rejection.
-- Isolated WorkOS Staging project/application, authentication methods, session/token policy, JWT template, Operations MFA organization, callback, and Supabase issuer integration.
-- Branch-scoped Vercel Preview configuration, protected stable branch deployment, stale-alias correction, credential rotation, disclosure containment, repeat deployment, and hosted AuthKit acceptance.
-- Durable evidence in `docs/PROJECT-DECISIONS.md`, commits through `58843a7`, and the CLE-106 Linear remediation comment.
+- Canonical GitHub/M1 SSD project authority, accepted product vocabulary, specification, decision log, provider boundaries, ADRs, deterministic Node 24 CI, secret scanning, and target-explicit database delivery.
+- Secure Supabase schema/RLS/public projection, audit/outbox foundations, private source import, deterministic candidate transformation, entity-risk review, reviewed selection, exact-100 publication command, and suspend/restore receipts.
+- Licensed Reno/Sparks corpus ingestion and private multi-provider SERP/website enrichment with DataForSEO, Exa, Tavily, and Firecrawl; no directory padding, stale receipt counting, or automatic publication.
+- Isolated WorkOS Staging authentication, safe callbacks/return paths, session policy, minimal Actor projection, separate Operator Grants, MFA/recent-auth requirements, and impersonation rejection.
+- Mobile-first Circle × Sierra design system, official 775Directory brand assets, truthful public directory/search/city/category/listing/offer/legal surfaces, commercial disclosures, and HTML-safe JSON-LD.
+- Vercel Production launch, Cloudflare apex/`www` cutover with mail preservation, canonical redirects, crawler controls, honest sitemap, post-cutover visual evidence, and rollback artifacts.
+- IndexNow verification/submission with durable receipts and provider limits; six current canonical URLs accepted.
+- Linear operating structure and verified CAT accounting for the production launch and Claim/outreach workstreams.
 
 ### Architecture decisions
 
-The application uses one source of truth per concern. Supabase owns directory records, participation, permissions, Claims, Leads, entitlements, audit events, media references, and integration state. WorkOS owns human authentication and session identity only. GoHighLevel is a projected operational system for CRM, email, SMS, phone, pipelines, invoices, and payments; it never overwrites public truth directly. Provider writes use durable outbox/inbox, signatures, idempotency, retries, receipts, dead-letter visibility, and reconciliation. Convex is intentionally absent from v1 because it duplicates Supabase capabilities without a bounded responsibility.
+Supabase owns directory records, permissions, Claims, Leads, entitlements, audit events, media references, and integration state. WorkOS owns human authentication/session identity only. Vercel hosts the application. Cloudflare controls public DNS. GoHighLevel is a projected CRM/communications/phone/payment system and never overwrites public truth directly. Stripe executes payments through GoHighLevel. Provider writes require target-explicit, idempotent, receipt-backed workflows. Convex remains out of scope for v1.
 
-### Design system (if applicable)
+### Design system
 
-Preserve the existing Circle × Sierra visual direction and the tokens in `docs/DESIGN-SYSTEM.md`, components in `docs/COMPONENTS.md`, and intent in `docs/DESIGN.md`. The product is mobile-first because approximately 90% of expected use is mobile. Maintain WCAG 2.2 AA, Lighthouse category scores above 90, good Core Web Vitals, clear Sponsored labels, and truthful public data.
+Preserve the Circle × Sierra direction in `docs/DESIGN.md`, `docs/DESIGN-SYSTEM.md`, and `docs/COMPONENTS.md`: pine/paper/gold palette, high-desert imagery, official Summit Seal/775Directory marks, mobile-first layouts, clear Sponsored labels, and truthful empty states. Maintain WCAG 2.2 AA and avoid mock-data claims.
 
-### Key invariants (never violate)
+### Key invariants
 
-- Authentication is not authorization: every privileged action requires server/database enforcement and explicit scoped authority.
-- Production is human-gated: Preview success never authorizes production, DNS, spend, messages, calls, payments, or privacy/security changes.
-- Supabase is the directory source of truth: GoHighLevel and provider payloads are projections or proposals, never co-equal owners.
-- Public means reviewed: anonymous clients may read only the publication-eligible projection; source evidence, private contact details, review state, and residential data remain private.
-- Secrets never enter source, command output, logs, analytics, issue text, or handoff documents.
-- Build is side-effect free: migrations and provider operations are separate, target-explicit release actions.
-- Bulk data is quarantined: import, eligibility, selection, and publication are distinct auditable transitions.
-- Payment never grants authority and failed Featured payment never removes the always-free Listing.
-- Preview has no real external effects by default.
-- Do not weaken a failing eligibility, RLS, auth, security, accessibility, or performance gate to make it pass.
+- Authentication is not authorization; all privileged actions require server/database enforcement and explicit scoped authority.
+- Public means reviewed; private evidence, contact details, review state, and residential data never enter the anonymous projection.
+- Build is side-effect free; migrations, provider calls, publication, and outreach are separate target-explicit actions.
+- Bulk data is quarantined; import, enrichment, eligibility, selection, and publication are distinct auditable transitions.
+- Never weaken eligibility, RLS, authentication, security, accessibility, or evidence rules to force a pass.
+- Payment never grants Listing/Claim authority, and a failed Featured payment never removes the always-free Listing.
+- Search-engine submission is not indexing; report provider acceptance and inspection states exactly.
+- Secrets never enter source, Linear, receipts, handoffs, logs, or command output.
 
-### Service / deployment map (if applicable)
+### Service / deployment map
 
-| Service                 | Detail                                                                                                                                         |
-| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| Canonical checkout      | `/Volumes/M1 Application SSD/Projects/Local775` on `codex/launch-foundation`                                                                   |
-| GitHub                  | https://github.com/Clvrwrk/775Local.git                                                                                                        |
-| Linear initiative       | [775 Directory — Product & Trust Foundation](https://linear.app/cleverwork/initiative/775-directory-product-and-trust-foundation-9c300ffaeb3e) |
-| Linear identity project | [775 Directory — Identity, Claims & Trust](https://linear.app/cleverwork/project/775-directory-identity-claims-and-trust-432396f134d4)         |
-| Linear active issue     | [CLE-106](https://linear.app/cleverwork/issue/CLE-106/launch-slice-account-authentication-and-operator-authorization) — In Progress            |
-| Vercel                  | `cleverwork/reno-local-directory`, project `prj_ZkcD7I7A6TDYLJ7Z4UAG2hfNoEth`                                                                  |
-| Vercel Preview          | https://reno-local-directory-git-codex-launch-foundation-cleverwork.vercel.app — protected; deployment `dpl_7HjSx64Yx2ZkurdNj26cRdZzpdk2`      |
-| WorkOS                  | Isolated `Local775 Directory` project, Staging only; application `775Directory.com`; no Local775 Production environment activated              |
-| Supabase Preview        | `dpxeldzunfxmjahgvjhm` — migrations and private corpus applied                                                                                 |
-| Supabase Production     | `hcfryjrajqftcnnbnybj` — infrastructure exists; schema/data untouched                                                                          |
-| GoHighLevel             | Dedicated Local775 location approved but not confirmed provisioned; do not use the Homeworks Advantage location                                |
-| Cloudflare              | Public domains are managed in Cloudflare; no production DNS change was made                                                                    |
-| Sentry                  | Existing account/tool available; Local775 production wiring is not yet accepted as complete                                                    |
-| Seed workbook           | `/Users/chussey/Library/CloudStorage/Dropbox-AIA4/Cleverwork Main/Local775Directory`                                                           |
+| Service                      | Detail                                                                                               |
+| ---------------------------- | ---------------------------------------------------------------------------------------------------- |
+| Canonical checkout           | `/Volumes/M1 Application SSD/Projects/Local775` on reviewed `main` after handoff merge               |
+| GitHub                       | https://github.com/Clvrwrk/775Local.git                                                              |
+| Production                   | https://775directory.com                                                                             |
+| Vercel                       | `cleverwork/reno-local-directory`; final receipt deployment `dpl_Biz96WB8ztHQk5PgU5quAT814HMd`       |
+| Cloudflare                   | Apex and `www` target Vercel; registrar MX/SPF preserved                                             |
+| Google Search Console        | Connector authenticated; `sc-domain:775directory.com` ownership missing; sitemap submission blocked  |
+| IndexNow                     | Six current sitemap URLs accepted with HTTP 202                                                      |
+| WorkOS                       | Isolated Local775 Staging application; human callback/session acceptance still required              |
+| Supabase Preview             | Migrations and private corpus foundations applied                                                    |
+| Supabase Production          | Infrastructure exists; schema/data remain untouched                                                  |
+| GoHighLevel                  | Dedicated Local775 communications location not confirmed; do not reuse Homeworks Advantage           |
+| Private enrichment artifacts | `/Users/chussey/Library/CloudStorage/Dropbox-AIA4/Cleverwork Main/Local775Directory/serp-enrichment` |
+
+### Archived predecessor
+
+- `docs/handoffs/archive/2026-08-29-1056.md` — byte-for-byte archive of the previous project handoff.
