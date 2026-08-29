@@ -2,10 +2,25 @@
 
 **Project:** 775 Directory (Local775)
 **Repo:** https://github.com/Clvrwrk/775Local.git
-**Production URL:** not yet deployed; approved canonical target is https://775directory.com
-**Date:** 2026-08-26
+**Production URL:** https://775directory.com
+**Date:** 2026-08-29
 **Agent:** Project Lead / Lead Orchestrator
 **Reason:** User-requested end of session
+
+---
+
+## 2026-08-29 — CLE-117 production go-live and indexing activation
+
+- **Live surface:** `https://775directory.com` is served by Vercel Production. The final indexing deployment is `dpl_GjXh6XffwxNfKUVT5udZXmsPpH3G`; `https://www.775directory.com/:path*` returns a permanent redirect to the apex while preserving the path and query. Public `*.vercel.app` aliases emit `X-Robots-Tag: noindex`.
+- **DNS cutover:** Cloudflare apex and `www` web records were changed from the former Namecheap parking/forwarding targets to the Vercel target as DNS-only CNAME records. The five registrar MX records and SPF TXT record were preserved. The sanitized durable rollback snapshot is [`docs/evidence/cle-117/2026-08-29-cloudflare-pre-cutover.json`](../evidence/cle-117/2026-08-29-cloudflare-pre-cutover.json).
+- **Indexability:** the live `robots.txt` allows the public site, blocks account/API/registration/studio paths, and declares the apex sitemap. The live sitemap contains exactly six currently indexable canonical URLs: home, about, categories, cities, privacy, and terms. Empty Listing/city/category leaves remain out of the sitemap and below-threshold discovery pages remain `noindex, follow`.
+- **Indexing activation:** [PR #6](https://github.com/Clvrwrk/775Local/pull/6), merged as `0d6065f`, hosts the IndexNow verification key and a bounded receipt-producing submission command. The live key returned HTTP 200 and matched the repository file. IndexNow accepted all six canonical URLs with HTTP 202 at `2026-08-29T15:44:31.313Z`.
+- **Google Search Console:** the connector is authenticated, but `sc-domain:775directory.com` is not owned by the connected account. Sitemap submission returned HTTP 403 and connector-side property creation is disabled. Confirmed Google indexing is therefore `not_available`; do not claim indexed status until the domain property is added/verified and the sitemap is submitted.
+- **Visual and technical acceptance:** desktop and mobile live probes returned HTTP 200, the apex canonical, no horizontal overflow, and zero console/page errors. Durable post-cutover captures are [`desktop`](../evidence/cle-117/2026-08-29-live-desktop.png) at `2026-08-29T08:59:16-07:00` and [`mobile`](../evidence/cle-117/2026-08-29-live-mobile.png) at `2026-08-29T08:59:41-07:00`. The final IndexNow fixed point passed 127/127 Node 24 tests, and the hosted Foundation Gate plus Vercel, Greptile, and CodeRabbit checks passed with every review thread resolved.
+- **Data and outreach boundary:** the public site is an honest empty-state beta. No unreviewed Listing was published and Supabase Production remains untouched. Claim/outreach work remains blocked by CLE-104 reviewed publication coverage and CLE-106 human authentication acceptance; no seed outreach was sent.
+- **Accounting:** [CAT-81](https://linear.app/cleverwork/issue/CAT-81/trailcle-117-launch-775directory-production-and-indexing) ↔ [CLE-117](https://linear.app/cleverwork/issue/CLE-117/launch-gate-production-acceptance-packet-and-controlled-go-live) ↔ `docs/CLE-117-PRODUCTION-GO-LIVE-2026-08-29.md` and the durable Dropbox receipt. Claim/outreach remains [CAT-82](https://linear.app/cleverwork/issue/CAT-82/trailcle-107-complete-local775-claim-flow-and-seed-outreach) ↔ [CLE-107](https://linear.app/cleverwork/issue/CLE-107/launch-slice-business-claim-through-approved-ownership).
+
+**Resume here:** add and verify `sc-domain:775directory.com` in Google Search Console, then submit `https://775directory.com/sitemap.xml` and inspect the six canonical URLs. In parallel, finish CLE-104 reviewed Listing coverage and the human-assisted CLE-106 callback/session/negative-authorization proof before enabling Claim or sending the seed outreach cohort. Do not equate the live site or IndexNow acceptance with Google indexing, Listing publication, Claim completion, or outreach completion.
 
 ---
 

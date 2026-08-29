@@ -1,0 +1,63 @@
+{
+  "capturedAt": "2026-08-29T14:57:00Z",
+  "zone": "775directory.com",
+  "source": "Cloudflare API pre-cutover snapshot",
+  "sanitization": "Provider record IDs and account metadata omitted; rollback values retained.",
+  "records": [
+    {
+      "type": "A",
+      "name": "775directory.com",
+      "content": "192.64.119.251",
+      "proxied": true,
+      "ttl": 1
+    },
+    {
+      "type": "CNAME",
+      "name": "www.775directory.com",
+      "content": "parkingpage.namecheap.com",
+      "proxied": true,
+      "ttl": 1
+    },
+    {
+      "type": "MX",
+      "name": "775directory.com",
+      "content": "eforward1.registrar-servers.com",
+      "priority": 10,
+      "ttl": 1
+    },
+    {
+      "type": "MX",
+      "name": "775directory.com",
+      "content": "eforward2.registrar-servers.com",
+      "priority": 10,
+      "ttl": 1
+    },
+    {
+      "type": "MX",
+      "name": "775directory.com",
+      "content": "eforward3.registrar-servers.com",
+      "priority": 10,
+      "ttl": 1
+    },
+    {
+      "type": "MX",
+      "name": "775directory.com",
+      "content": "eforward4.registrar-servers.com",
+      "priority": 15,
+      "ttl": 1
+    },
+    {
+      "type": "MX",
+      "name": "775directory.com",
+      "content": "eforward5.registrar-servers.com",
+      "priority": 20,
+      "ttl": 1
+    },
+    {
+      "type": "TXT",
+      "name": "775directory.com",
+      "content": "v=spf1 include:spf.efwd.registrar-servers.com ~all",
+      "ttl": 1
+    }
+  ]
+}
