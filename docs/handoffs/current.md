@@ -49,8 +49,8 @@
 - **Milestones:** OPS-1 — Controlled 775 Launch; TRUST-1 — Claims & Evidence Production-Safe
 - **Issues created/updated:** CAT-81, CLE-117, CAT-82, CLE-107
 - **CAT issue/trails:**
-  - [CAT-81 — [trail][CLE-117] Launch 775Directory production and indexing](https://linear.app/cleverwork/issue/CAT-81/trailcle-117-launch-775directory-production-and-indexing)
-  - [CAT-82 — [trail][CLE-107] Complete Local775 Claim flow and seed outreach](https://linear.app/cleverwork/issue/CAT-82/trailcle-107-complete-local775-claim-flow-and-seed-outreach)
+  - [CAT-81 — trail for CLE-117: Launch 775Directory production and indexing](https://linear.app/cleverwork/issue/CAT-81/trailcle-117-launch-775directory-production-and-indexing)
+  - [CAT-82 — trail for CLE-107: Complete Local775 Claim flow and seed outreach](https://linear.app/cleverwork/issue/CAT-82/trailcle-107-complete-local775-claim-flow-and-seed-outreach)
 - **Foreign issues:**
   - [CLE-117 — Launch gate: production acceptance packet and controlled go-live](https://linear.app/cleverwork/issue/CLE-117/launch-gate-production-acceptance-packet-and-controlled-go-live) — Done
   - [CLE-107 — Launch slice: business claim through approved ownership](https://linear.app/cleverwork/issue/CLE-107/launch-slice-business-claim-through-approved-ownership) — In Progress, blocked by CLE-104 and CLE-106
