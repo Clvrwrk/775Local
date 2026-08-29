@@ -27,6 +27,19 @@ test("IndexNow refuses an empty sitemap", () => {
   assert.throws(() => indexNowPayload([]), /did not contain any canonical URLs/);
 });
 
+test("IndexNow enforces the 10,000 URL provider limit", () => {
+  const urls = Array.from(
+    { length: 10_000 },
+    (_, index) => `https://775directory.com/indexnow-boundary-${index}`,
+  );
+
+  assert.equal(indexNowPayload(urls).urlList.length, 10_000);
+  assert.throws(
+    () => indexNowPayload([...urls, "https://775directory.com/indexnow-over-limit"]),
+    /at most 10000 URLs per request/,
+  );
+});
+
 test("IndexNow preserves a failure receipt when the provider request rejects", async () => {
   const urls = ["https://775directory.com/"];
   const receipt = await submitIndexNow(urls, {

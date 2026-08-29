@@ -5,6 +5,7 @@ const host = "775directory.com";
 const key = "738605bcc41cbc13f8943448c1bdae49";
 const keyLocation = `https://${host}/${key}.txt`;
 const endpoint = "https://api.indexnow.org/indexnow";
+const maximumUrlsPerRequest = 10_000;
 
 /** Extract the canonical 775Directory URLs from the static production sitemap. */
 export function sitemapUrls(xml) {
@@ -17,6 +18,9 @@ export function sitemapUrls(xml) {
 export function indexNowPayload(urlList) {
   if (!Array.isArray(urlList) || urlList.length === 0) {
     throw new Error("The production sitemap did not contain any canonical URLs.");
+  }
+  if (urlList.length > maximumUrlsPerRequest) {
+    throw new Error(`IndexNow accepts at most ${maximumUrlsPerRequest} URLs per request.`);
   }
 
   return { host, key, keyLocation, urlList };
