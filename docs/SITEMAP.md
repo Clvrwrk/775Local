@@ -38,7 +38,7 @@
 
 ```
 https://775directory.com/nv/{city-slug}/{category-slug}
-https://775directory.com/biz/{business-slug}
+https://775directory.com/business/{business-slug}-{stable-id}
 ```
 
 Examples:
@@ -46,4 +46,13 @@ Examples:
 - `/nv/reno/screen-repair`
 - `/nv/elko/auto-repair`
 - `/nv/west-wendover/restaurants`
-- `/biz/high-sierra-screens-reno`
+- `/business/{reviewed-business-slug}-{stable-id}`
+
+## Indexability gate
+
+- The launch sitemap contains only URLs that are currently eligible to index.
+- City pages require at least three active reviewed Listings.
+- City/category pages require at least five active reviewed Listings plus useful non-template content.
+- Category pages require at least three active reviewed Listings across launch coverage.
+- Empty and below-threshold discovery pages remain crawlable with `noindex, follow`; they are not listed in the sitemap.
+- Search, authentication, Claim, Studio, account, pricing preview, registration, and internal specification routes are `noindex`.

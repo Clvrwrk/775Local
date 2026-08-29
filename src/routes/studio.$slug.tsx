@@ -20,6 +20,7 @@ import { getBusiness } from "@/lib/directory/queries";
 import type { ListingPhoto, Offer } from "@/lib/directory/types";
 
 export const Route = createFileRoute("/studio/$slug")({
+  head: () => ({ meta: [{ title: "Listing studio | 775Directory" }, { name: "robots", content: "noindex, nofollow" }] }),
   loader: async ({ params }) => {
     const biz = await getBusiness({ data: params.slug });
     if (!biz) throw notFound();

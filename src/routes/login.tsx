@@ -1,22 +1,19 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { GROK_PROVIDERS, authEnabled, signIn } from "@/lib/auth/client";
 import { CircleMark } from "@/components/brand/mark";
 import { SiteShell } from "@/components/layout/site-shell";
-import { Button } from "@/components/ui/button";
-
-function safeNext(raw: unknown) {
-  if (typeof raw !== "string") return "/account";
-  if (!raw.startsWith("/") || raw.startsWith("//") || raw.includes("://")) return "/account";
-  return raw;
-}
+import { safeReturnPath } from "@/lib/auth/policy.mjs";
 
 export const Route = createFileRoute("/login")({
-  validateSearch: (s: Record<string, unknown>) => ({ next: safeNext(s.next) }),
+  validateSearch: (s: Record<string, unknown>) => ({
+    next: safeReturnPath(s.next),
+    error: typeof s.error === "string" ? s.error : undefined,
+  }),
+  head: () => ({ meta: [{ title: "Sign in | 775Directory" }, { name: "robots", content: "noindex, nofollow" }] }),
   component: Login,
 });
 
 function Login() {
-  const { next } = Route.useSearch();
+  const { next, error } = Route.useSearch();
   return (
     <SiteShell wash>
       <section className="mx-auto max-w-md px-4 py-12 text-center">
@@ -31,25 +28,21 @@ function Login() {
         <p className="mt-6 text-sm text-ink-soft">
           Claim a shop, register for neighborhood mail, or keep a punch card in your pocket.
         </p>
-        <div className="mt-8 space-y-3">
-          {authEnabled ? (
-            GROK_PROVIDERS.map((p) => (
-              <Button
-                key={p.providerId}
-                type="button"
-                variant={p.providerId === "google" ? "default" : "outline"}
-                className="w-full rounded-full"
-                onClick={() => signIn(p.providerId, { callbackURL: next })}
-              >
-                Continue with {p.label}
-              </Button>
-            ))
-          ) : (
-            <p className="text-sm text-muted">Sign-in is disabled.</p>
-          )}
-        </div>
+        {error ? (
+          <p role="alert" className="mt-6 rounded-[16px] border border-line bg-card p-4 text-sm">
+            {error === "not_configured"
+              ? "Sign-in is not configured in this environment yet."
+              : "Sign-in could not be completed. Please try again."}
+          </p>
+        ) : null}
+        <a
+          href={`/api/auth/sign-in?returnPathname=${encodeURIComponent(next)}`}
+          className="mt-8 inline-flex h-10 w-full items-center justify-center rounded-full bg-teal px-4 text-sm font-medium text-white hover:bg-teal/90"
+        >
+          Continue with email or Google
+        </a>
         <p className="mt-8 text-sm text-muted">
-          Prefer Google or X. Email codes ship on the production auth layer.
+          Residents do not need an account. Owner and operator access is individually authorized.
         </p>
         <p className="mt-4 text-sm">
           <Link to="/" className="text-teal underline-offset-4 hover:underline">

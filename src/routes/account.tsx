@@ -18,6 +18,7 @@ import {
 import type { BusinessCard, CampaignRow, Category, City, LeadRow } from "@/lib/directory/types";
 
 export const Route = createFileRoute("/account")({
+  head: () => ({ meta: [{ title: "Account | 775Directory" }, { name: "robots", content: "noindex, nofollow" }] }),
   loader: async () => {
     const [cities, categories] = await Promise.all([listCities(), listCategories()]);
     return { cities, categories };
@@ -179,7 +180,7 @@ function MailTab({
   campaigns: CampaignRow[];
   onSent: (c: CampaignRow) => void;
 }) {
-  const [error, setError] = useState("");
+  const [, setError] = useState("");
   const [saving, setSaving] = useState(false);
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {

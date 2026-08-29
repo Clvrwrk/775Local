@@ -1,7 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { SiteShell } from "@/components/layout/site-shell";
 
-export const Route = createFileRoute("/spec")({ component: SpecPage });
+export const Route = createFileRoute("/spec")({
+  head: () => ({ meta: [{ title: "Internal product specification | 775Directory" }, { name: "robots", content: "noindex, nofollow" }] }),
+  component: SpecPage,
+});
 
 function SpecPage() {
   return (

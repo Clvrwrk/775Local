@@ -90,13 +90,14 @@ export function ClaimListingPanel({
       <p className="text-xs font-medium uppercase tracking-[0.16em] text-sage">Unclaimed</p>
       <h3 className="mt-1 font-display text-xl font-semibold">Own {businessName}?</h3>
       <p className="mt-1 text-sm text-ink-soft">
-        Prefer Google or X. A work email that matches {host || "the shop website"} skips the photo.
+        Prefer Google or email. A work email that matches {host || "the shop website"} is one form
+        of evidence, but Claim approval remains a separate review.
         Gmail and other generic inboxes need a card or a quick pic in front of the store or rig.
       </p>
       {!user ? (
         <Link
           to="/login"
-          search={{ next }}
+          search={{ next, error: undefined }}
           className="mt-4 inline-flex h-11 items-center rounded-[12px] bg-sage px-4 text-sm font-medium text-paper hover:bg-sage-2"
         >
           Sign in to claim

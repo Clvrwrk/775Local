@@ -9,6 +9,7 @@ import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { getResident, listCategories, listCities, saveResident } from "@/lib/directory/queries";
 
 export const Route = createFileRoute("/register")({
+  head: () => ({ meta: [{ title: "Local mail registration | 775Directory" }, { name: "robots", content: "noindex, nofollow" }] }),
   loader: async () => {
     const [cities, categories] = await Promise.all([listCities(), listCategories()]);
     return { cities, categories };

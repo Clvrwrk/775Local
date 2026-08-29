@@ -1,0 +1,437 @@
+import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
+import { test } from "node:test";
+import {
+  categorySerpQueries,
+  chooseBusinessResults,
+  completionEstimate,
+  extractWebsiteEvidence,
+  isCategoryRelevantResult,
+  isEvidenceCompleteReceipt,
+  normalizeResultUrl,
+  planCategoryBatch,
+  planReconciliationWindow,
+  revalidateSearchResults,
+  summarizeCurrentSearchReceipts,
+} from "./serp-enrichment-lib.mjs";
+
+test("zero-page crawls never count as enriched candidates", () => {
+  assert.equal(
+    isEvidenceCompleteReceipt({
+      reviewStatus: "private_candidate",
+      crawl: { pageCount: 0 },
+      sourcePages: [],
+    }),
+    false,
+  );
+  assert.equal(
+    isEvidenceCompleteReceipt({
+      reviewStatus: "private_candidate",
+      crawl: { pageCount: 1 },
+      sourcePages: [{ url: "https://example.com" }],
+    }),
+    true,
+  );
+});
+
+test("runner imports query planning from the local library, not node fs", async () => {
+  const source = await readFile(new URL("./serp-enrichment.mjs", import.meta.url), "utf8");
+  const fsImport = source.match(/import \{[\s\S]*?\} from "node:fs\/promises";/)?.[0] ?? "";
+  const libraryImport =
+    source.match(/import \{[\s\S]*?\} from "\.\/serp-enrichment-lib\.mjs";/)?.[0] ?? "";
+  assert.doesNotMatch(fsImport, /categorySerpQueries/);
+  assert.match(libraryImport, /categorySerpQueries/);
+});
+
+test("completion accounting reads only the current SERP result receipts", async () => {
+  const source = await readFile(new URL("./serp-enrichment.mjs", import.meta.url), "utf8");
+  assert.match(source, /summarizeCurrentSearchReceipts/);
+  assert.match(source, /completedPriorities\.delete/);
+  assert.match(source, /priority \?\? 1\) \/ batchSize/);
+  assert.match(source, /superseded-listings/);
+});
+
+test("receipt reconciliation excludes stale successes and superseded failures", () => {
+  const search = {
+    filterVersion: "business-controlled-domain-v10",
+    shortfall: 0,
+    results: Array.from({ length: 20 }, (_, index) => ({
+      domain: `current-${index + 1}.example`,
+      url: `https://current-${index + 1}.example/`,
+    })),
+  };
+  const successfulReceipt = (domain) => ({
+    reviewStatus: "private_candidate",
+    serp: { domain, url: `https://${domain}/` },
+    crawl: { pageCount: 1 },
+    sourcePages: [{ url: `https://${domain}` }],
+  });
+  const receipts = [
+    ...search.results.slice(0, 18).map((result) => successfulReceipt(result.domain)),
+    {
+      reviewStatus: "crawl_failed",
+      serp: { domain: "current-19.example", url: "https://current-19.example/" },
+      crawl: { pageCount: 0 },
+      sourcePages: [],
+    },
+    successfulReceipt("stale-success.example"),
+    {
+      reviewStatus: "crawl_failed",
+      serp: { domain: "superseded-failure.example" },
+    },
+  ];
+
+  assert.deepEqual(summarizeCurrentSearchReceipts(search, receipts), {
+    resultCount: 20,
+    evidenceCompleteCount: 18,
+    failureCount: 1,
+    missingReceiptCount: 1,
+    invalidReceiptCount: 0,
+    staleReceiptCount: 2,
+    shortfall: 0,
+    filterVersion: "business-controlled-domain-v10",
+    filterVersionAccepted: true,
+    complete: false,
+    blocked: false,
+  });
+});
+
+test("same-domain evidence for a different result URL stays stale", () => {
+  const summary = summarizeCurrentSearchReceipts(
+    {
+      filterVersion: "business-controlled-domain-v10",
+      shortfall: 19,
+      results: [
+        {
+          domain: "example.com",
+          url: "https://example.com/locations/reno",
+        },
+      ],
+    },
+    [
+      {
+        reviewStatus: "private_candidate",
+        serp: { domain: "example.com", url: "https://example.com/services" },
+        crawl: { pageCount: 1 },
+        sourcePages: [{ url: "https://example.com/services" }],
+      },
+    ],
+  );
+  assert.equal(summary.evidenceCompleteCount, 0);
+  assert.equal(summary.missingReceiptCount, 1);
+  assert.equal(summary.staleReceiptCount, 1);
+  assert.equal(summary.blocked, false);
+});
+
+test("an obsolete search filter can never complete a category", () => {
+  const results = Array.from({ length: 20 }, (_, index) => ({
+    domain: `business-${index + 1}.example`,
+    url: `https://business-${index + 1}.example/`,
+  }));
+  const receipts = results.map((result) => ({
+    reviewStatus: "private_candidate",
+    serp: result,
+    crawl: { pageCount: 1 },
+    sourcePages: [{ url: result.url }],
+  }));
+  const summary = summarizeCurrentSearchReceipts(
+    { filterVersion: "business-controlled-domain-v2", shortfall: 0, results },
+    receipts,
+    { expectedFilterVersion: "business-controlled-domain-v10" },
+  );
+  assert.equal(summary.evidenceCompleteCount, 20);
+  assert.equal(summary.filterVersionAccepted, false);
+  assert.equal(summary.complete, false);
+  assert.equal(summary.blocked, false);
+});
+
+test("failed crawl retries are appended to the provider ledger", async () => {
+  const source = await readFile(new URL("./serp-enrichment.mjs", import.meta.url), "utf8");
+  assert.match(source, /status: "failed"/);
+  assert.match(source, /failureRecordedAt/);
+  assert.match(source, /error\.firecrawlJobId/);
+  assert.match(source, /crawl\?\.creditsUsed/);
+});
+
+test("DataForSEO retries and terminal task failures are appended to the provider ledger", async () => {
+  const source = await readFile(new URL("./serp-enrichment.mjs", import.meta.url), "utf8");
+  assert.match(source, /category_search_task_retry/);
+  assert.match(source, /category_search_task_failure/);
+  assert.match(source, /dataforseoTaskId: task\?\.id \?\? null/);
+  assert.match(source, /dataforseoCostUsd: task\?\.cost == null \? null : Number\(task\.cost\)/);
+});
+
+test("SERP query aliases are explicit, unique, and bounded", () => {
+  assert.deepEqual(
+    categorySerpQueries({
+      query: "window screen repair service",
+      queryAliases: [
+        "screen door repair service",
+        "screen door repair service",
+        "patio screen repair",
+      ],
+    }),
+    ["window screen repair service", "screen door repair service", "patio screen repair"],
+  );
+  assert.throws(
+    () =>
+      categorySerpQueries({
+        query: "plumber",
+        queryAliases: ["one", "two", "three"],
+      }),
+    /at most two aliases/,
+  );
+});
+
+test("SERP selection excludes aggregators, social networks, duplicates, and unsafe URLs", () => {
+  const items = [
+    {
+      rank_group: 1,
+      title: "Yelp",
+      url: "https://www.yelp.com/search?find_desc=plumber",
+    },
+    { rank_group: 2, title: "Alpha", url: "https://alpha.example/services" },
+    {
+      rank_group: 3,
+      title: "Alpha duplicate",
+      url: "https://www.alpha.example/about",
+    },
+    { rank_group: 4, title: "Facebook", url: "https://facebook.com/alpha" },
+    { rank_group: 5, title: "Beta", url: "http://beta.example/" },
+    { rank_group: 6, title: "Unsafe", url: "ftp://unsafe.example/" },
+    {
+      rank_group: 7,
+      title: "Restaurant guide",
+      url: "https://vegas.eater.com/maps/best-restaurants-reno",
+    },
+    {
+      rank_group: 8,
+      title: "Attorney directory",
+      url: "https://www.justia.com/lawyers/nevada/reno",
+    },
+    {
+      rank_group: 9,
+      title: "Contractor marketplace",
+      url: "https://pro.porch.com/reno-nv/door-contractors/reno-screen-repair-1/pp",
+    },
+    {
+      rank_group: 10,
+      title: "Provider directory",
+      url: "https://www.zocdoc.com/dentists/reno-nv-274596pm",
+    },
+    {
+      rank_group: 11,
+      title: "Google redirect",
+      url: "https://google.com/goto?url=opaque",
+    },
+    {
+      rank_group: 12,
+      title: "Synthetic handyman",
+      description: "Call (775) 555-0176",
+      url: "https://synthetic-handyman.example/",
+    },
+    {
+      rank_group: 13,
+      title: "Screen contractor directory",
+      url: "https://www.superpages.com/reno-nv/screens",
+    },
+  ];
+  assert.deepEqual(
+    chooseBusinessResults(items, 20).map((item) => item.domain),
+    ["alpha.example", "beta.example"],
+  );
+});
+
+test("merged SERP results preserve their provider rank", () => {
+  assert.deepEqual(
+    chooseBusinessResults([
+      { serpRank: 7, title: "Alpha", url: "https://alpha.example" },
+      { serpRank: 2, title: "Beta", url: "https://beta.example" },
+    ]).map(({ domain, serpRank }) => ({ domain, serpRank })),
+    [
+      { domain: "alpha.example", serpRank: 7 },
+      { domain: "beta.example", serpRank: 2 },
+    ],
+  );
+});
+
+test("search receipt revalidation preserves clean metadata and removes newly blocked results", () => {
+  const category = { slug: "dentists" };
+  const results = [
+    {
+      serpRank: 1,
+      title: "Reno Family Dental",
+      url: "https://reno-family.example/",
+      domain: "reno-family.example",
+      corroboratedBySemanticSearch: true,
+    },
+    {
+      serpRank: 2,
+      title: "Dentist directory",
+      url: "https://www.zocdoc.com/dentists/reno-nv",
+      domain: "zocdoc.com",
+      corroboratedBySemanticSearch: false,
+    },
+  ];
+  const revalidated = revalidateSearchResults(category, results, 20);
+  assert.equal(revalidated.length, 1);
+  assert.equal(revalidated[0].domain, "reno-family.example");
+  assert.equal(revalidated[0].serpRank, 1);
+  assert.equal(revalidated[0].corroboratedBySemanticSearch, true);
+});
+
+test("result URL matching tolerates fragments and trailing slashes but not path changes", () => {
+  assert.equal(
+    normalizeResultUrl("https://example.com/services/#contact"),
+    "https://example.com/services",
+  );
+  assert.notEqual(
+    normalizeResultUrl("https://example.com/services"),
+    normalizeResultUrl("https://example.com/locations/reno"),
+  );
+});
+
+test("screen repair candidates exclude phone, auto-glass, and generic window results", () => {
+  const category = { slug: "screen-repair" };
+  assert.equal(
+    isCategoryRelevantResult(category, {
+      title: "Patio Screen Door Repair in Reno",
+      description: "Window rescreening and retractable screens",
+    }),
+    true,
+  );
+  assert.equal(
+    isCategoryRelevantResult(category, {
+      title: "Cracked iPhone Screen Repair",
+      description: "Phone and tablet service",
+    }),
+    false,
+  );
+  assert.equal(
+    isCategoryRelevantResult(category, {
+      title: "Fireplace Screen Replacement in Sparks",
+      description: "Chimney and fireplace services",
+      url: "https://example.com/fireplace-screen-replacement",
+    }),
+    false,
+  );
+  assert.equal(
+    isCategoryRelevantResult(category, {
+      title: "Mobile Screen Repair in Placer and Nevada City",
+      description: "Serving Grass Valley and Rocklin",
+      url: "https://www.screenmobile.com/locations/placer-and-sierra-counties/",
+    }),
+    false,
+  );
+  assert.equal(
+    isCategoryRelevantResult(category, {
+      title: "Retractable Screen Doors in Reno",
+      description: "Custom new screens and installation",
+      url: "https://example.com/retractable-screens",
+    }),
+    false,
+  );
+  assert.equal(
+    isCategoryRelevantResult(category, {
+      title: "Window Screen Repair Services",
+      description: "We repair and replace damaged screens nationwide",
+      url: "https://example.com/screen-repair",
+    }),
+    false,
+  );
+  assert.equal(
+    isCategoryRelevantResult(category, {
+      title: "Windshield Repair and Replacement",
+      description: "Auto glass service",
+    }),
+    false,
+  );
+  assert.equal(
+    isCategoryRelevantResult(category, {
+      title: "Window Replacement in Reno",
+      description: "Install new windows",
+    }),
+    false,
+  );
+  assert.equal(
+    isCategoryRelevantResult(category, {
+      title: "Window Replacement in Reno",
+      description: "Contractors also repair window screens",
+      url: "https://example.com/services/window-replacement",
+    }),
+    false,
+  );
+  assert.equal(
+    isCategoryRelevantResult(category, {
+      title: "Cracked Screen Repair in Reno",
+      description: "Same-day repair",
+      url: "https://www.ubreakifix.com/locations/reno/cracked-screen",
+    }),
+    false,
+  );
+});
+
+test("category batches stay in a fixed 20-category window until retries finish", () => {
+  const queue = Array.from({ length: 45 }, (_, index) => ({
+    priority: index + 1,
+    category: `Category ${index + 1}`,
+    status: index < 3 ? "complete" : "pending",
+  }));
+  const batch = planCategoryBatch(queue, 20);
+  assert.equal(batch.length, 17);
+  assert.equal(batch[0].priority, 4);
+  assert.equal(batch.at(-1).priority, 20);
+
+  const next = planCategoryBatch(
+    queue.map((entry) => ({
+      ...entry,
+      status: entry.priority <= 20 ? "complete" : "pending",
+    })),
+    20,
+  );
+  assert.equal(next.length, 20);
+  assert.equal(next[0].priority, 21);
+  assert.equal(next.at(-1).priority, 40);
+});
+
+test("reconciliation rechecks the entire fixed window including completed categories", () => {
+  const queue = Array.from({ length: 45 }, (_, index) => ({
+    priority: index + 1,
+    category: `Category ${index + 1}`,
+    status: index < 12 ? "complete" : "pending",
+  }));
+  const window = planReconciliationWindow(queue, 20);
+  assert.equal(window.length, 20);
+  assert.equal(window[0].priority, 1);
+  assert.equal(window.at(-1).priority, 20);
+});
+
+test("website evidence aggregates pages without inventing missing fields", () => {
+  const evidence = extractWebsiteEvidence([
+    {
+      url: "https://alpha.example/",
+      title: "Alpha Plumbing",
+      markdown: "Call (775) 555-0100. Open Mon-Fri 8am-5pm. Serving Reno and Sparks.",
+    },
+    {
+      url: "https://alpha.example/contact",
+      markdown: "Email hello@alpha.example, 10 Main St, Reno, NV 89501",
+    },
+  ]);
+  assert.equal(evidence.title, "Alpha Plumbing");
+  assert.deepEqual(evidence.phones, ["(775) 555-0100"]);
+  assert.deepEqual(evidence.emails, ["hello@alpha.example"]);
+  assert.match(evidence.hoursEvidence, /Mon-Fri 8am-5pm/);
+  assert.equal(evidence.sourceUrls.length, 2);
+});
+
+test("completion estimate counts the current batch and includes retry allowance", () => {
+  const estimate = completionEstimate({
+    categoryCount: 232,
+    batchSize: 20,
+    currentBatch: 1,
+  });
+  assert.equal(estimate.totalBatches, 12);
+  assert.equal(estimate.nightlyRunsRemaining, 11);
+  assert.equal(estimate.retryAllowanceDays, 2);
+});

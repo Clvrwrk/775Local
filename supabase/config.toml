@@ -1,0 +1,21 @@
+project_id = "local775"
+
+[api]
+enabled = true
+schemas = ["public"]
+extra_search_path = ["public", "extensions"]
+
+[db]
+major_version = 17
+
+[db.seed]
+enabled = false
+
+[studio]
+enabled = true
+
+[auth]
+enabled = true
+
+[storage]
+enabled = true

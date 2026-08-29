@@ -18,6 +18,7 @@ import { Route as ClaimRouteImport } from './routes/claim'
 import { Route as ListYourBusinessRouteImport } from './routes/list-your-business'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as OffersRouteImport } from './routes/offers'
+import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as SearchRouteImport } from './routes/search'
@@ -27,7 +28,8 @@ import { Route as BizSlugRouteImport } from './routes/biz.$slug'
 import { Route as CategoriesSlugRouteImport } from './routes/categories.$slug'
 import { Route as NvCityRouteImport } from './routes/nv.$city'
 import { Route as StudioSlugRouteImport } from './routes/studio.$slug'
-import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
+import { Route as ApiAuthCallbackRouteImport } from './routes/api/auth/callback'
+import { Route as ApiAuthSignInRouteImport } from './routes/api/auth/sign-in'
 import { Route as NvCityCategoryRouteImport } from './routes/nv.$city.$category'
 
 const IndexRoute = IndexRouteImport.update({
@@ -75,6 +77,11 @@ const OffersRoute = OffersRouteImport.update({
   path: '/offers',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PricingRoute = PricingRouteImport.update({
+  id: '/pricing',
+  path: '/pricing',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PrivacyRoute = PrivacyRouteImport.update({
   id: '/privacy',
   path: '/privacy',
@@ -120,9 +127,14 @@ const StudioSlugRoute = StudioSlugRouteImport.update({
   path: '/studio/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
-  id: '/api/auth/$',
-  path: '/api/auth/$',
+const ApiAuthCallbackRoute = ApiAuthCallbackRouteImport.update({
+  id: '/api/auth/callback',
+  path: '/api/auth/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAuthSignInRoute = ApiAuthSignInRouteImport.update({
+  id: '/api/auth/sign-in',
+  path: '/api/auth/sign-in',
   getParentRoute: () => rootRouteImport,
 } as any)
 const NvCityCategoryRoute = NvCityCategoryRouteImport.update({
@@ -141,6 +153,7 @@ export interface FileRoutesByFullPath {
   '/list-your-business': typeof ListYourBusinessRoute
   '/login': typeof LoginRoute
   '/offers': typeof OffersRoute
+  '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/register': typeof RegisterRoute
   '/search': typeof SearchRoute
@@ -150,7 +163,8 @@ export interface FileRoutesByFullPath {
   '/categories/$slug': typeof CategoriesSlugRoute
   '/nv/$city': typeof NvCityRouteWithChildren
   '/studio/$slug': typeof StudioSlugRoute
-  '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/auth/callback': typeof ApiAuthCallbackRoute
+  '/api/auth/sign-in': typeof ApiAuthSignInRoute
   '/nv/$city/$category': typeof NvCityCategoryRoute
 }
 export interface FileRoutesByTo {
@@ -163,6 +177,7 @@ export interface FileRoutesByTo {
   '/list-your-business': typeof ListYourBusinessRoute
   '/login': typeof LoginRoute
   '/offers': typeof OffersRoute
+  '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/register': typeof RegisterRoute
   '/search': typeof SearchRoute
@@ -172,7 +187,8 @@ export interface FileRoutesByTo {
   '/categories/$slug': typeof CategoriesSlugRoute
   '/nv/$city': typeof NvCityRouteWithChildren
   '/studio/$slug': typeof StudioSlugRoute
-  '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/auth/callback': typeof ApiAuthCallbackRoute
+  '/api/auth/sign-in': typeof ApiAuthSignInRoute
   '/nv/$city/$category': typeof NvCityCategoryRoute
 }
 export interface FileRoutesById {
@@ -186,6 +202,7 @@ export interface FileRoutesById {
   '/list-your-business': typeof ListYourBusinessRoute
   '/login': typeof LoginRoute
   '/offers': typeof OffersRoute
+  '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/register': typeof RegisterRoute
   '/search': typeof SearchRoute
@@ -195,7 +212,8 @@ export interface FileRoutesById {
   '/categories/$slug': typeof CategoriesSlugRoute
   '/nv/$city': typeof NvCityRouteWithChildren
   '/studio/$slug': typeof StudioSlugRoute
-  '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/auth/callback': typeof ApiAuthCallbackRoute
+  '/api/auth/sign-in': typeof ApiAuthSignInRoute
   '/nv/$city/$category': typeof NvCityCategoryRoute
 }
 export interface FileRouteTypes {
@@ -210,6 +228,7 @@ export interface FileRouteTypes {
     | '/list-your-business'
     | '/login'
     | '/offers'
+    | '/pricing'
     | '/privacy'
     | '/register'
     | '/search'
@@ -219,7 +238,8 @@ export interface FileRouteTypes {
     | '/categories/$slug'
     | '/nv/$city'
     | '/studio/$slug'
-    | '/api/auth/$'
+    | '/api/auth/callback'
+    | '/api/auth/sign-in'
     | '/nv/$city/$category'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -232,6 +252,7 @@ export interface FileRouteTypes {
     | '/list-your-business'
     | '/login'
     | '/offers'
+    | '/pricing'
     | '/privacy'
     | '/register'
     | '/search'
@@ -241,7 +262,8 @@ export interface FileRouteTypes {
     | '/categories/$slug'
     | '/nv/$city'
     | '/studio/$slug'
-    | '/api/auth/$'
+    | '/api/auth/callback'
+    | '/api/auth/sign-in'
     | '/nv/$city/$category'
   id:
     | '__root__'
@@ -254,6 +276,7 @@ export interface FileRouteTypes {
     | '/list-your-business'
     | '/login'
     | '/offers'
+    | '/pricing'
     | '/privacy'
     | '/register'
     | '/search'
@@ -263,7 +286,8 @@ export interface FileRouteTypes {
     | '/categories/$slug'
     | '/nv/$city'
     | '/studio/$slug'
-    | '/api/auth/$'
+    | '/api/auth/callback'
+    | '/api/auth/sign-in'
     | '/nv/$city/$category'
   fileRoutesById: FileRoutesById
 }
@@ -277,6 +301,7 @@ export interface RootRouteChildren {
   ListYourBusinessRoute: typeof ListYourBusinessRoute
   LoginRoute: typeof LoginRoute
   OffersRoute: typeof OffersRoute
+  PricingRoute: typeof PricingRoute
   PrivacyRoute: typeof PrivacyRoute
   RegisterRoute: typeof RegisterRoute
   SearchRoute: typeof SearchRoute
@@ -285,7 +310,8 @@ export interface RootRouteChildren {
   BizSlugRoute: typeof BizSlugRoute
   NvCityRoute: typeof NvCityRouteWithChildren
   StudioSlugRoute: typeof StudioSlugRoute
-  ApiAuthSplatRoute: typeof ApiAuthSplatRoute
+  ApiAuthCallbackRoute: typeof ApiAuthCallbackRoute
+  ApiAuthSignInRoute: typeof ApiAuthSignInRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -353,6 +379,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OffersRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/pricing': {
+      id: '/pricing'
+      path: '/pricing'
+      fullPath: '/pricing'
+      preLoaderRoute: typeof PricingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/privacy': {
       id: '/privacy'
       path: '/privacy'
@@ -416,11 +449,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StudioSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/auth/$': {
-      id: '/api/auth/$'
-      path: '/api/auth/$'
-      fullPath: '/api/auth/$'
-      preLoaderRoute: typeof ApiAuthSplatRouteImport
+    '/api/auth/callback': {
+      id: '/api/auth/callback'
+      path: '/api/auth/callback'
+      fullPath: '/api/auth/callback'
+      preLoaderRoute: typeof ApiAuthCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/auth/sign-in': {
+      id: '/api/auth/sign-in'
+      path: '/api/auth/sign-in'
+      fullPath: '/api/auth/sign-in'
+      preLoaderRoute: typeof ApiAuthSignInRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/nv/$city/$category': {
@@ -466,6 +506,7 @@ const rootRouteChildren: RootRouteChildren = {
   ListYourBusinessRoute: ListYourBusinessRoute,
   LoginRoute: LoginRoute,
   OffersRoute: OffersRoute,
+  PricingRoute: PricingRoute,
   PrivacyRoute: PrivacyRoute,
   RegisterRoute: RegisterRoute,
   SearchRoute: SearchRoute,
@@ -474,17 +515,19 @@ const rootRouteChildren: RootRouteChildren = {
   BizSlugRoute: BizSlugRoute,
   NvCityRoute: NvCityRouteWithChildren,
   StudioSlugRoute: StudioSlugRoute,
-  ApiAuthSplatRoute: ApiAuthSplatRoute,
+  ApiAuthCallbackRoute: ApiAuthCallbackRoute,
+  ApiAuthSignInRoute: ApiAuthSignInRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
 
 import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
+import type { startInstance } from './start.ts'
 declare module '@tanstack/react-start' {
   interface Register {
     ssr: true
     router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
   }
 }

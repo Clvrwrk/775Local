@@ -1,7 +1,7 @@
 import { useNavigate } from "@tanstack/react-router";
 import { Search } from "lucide-react";
 import { useState } from "react";
-import { CircleMark } from "@/components/brand/mark";
+import { BrandMark } from "@/components/brand/logo";
 import type { City } from "@/lib/directory/types";
 
 export function SearchBox({
@@ -26,9 +26,9 @@ export function SearchBox({
   }
 
   return (
-    <form onSubmit={go} className="w-full">
-      <div className="flex items-center gap-2 rounded-full border border-line bg-card px-3 shadow-[0_8px_30px_rgba(28,26,22,0.06)]">
-        <CircleMark className="size-6 shrink-0 text-gold" />
+    <form onSubmit={go} className="w-full" role="search">
+      <div className="flex items-center gap-2 rounded-full border border-line bg-card px-3 shadow-[0_8px_30px_rgba(28,26,22,0.08)] focus-within:border-gold/70 focus-within:ring-4 focus-within:ring-gold/10">
+        <BrandMark className="size-7" />
         <label className="sr-only" htmlFor="need">
           What do you need?
         </label>
@@ -36,12 +36,12 @@ export function SearchBox({
           id="need"
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          placeholder="Discover your 775"
-          className="h-12 min-w-0 flex-1 bg-transparent text-sm text-ink placeholder:text-muted focus-visible:outline-none"
+          placeholder="What do you need?"
+          className="h-14 min-w-0 flex-1 bg-transparent text-base text-ink placeholder:text-muted focus-visible:outline-none"
         />
         <button
           type="submit"
-          className="inline-flex size-9 shrink-0 items-center justify-center rounded-full bg-gold text-ink"
+          className="inline-flex size-10 shrink-0 items-center justify-center rounded-full bg-gold text-ink hover:bg-gold-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pine"
           aria-label="Search"
         >
           <Search className="size-4" />
@@ -51,7 +51,7 @@ export function SearchBox({
         value={city}
         onChange={(e) => setCity(e.target.value)}
         aria-label="Town"
-        className="mt-2 w-full bg-transparent text-center text-xs text-ink-soft focus-visible:outline-none"
+        className="mt-2 w-full bg-transparent text-center text-sm text-ink-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pine"
       >
         <option value="">All towns in the 775</option>
         {cities.map((c) => (
