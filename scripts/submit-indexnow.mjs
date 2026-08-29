@@ -6,12 +6,14 @@ const key = "738605bcc41cbc13f8943448c1bdae49";
 const keyLocation = `https://${host}/${key}.txt`;
 const endpoint = "https://api.indexnow.org/indexnow";
 
+/** Extract the canonical 775Directory URLs from the static production sitemap. */
 export function sitemapUrls(xml) {
   return [...xml.matchAll(/<loc>(https:\/\/775directory\.com\/[^<]*)<\/loc>/g)].map(
     (match) => match[1],
   );
 }
 
+/** Build the bounded IndexNow payload, refusing an empty URL set. */
 export function indexNowPayload(urlList) {
   if (!Array.isArray(urlList) || urlList.length === 0) {
     throw new Error("The production sitemap did not contain any canonical URLs.");
@@ -20,28 +22,51 @@ export function indexNowPayload(urlList) {
   return { host, key, keyLocation, urlList };
 }
 
-async function main() {
-  const sitemap = await readFile(new URL("../public/sitemap.xml", import.meta.url), "utf8");
-  const payload = indexNowPayload(sitemapUrls(sitemap));
-  const response = await fetch(endpoint, {
-    method: "POST",
-    headers: { "content-type": "application/json; charset=utf-8" },
-    body: JSON.stringify(payload),
-  });
-
-  const responseBody = await response.text();
-  const receipt = {
-    submittedAt: new Date().toISOString(),
+/** Submit one bounded URL set and always return a durable, no-secret receipt. */
+export async function submitIndexNow(
+  urlList,
+  { fetchImpl = globalThis.fetch, now = () => new Date() } = {},
+) {
+  const payload = indexNowPayload(urlList);
+  const baseReceipt = {
+    submittedAt: now().toISOString(),
     endpoint,
     host,
     keyLocation,
     urlCount: payload.urlList.length,
     urlList: payload.urlList,
-    status: response.status,
-    accepted: response.status === 200 || response.status === 202,
-    responseBody: responseBody || null,
   };
 
+  try {
+    const response = await fetchImpl(endpoint, {
+      method: "POST",
+      headers: { "content-type": "application/json; charset=utf-8" },
+      body: JSON.stringify(payload),
+    });
+    const responseBody = await response.text();
+
+    return {
+      ...baseReceipt,
+      status: response.status,
+      accepted: response.status === 200 || response.status === 202,
+      responseBody: responseBody || null,
+      failure: null,
+    };
+  } catch {
+    return {
+      ...baseReceipt,
+      status: null,
+      accepted: false,
+      responseBody: null,
+      failure: "request_or_response_read_failed",
+    };
+  }
+}
+
+/** Read the repository sitemap, submit it, print the receipt, and set the exit status. */
+async function main() {
+  const sitemap = await readFile(new URL("../public/sitemap.xml", import.meta.url), "utf8");
+  const receipt = await submitIndexNow(sitemapUrls(sitemap));
   process.stdout.write(`${JSON.stringify(receipt, null, 2)}\n`);
   if (!receipt.accepted) process.exitCode = 1;
 }
