@@ -17,7 +17,7 @@ The final PR #6 fixed point passed the hosted Foundation Gate, Vercel deployment
 - Vercel deployment: `dpl_GjXh6XffwxNfKUVT5udZXmsPpH3G`
 - Deployment URL: `https://reno-local-directory-81us35r2i-cleverwork.vercel.app`
 - Production aliases: `https://775directory.com`, `https://www.775directory.com`, and Vercel project aliases.
-- Cloudflare pre-change snapshot: `/private/tmp/local775-cloudflare-before.json`
+- Cloudflare pre-change snapshot: [`docs/evidence/cle-117/2026-08-29-cloudflare-pre-cutover.json`](evidence/cle-117/2026-08-29-cloudflare-pre-cutover.json), sanitized to omit provider record IDs while retaining the rollback values.
 - Changed records: apex and `www` only, from Namecheap forwarding/parking to the Vercel DNS target.
 - Preserved records: five registrar MX records and the SPF TXT record.
 - Live apex: HTTP 200 from Vercel.
@@ -48,8 +48,8 @@ IndexNow URL set:
 - Canonical: `https://775directory.com/`
 - No horizontal overflow.
 - Zero browser console errors and page errors.
-- Desktop screenshot: `/Users/chussey/.codex/visualizations/2026/08/28/01a04941-cdab-7911-bf13-d22f79733112/local775-live-desktop.png`
-- Mobile screenshot: `/Users/chussey/.codex/visualizations/2026/08/28/01a04941-cdab-7911-bf13-d22f79733112/local775-live-mobile.png`
+- Desktop screenshot: [`docs/evidence/cle-117/2026-08-29-live-desktop.png`](evidence/cle-117/2026-08-29-live-desktop.png), captured from the live apex at `2026-08-29T08:59:16-07:00`; SHA-256 `94c1b6038057e38978073603d40bcd2663b17899061cf64d34a2ccc473a660f4`.
+- Mobile screenshot: [`docs/evidence/cle-117/2026-08-29-live-mobile.png`](evidence/cle-117/2026-08-29-live-mobile.png), captured from the live apex at `2026-08-29T08:59:41-07:00`; SHA-256 `32e8dcb687316d68d8af71b30a089f68eb7d0b7a89d7ac1f60ac6de2ece6b512`.
 
 ## Retained boundaries and blockers
 
