@@ -2,36 +2,36 @@
 
 ## Public
 
-| Path | Purpose | Canvas |
-|---|---|---|
-| `/` | Home: search, shortcuts, Discover, offers | `app-phone` |
-| `/search?q=&city=&category=` | Intent results | `app-sheet` |
-| `/cities` | All 775 towns | `app-sheet` |
-| `/categories` | All service categories | `app-sheet` |
-| `/categories/{category}` | Category across the 775 | `app-sheet` |
-| `/nv/{city}` | City hub | `app-sheet` |
-| `/nv/{city}/{category}` | Money page: service in town | `app-sheet` |
-| `/biz/{slug}` | Profile, gallery, offer, quote, claim | `app-sheet` |
-| `/offers` | Live coupons | `app-phone` |
-| `/claim` | Find + claim unclaimed seeds | wash |
-| `/register` | Resident mail registration | — |
-| `/about` | What the 775 is | — |
-| `/privacy` `/terms` | Legal | — |
-| `/spec` | Live PRD / schema | — |
-| `/login` | Join the 775 (SSO) | wash + gold ring |
+| Path                         | Purpose                                   | Canvas           |
+| ---------------------------- | ----------------------------------------- | ---------------- |
+| `/`                          | Home: search, shortcuts, Discover, offers | `app-phone`      |
+| `/search?q=&city=&category=` | Intent results                            | `app-sheet`      |
+| `/cities`                    | All 775 towns                             | `app-sheet`      |
+| `/categories`                | All service categories                    | `app-sheet`      |
+| `/categories/{category}`     | Category across the 775                   | `app-sheet`      |
+| `/nv/{city}`                 | City hub                                  | `app-sheet`      |
+| `/nv/{city}/{category}`      | Money page: service in town               | `app-sheet`      |
+| `/biz/{slug}`                | Profile, gallery, offer, quote, claim     | `app-sheet`      |
+| `/offers`                    | Live coupons                              | `app-phone`      |
+| `/claim`                     | Find + claim unclaimed seeds              | wash             |
+| `/register`                  | Resident mail registration                | —                |
+| `/about`                     | What the 775 is                           | —                |
+| `/privacy` `/terms`          | Legal                                     | —                |
+| `/spec`                      | Live PRD / schema                         | —                |
+| `/login`                     | Join the 775 (SSO)                        | wash + gold ring |
 
 ## Authenticated
 
-| Path | Purpose |
-|---|---|
-| `/account` | Listings → studio, leads, campaigns |
-| `/studio/{slug}` | Featured, photos, coupon (must own listing) |
-| `/list-your-business` | Create a listing |
+| Path                  | Purpose                                     |
+| --------------------- | ------------------------------------------- |
+| `/account`            | Listings → studio, leads, campaigns         |
+| `/studio/{slug}`      | Featured, photos, coupon (must own listing) |
+| `/list-your-business` | Create a listing                            |
 
 ## Auth API
 
-| Path | Purpose |
-|---|---|
+| Path          | Purpose                                                         |
+| ------------- | --------------------------------------------------------------- |
 | `/api/auth/*` | Better Auth today (Google, X). WorkOS is the production target. |
 
 ## Canonical SEO URLs
@@ -55,4 +55,5 @@ Examples:
 - City/category pages require at least five active reviewed Listings plus useful non-template content.
 - Category pages require at least three active reviewed Listings across launch coverage.
 - Empty and below-threshold discovery pages remain crawlable with `noindex, follow`; they are not listed in the sitemap.
+- `npm run indexnow:submit` submits only the current canonical sitemap URLs to the shared IndexNow endpoint. The public verification key is hosted on the canonical origin; each invocation emits a timestamped JSON receipt and fails closed on non-200/202 responses.
 - Search, authentication, Claim, Studio, account, pricing preview, registration, and internal specification routes are `noindex`.
