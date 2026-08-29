@@ -9,6 +9,16 @@
 
 ---
 
+## 2026-08-29 — CLE-104 batch-01 user-directed continuation
+
+- **Receipt:** `docs/CLE-104-SERP-ENRICHMENT-BATCH-01-2026-08-29-CONTINUATION.md`; private artifacts remain under `/Users/chussey/Library/CloudStorage/Dropbox-AIA4/Cleverwork Main/Local775Directory/serp-enrichment`.
+- **Bounded outcome:** after the scheduled August 29 checkpoint, the user explicitly directed another fixed-window retry. Screen Repair was re-searched under accepted filter v10; DataForSEO plus Exa/Tavily retained 12 eligible domains, one fewer than the scheduled run, and preserved an eight-result source shortfall without padding. Firecrawl retried the ten current failures, and all ten returned zero pages with retained job IDs and zero measured credits.
+- **Batch state:** 392 current private candidates, 382 evidence-complete, ten current failures, 16 completed categories, four pending categories, and zero terminal blocked categories. Pending priorities remain 1, 7, 10, and 20. Do not advance to batch 02.
+- **Provider accounting:** this continuation appended 13 ledger events: two DataForSEO retries plus one six-task Screen Repair search totaling $0.0490, $0.0070 Exa, one Tavily corroboration request with no exposed cost/credits, and ten zero-page Firecrawl failures. Cumulative known batch-01 accounting is $1.0990 DataForSEO plus four unavailable pre-fix attempt costs, $0.3850 Exa, and 55 Tavily requests. The current-filter Firecrawl lineage is 127 events with 1,773 pages, 60 cap flags, and 1,780 measured credits; the full append-only history also retains 22 superseded filter-v2 events.
+- **Effects:** no Listing review/selection/publication, Supabase write, deployment, DNS change, external message/call beyond required Linear accounting, payment, or Production effect occurred.
+
+**Resume here:** rerun the same fixed-window command. It must remain in batch 01 and retry only current failures for priorities 1, 7, 10, and 20. Screen Repair may become terminal with an eight-result source shortfall only after all 12 retained domains have valid evidence. Do not pad, advance, select, publish, write Supabase, or deploy.
+
 ## 2026-08-29 — CLE-104 batch-01 bounded retry
 
 - **Receipt:** `docs/CLE-104-SERP-ENRICHMENT-BATCH-01-2026-08-29.md`; private artifacts remain under `/Users/chussey/Library/CloudStorage/Dropbox-AIA4/Cleverwork Main/Local775Directory/serp-enrichment`.
