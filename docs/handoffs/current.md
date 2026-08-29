@@ -9,6 +9,18 @@
 
 ---
 
+## 2026-08-26 — CLE-105 public directory design integration
+
+- **Accounting:** [CAT-78](https://linear.app/cleverwork/issue/CAT-78/trailcle-105-integrate-the-775-design-system-and-complete-the-public) is the contemporaneous CAT trail for [CLE-105](https://linear.app/cleverwork/issue/CLE-105/launch-slice-mobile-public-discovery-and-search-surfaces). The durable cross-team receipt is `/Users/chussey/Library/CloudStorage/Dropbox-AIA4/Cleverwork Main/CODEX/docs/linear/teams/CLE/2026-08-26-local775-full-directory-build.md`.
+- **Branch:** `codex/cle-105-design-system`, stacked on `origin/codex/cle-104-directory-pricing`. This preserves the reviewed-publication and future-pricing dependency chain without merging or deleting the active enrichment branch.
+- **Design authority:** `/Users/chussey/Library/CloudStorage/Dropbox-AIA4/Cleverwork Main/Local775Directory/Design system build guidance`. `docs/DESIGN-SOURCE-INVENTORY.md` records every design-source group reviewed, the applied visual contract, asset provenance, and the mock claims that are forbidden in public output.
+- **Implementation:** official Summit Seal and 775Directory lockups, approved high-desert imagery, responsive pine/paper public shell, redesigned home/search/category/city/listing/about/offers surfaces, truthful owner/claim/lead states, Sponsored disclosure and outbound-link treatment, public canonicals, bounded launch sitemap, and crawler exclusions for private/incomplete tools.
+- **Safety boundary:** no placeholder business, rating, review, count, address, license, hours, response-time, or verification claim was copied from the design mockups. Empty states remain visible. Quote, Claim, and new-listing forms backed by unavailable handlers are not presented as working. The isolated `/pricing` route retains its approved values, `noindex, nofollow`, and disabled paid actions.
+- **Verification:** 107 Node tests, TypeScript, ESLint, secret scan, diff check, and the Node 24 Vercel production build pass. Local HTML probes returned 200 for the home, category, city, about, listing-discovery, future-pricing, and canonical query routes. Greptile found a valid P1 JSON-LD script-breakout path at `50a2f73`; `c8ace93` added a fail-closed HTML-safe structured-data serializer and an executable stored-XSS regression test. Connected-browser visual QA remains unverified because the browser bridge rejected its own configured trusted runtime path; do not mark visual acceptance complete from source/build evidence alone.
+- **Effects:** no Supabase write, real publication, Vercel deployment, Production change, Cloudflare DNS mutation, domain attachment, provider spend, payment, message, or other external effect occurred during this implementation pass.
+
+**Next gate:** complete actual desktop/mobile browser inspection. CLE-104 reviewed corpus completion, CLE-106 human authentication acceptance, and CLE-116/CLE-117 launch acceptance/rollback evidence remain prerequisites for Production and the `775directory.com` Cloudflare cutover.
+
 ## 2026-08-29 — CLE-104 batch-01 user-directed continuation
 
 - **Receipt:** `docs/CLE-104-SERP-ENRICHMENT-BATCH-01-2026-08-29-CONTINUATION.md`; private artifacts remain under `/Users/chussey/Library/CloudStorage/Dropbox-AIA4/Cleverwork Main/Local775Directory/serp-enrichment`.
@@ -74,7 +86,6 @@
 - **Hard boundary retained:** Nothing was selected or published, no Supabase environment was written, no deployment or message occurred, and no directory/off-category result may be used to reach 20.
 
 **Resume here:** run the same documented bounded command. It must remain in batch 01, archive the v2 search receipts, execute filter-v3 DataForSEO/Exa/Tavily revalidation for at most priorities 1–20, and crawl only the resulting business-controlled domains. Treat any strict shortfall as pending or terminal source-shortfall evidence; do not pad it or advance to batch 02.
-
 ## 2026-08-25 — CLE-104 multi-provider SERP enrichment in progress
 
 - **Accounting:** [CAT-76](https://linear.app/cleverwork/issue/CAT-76/trailcle-104-build-local775-multi-provider-serp-enrichment-pipeline) is the contemporaneous CAT trail for [CLE-104](https://linear.app/cleverwork/issue/CLE-104/launch-slice-seed-ingestion-and-reviewed-publication-set). The durable receipt is `/Users/chussey/Library/CloudStorage/Dropbox-AIA4/Cleverwork Main/CODEX/docs/linear/teams/CLE/2026-08-25-local775-serp-enrichment.md`.

@@ -7,9 +7,32 @@ import {
 import { SiteShell } from "@/components/layout/site-shell";
 import { Link } from "@tanstack/react-router";
 import { AuthKitProvider, getAuthAction } from "@workos/authkit-tanstack-react-start/client";
+import { serializeStructuredData } from "@/lib/directory/structured-data.mjs";
 import appCss from "../styles.css?url";
 
 const APP_NAME = "775 Directory";
+const SITE_URL = "https://775directory.com";
+const SITE_STRUCTURED_DATA = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": `${SITE_URL}/#organization`,
+      name: APP_NAME,
+      url: `${SITE_URL}/`,
+      logo: `${SITE_URL}/brand/mark.svg`,
+      areaServed: ["Reno, Nevada", "Sparks, Nevada"],
+    },
+    {
+      "@type": "WebSite",
+      "@id": `${SITE_URL}/#website`,
+      name: APP_NAME,
+      url: `${SITE_URL}/`,
+      publisher: { "@id": `${SITE_URL}/#organization` },
+      inLanguage: "en-US",
+    },
+  ],
+};
 
 export const Route = createRootRoute({
   loader: async () => {
@@ -27,7 +50,7 @@ export const Route = createRootRoute({
       {
         name: "description",
         content:
-          "Find trusted local businesses across the 775, from the California border to West Wendover.",
+          "Find reviewed local business listings in Reno and Sparks, Nevada.",
       },
       { name: "theme-color", content: "#1C3B34" },
     ],
@@ -56,6 +79,10 @@ function RootDocument() {
     <html lang="en" className="antialiased" suppressHydrationWarning>
       <head>
         <HeadContent />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: serializeStructuredData(SITE_STRUCTURED_DATA) }}
+        />
       </head>
       <body className="min-h-dvh bg-paper font-sans text-ink">
         <AuthKitProvider initialAuth={auth}>

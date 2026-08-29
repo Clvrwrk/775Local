@@ -42,6 +42,7 @@
     background: var(--color-paper);
     color: var(--color-ink);
     font-family: var(--font-sans);
+    line-height: 1.5;
   }
 
   h1,
@@ -58,6 +59,19 @@
   button:not(:disabled),
   [role="button"]:not(:disabled) {
     cursor: pointer;
+  }
+
+  ::selection {
+    background: color-mix(in srgb, var(--color-gold) 38%, transparent);
+    color: var(--color-ink);
+  }
+
+  img {
+    max-width: 100%;
+  }
+
+  a {
+    text-underline-offset: 0.2em;
   }
 }
 
@@ -91,6 +105,14 @@
   width: 100%;
   max-width: 72rem;
   margin-inline: auto;
+}
+
+@media (hover: hover) {
+  a,
+  button {
+    transition-property: color, background-color, border-color, opacity, transform;
+    transition-duration: 160ms;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

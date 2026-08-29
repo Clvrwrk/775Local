@@ -18,6 +18,7 @@ import {
 import type { BusinessCard, CampaignRow, Category, City, LeadRow } from "@/lib/directory/types";
 
 export const Route = createFileRoute("/account")({
+  head: () => ({ meta: [{ title: "Account | 775Directory" }, { name: "robots", content: "noindex, nofollow" }] }),
   loader: async () => {
     const [cities, categories] = await Promise.all([listCities(), listCategories()]);
     return { cities, categories };

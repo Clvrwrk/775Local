@@ -1,142 +1,41 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { BadgeCheck, FileCheck2, Search, ShieldCheck } from "lucide-react";
 import { SiteShell } from "@/components/layout/site-shell";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { useCurrentUserState } from "@/lib/auth/use-current-user";
-import { createListing, listCategories, listCities } from "@/lib/directory/queries";
 
 export const Route = createFileRoute("/list-your-business")({
-  loader: async () => {
-    const [cities, categories] = await Promise.all([listCities(), listCategories()]);
-    return { cities, categories };
-  },
+  head: () => ({ meta: [{ title: "List your business | 775Directory" }, { name: "robots", content: "noindex, nofollow" }] }),
   component: ListPage,
 });
 
+const steps = [
+  { Icon: Search, title: "Search first", body: "Many local businesses will already have a directory record. Checking first prevents duplicates." },
+  { Icon: BadgeCheck, title: "Prove the connection", body: "A future Claim request will require evidence tying the requester to the business. Payment will not count as proof." },
+  { Icon: FileCheck2, title: "Review the facts", body: "Core contact and service details will be reviewed before publication or a material listing change." },
+];
+
 function ListPage() {
-  const { cities, categories } = Route.useLoaderData();
-  const { user, isPending } = useCurrentUserState();
-  const navigate = useNavigate();
-  const [error, setError] = useState("");
-  const [saving, setSaving] = useState(false);
-
-  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    if (!user) return;
-    const fd = new FormData(e.currentTarget);
-    setSaving(true);
-    setError("");
-    try {
-      const res = await createListing({
-        data: {
-          name: String(fd.get("name") ?? ""),
-          citySlug: String(fd.get("city") ?? ""),
-          categorySlug: String(fd.get("category") ?? ""),
-          phone: String(fd.get("phone") ?? ""),
-          street: String(fd.get("street") ?? ""),
-          zip: String(fd.get("zip") ?? ""),
-          description: String(fd.get("description") ?? ""),
-        },
-      });
-      await navigate({ to: "/biz/$slug", params: { slug: res.slug } });
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not list.");
-      setSaving(false);
-    }
-  }
-
   return (
-    <SiteShell>
-      <section className="mx-auto max-w-lg px-4 py-12">
-        <h1 className="font-display text-4xl font-semibold tracking-tight">List your business</h1>
-        <p className="mt-3 text-sm text-ink-soft">
-          Get found for the searches neighbors actually type. No newspaper. A listing.
-        </p>
-        <div className="mt-6 rounded-[24px] border border-line bg-card p-5">
-          <p className="font-medium">Already in the seed?</p>
-          <p className="mt-1 text-sm text-ink-soft">
-            Most 775 shops will be pre-listed. Claim yours with the last four of the phone on the
-            page — don’t create a duplicate.
-          </p>
-          <Link to="/claim" search={{ q: "", city: "" }} className="mt-3 inline-block text-sm font-medium text-sage hover:underline">
-            Claim an existing listing
-          </Link>
+    <SiteShell wash>
+      <section className="app-page px-4 py-10 sm:px-6 sm:py-16">
+        <div className="mx-auto max-w-3xl text-center">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-teal">For business owners</p>
+          <h1 className="mt-3 font-display text-5xl font-semibold leading-[0.94] tracking-[-0.03em] sm:text-7xl">Put your local business on the map.</h1>
+          <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-ink-soft">The listing and Claim workflow is being prepared for a reviewed launch. Submissions are not open yet, so this page will not accept information it cannot safely process.</p>
         </div>
-        {isPending ? (
-          <div className="mt-8 h-40 animate-pulse rounded-[24px] bg-paper-2" />
-        ) : !user ? (
-          <p className="mt-8 text-sm text-ink-soft">
-            Need a brand-new page?{" "}
-            <Link
-              to="/login"
-              search={{ next: "/list-your-business", error: undefined }}
-              className="text-sage hover:underline"
-            >
-              Sign in to publish
-            </Link>
-            .
-          </p>
-        ) : (
-          <form onSubmit={onSubmit} className="mt-8 grid gap-4">
-            <div className="grid gap-1.5">
-              <Label htmlFor="name">Business name</Label>
-              <Input id="name" name="name" required placeholder="High Sierra Screens" />
-            </div>
-            <div className="grid gap-1.5">
-              <Label htmlFor="city">Town</Label>
-              <select
-                id="city"
-                name="city"
-                required
-                className="h-11 rounded-[12px] border border-line bg-card px-3 text-sm"
-              >
-                {cities.map((c) => (
-                  <option key={c.slug} value={c.slug}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="grid gap-1.5">
-              <Label htmlFor="category">Primary service</Label>
-              <select
-                id="category"
-                name="category"
-                required
-                className="h-11 rounded-[12px] border border-line bg-card px-3 text-sm"
-              >
-                {categories.map((c) => (
-                  <option key={c.slug} value={c.slug}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="grid gap-1.5">
-              <Label htmlFor="phone">Phone</Label>
-              <Input id="phone" name="phone" placeholder="775-555-0100" />
-            </div>
-            <div className="grid gap-1.5">
-              <Label htmlFor="street">Street</Label>
-              <Input id="street" name="street" placeholder="1845 S Virginia St" />
-            </div>
-            <div className="grid gap-1.5">
-              <Label htmlFor="zip">ZIP</Label>
-              <Input id="zip" name="zip" placeholder="89502" />
-            </div>
-            <div className="grid gap-1.5">
-              <Label htmlFor="description">What you do</Label>
-              <Textarea id="description" name="description" placeholder="Window and patio screens across the Meadows." />
-            </div>
-            {error ? <p className="text-sm text-danger">{error}</p> : null}
-            <Button type="submit" disabled={saving}>
-              {saving ? "Publishing…" : "Publish listing"}
-            </Button>
-          </form>
-        )}
+        <div className="mx-auto mt-10 grid max-w-4xl gap-4 md:grid-cols-3">
+          {steps.map(({ Icon, title, body }, index) => (
+            <section key={title} className="rounded-[24px] border border-line bg-card p-6">
+              <div className="flex items-center justify-between"><span className="inline-flex size-11 items-center justify-center rounded-full bg-paper-2 text-teal"><Icon className="size-5" strokeWidth={1.75} /></span><span className="font-display text-xl text-muted">0{index + 1}</span></div>
+              <h2 className="mt-5 font-display text-2xl font-semibold">{title}</h2>
+              <p className="mt-2 text-sm leading-6 text-ink-soft">{body}</p>
+            </section>
+          ))}
+        </div>
+        <div className="mx-auto mt-8 flex max-w-3xl items-start gap-3 rounded-[22px] border border-gold/40 bg-card p-5">
+          <ShieldCheck className="mt-0.5 size-5 shrink-0 text-teal" />
+          <div><p className="font-semibold">Ownership and paid plans stay separate.</p><p className="mt-1 text-sm leading-6 text-ink-soft">Claim approval will be evidence-based. A free or paid plan will never establish business ownership, purchase a positive review, or change undisclosed organic rank.</p></div>
+        </div>
+        <div className="mt-8 flex justify-center"><Link to="/search" search={{ q: "", city: "", category: "" }} className="inline-flex min-h-12 items-center rounded-full bg-pine px-6 text-sm font-semibold text-paper hover:bg-teal">Search the current directory</Link></div>
       </section>
     </SiteShell>
   );

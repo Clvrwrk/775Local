@@ -8,6 +8,7 @@ export const Route = createFileRoute("/login")({
     next: safeReturnPath(s.next),
     error: typeof s.error === "string" ? s.error : undefined,
   }),
+  head: () => ({ meta: [{ title: "Sign in | 775Directory" }, { name: "robots", content: "noindex, nofollow" }] }),
   component: Login,
 });
 

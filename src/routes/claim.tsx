@@ -1,106 +1,30 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { BusinessCardView } from "@/components/directory/business-card";
-import { ClaimListingPanel } from "@/components/directory/claim-listing";
+import { BadgeCheck, Clock3, ShieldCheck } from "lucide-react";
 import { SiteShell } from "@/components/layout/site-shell";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { listCities, searchBusinesses } from "@/lib/directory/queries";
-import { useNavigate } from "@tanstack/react-router";
 
 type Search = { q: string; city: string };
 
 export const Route = createFileRoute("/claim")({
-  validateSearch: (s: Record<string, unknown>): Search => ({
-    q: typeof s.q === "string" ? s.q : "",
-    city: typeof s.city === "string" ? s.city : "",
-  }),
-  loaderDeps: ({ search }) => search,
-  loader: async ({ deps }) => {
-    const [cities, results] = await Promise.all([
-      listCities(),
-      searchBusinesses({
-        data: { q: deps.q, city: deps.city, unclaimed: true },
-      }),
-    ]);
-    return { cities, results };
-  },
+  validateSearch: (search: Record<string, unknown>): Search => ({ q: typeof search.q === "string" ? search.q : "", city: typeof search.city === "string" ? search.city : "" }),
+  head: () => ({ meta: [{ title: "Claim a listing | 775Directory" }, { name: "robots", content: "noindex, nofollow" }] }),
   component: ClaimPage,
 });
 
 function ClaimPage() {
-  const { q, city } = Route.useSearch();
-  const { cities, results } = Route.useLoaderData();
-  const navigate = useNavigate();
-
-  function onSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    const fd = new FormData(e.currentTarget);
-    void navigate({
-      to: "/claim",
-      search: {
-        q: String(fd.get("q") ?? "").trim(),
-        city: String(fd.get("city") ?? ""),
-      },
-    });
-  }
-
   return (
-    <SiteShell>
-      <section className="mx-auto max-w-3xl px-4 py-12">
-        <p className="text-xs font-medium uppercase tracking-[0.18em] text-sage">For owners</p>
-        <h1 className="mt-2 font-display text-4xl font-semibold tracking-tight">
-          Claim your listing
-        </h1>
-        <p className="mt-3 max-w-xl text-sm text-ink-soft">
-          We’re seeding the 775 with public shop pages. If that’s you, find the listing, confirm
-          the last four of the listed phone, and take it over — leads and campaigns then belong to
-          you.
-        </p>
-        <form onSubmit={onSubmit} className="mt-8 grid gap-2 sm:grid-cols-[1fr_11rem_auto]">
-          <Input name="q" defaultValue={q} placeholder="Shop name or service" />
-          <select
-            name="city"
-            defaultValue={city}
-            aria-label="Town"
-            className="h-11 rounded-[12px] border border-line bg-card px-3 text-sm"
-          >
-            <option value="">All of the 775</option>
-            {cities.map((c) => (
-              <option key={c.slug} value={c.slug}>
-                {c.name}
-              </option>
-            ))}
-          </select>
-          <Button type="submit">Find listings</Button>
-        </form>
-        <p className="mt-3 text-sm text-muted">
-          Not in the directory yet?{" "}
-          <Link to="/list-your-business" className="text-sage hover:underline">
-            Create a new listing
-          </Link>
-          .
-        </p>
-        <div className="mt-8 grid gap-6">
-          {results.length === 0 ? (
-            <p className="rounded-[24px] border border-line bg-card p-6 text-sm text-ink-soft">
-              No unclaimed shops matched. Try another town, or publish a new listing.
-            </p>
-          ) : (
-            results.map((biz) => (
-              <div key={biz.id} className="grid gap-2">
-                <BusinessCardView biz={biz} />
-                <ClaimListingPanel
-                  businessId={biz.id}
-                  businessName={biz.name}
-                  slug={biz.slug}
-                  claimedBy={biz.claimedBy}
-                  website={biz.website}
-                  listingEmail=""
-                />
-              </div>
-            ))
-          )}
+    <SiteShell wash>
+      <section className="app-page px-4 py-10 sm:px-6 sm:py-16">
+        <div className="mx-auto max-w-2xl text-center">
+          <span className="mx-auto inline-flex size-14 items-center justify-center rounded-full bg-sage/20 text-teal"><BadgeCheck className="size-7" strokeWidth={1.75} /></span>
+          <p className="mt-5 text-xs font-semibold uppercase tracking-[0.18em] text-teal">For owners</p>
+          <h1 className="mt-3 font-display text-5xl font-semibold leading-[0.94] tracking-[-0.03em] sm:text-7xl">Claim review is coming soon.</h1>
+          <p className="mt-5 text-base leading-7 text-ink-soft">The Claim workflow is not accepting submissions yet. We are completing identity, evidence, authorization, and change-review checks before opening it.</p>
         </div>
+        <div className="mx-auto mt-9 grid max-w-3xl gap-4 sm:grid-cols-2">
+          <div className="rounded-[24px] border border-line bg-card p-6"><Clock3 className="size-5 text-gold-2" /><h2 className="mt-3 font-display text-2xl font-semibold">What to do now</h2><p className="mt-2 text-sm leading-6 text-ink-soft">Search the public directory for your business and check its published facts. No action is required if the page is not public yet.</p></div>
+          <div className="rounded-[24px] border border-line bg-card p-6"><ShieldCheck className="size-5 text-gold-2" /><h2 className="mt-3 font-display text-2xl font-semibold">What Claim will mean</h2><p className="mt-2 text-sm leading-6 text-ink-soft">An approved Claim will establish account authority after evidence review. It will not certify business quality or buy ranking.</p></div>
+        </div>
+        <div className="mt-8 flex justify-center"><Link to="/search" search={{ q: "", city: "", category: "" }} className="inline-flex min-h-12 items-center rounded-full bg-pine px-6 text-sm font-semibold text-paper hover:bg-teal">Search the directory</Link></div>
       </section>
     </SiteShell>
   );
