@@ -63,10 +63,34 @@ export async function submitIndexNow(
   }
 }
 
+/** Read and validate the sitemap while retaining a receipt for pre-request failures. */
+export async function runIndexNowSubmission({
+  readFileImpl = readFile,
+  fetchImpl = globalThis.fetch,
+  now = () => new Date(),
+} = {}) {
+  try {
+    const sitemap = await readFileImpl(new URL("../public/sitemap.xml", import.meta.url), "utf8");
+    return await submitIndexNow(sitemapUrls(sitemap), { fetchImpl, now });
+  } catch {
+    return {
+      submittedAt: now().toISOString(),
+      endpoint,
+      host,
+      keyLocation,
+      urlCount: 0,
+      urlList: [],
+      status: null,
+      accepted: false,
+      responseBody: null,
+      failure: "sitemap_read_or_validation_failed",
+    };
+  }
+}
+
 /** Read the repository sitemap, submit it, print the receipt, and set the exit status. */
 async function main() {
-  const sitemap = await readFile(new URL("../public/sitemap.xml", import.meta.url), "utf8");
-  const receipt = await submitIndexNow(sitemapUrls(sitemap));
+  const receipt = await runIndexNowSubmission();
   process.stdout.write(`${JSON.stringify(receipt, null, 2)}\n`);
   if (!receipt.accepted) process.exitCode = 1;
 }

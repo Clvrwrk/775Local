@@ -1,7 +1,12 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
-import { indexNowPayload, sitemapUrls, submitIndexNow } from "./submit-indexnow.mjs";
+import {
+  indexNowPayload,
+  runIndexNowSubmission,
+  sitemapUrls,
+  submitIndexNow,
+} from "./submit-indexnow.mjs";
 
 test("IndexNow publishes a valid same-host key and submits only sitemap canonicals", async () => {
   const sitemap = await readFile(new URL("../public/sitemap.xml", import.meta.url), "utf8");
@@ -42,5 +47,25 @@ test("IndexNow preserves a failure receipt when the provider request rejects", a
     accepted: false,
     responseBody: null,
     failure: "request_or_response_read_failed",
+  });
+});
+
+test("IndexNow preserves a failure receipt when the sitemap is empty", async () => {
+  const receipt = await runIndexNowSubmission({
+    readFileImpl: async () => "<urlset></urlset>",
+    now: () => new Date("2026-08-29T15:35:00.000Z"),
+  });
+
+  assert.deepEqual(receipt, {
+    submittedAt: "2026-08-29T15:35:00.000Z",
+    endpoint: "https://api.indexnow.org/indexnow",
+    host: "775directory.com",
+    keyLocation: "https://775directory.com/738605bcc41cbc13f8943448c1bdae49.txt",
+    urlCount: 0,
+    urlList: [],
+    status: null,
+    accepted: false,
+    responseBody: null,
+    failure: "sitemap_read_or_validation_failed",
   });
 });
