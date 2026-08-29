@@ -9,6 +9,16 @@
 
 ---
 
+## 2026-08-28 — CLE-104 batch-01 bounded retry
+
+- **Receipt:** `docs/CLE-104-SERP-ENRICHMENT-BATCH-01-2026-08-28.md`; private artifacts remain under `/Users/chussey/Library/CloudStorage/Dropbox-AIA4/Cleverwork Main/Local775Directory/serp-enrichment`.
+- **Bounded outcome:** the pre-run reconciliation found 15 complete and five pending categories. Screen Repair was re-searched under accepted filter v10 because of its retained shortfall; DataForSEO plus Exa/Tavily again found 14 eligible domains and preserved the six-result source shortfall without padding. Firecrawl retried 11 current failures; Handyman recovered with five pages, while ten domains returned zero pages.
+- **Batch state:** 394 current private candidates, 384 evidence-complete, ten current failures, 16 completed categories, four pending categories, and zero terminal blocked categories. Pending priorities are 1, 7, 10, and 20. Do not advance to batch 02.
+- **Provider accounting:** this run appended 13 ledger events: one DataForSEO retry and one six-task Screen Repair search totaling $0.0605, $0.0070 Exa, one Tavily corroboration request with no exposed cost/credits, and 11 Firecrawl attempts totaling five pages and five measured credits. One crawl succeeded and ten failed with zero pages. Cumulative known batch-01 accounting is $0.9920 DataForSEO plus four unavailable pre-fix attempt costs, $0.3710 Exa, 53 Tavily requests, and 107 Firecrawl events with 1,773 pages, 60 cap flags, and 1,780 measured credits.
+- **Effects:** no Listing review/selection/publication, Supabase write, deployment, DNS change, external message/call beyond required Linear accounting, payment, or Production effect occurred.
+
+**Resume here:** rerun the same fixed-window command. It must remain in batch 01 and retry only current failures for priorities 1, 7, 10, and 20. Screen Repair may become terminal with a six-result source shortfall only after all 14 retained domains have valid evidence. Do not pad, advance, select, publish, write Supabase, or deploy.
+
 ## 2026-08-27 — CLE-104 filter-v10 batch-01 bounded enrichment
 
 - **Receipt:** `docs/CLE-104-SERP-ENRICHMENT-BATCH-01-2026-08-27.md`; private artifacts remain under `/Users/chussey/Library/CloudStorage/Dropbox-AIA4/Cleverwork Main/Local775Directory/serp-enrichment`.
