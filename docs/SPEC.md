@@ -12,7 +12,7 @@ Residents in Reno and Sparks need a fast, trustworthy way to find a local Busine
 
 Local Businesses need an always-free, accurate Business Listing and a safe way for an authorized Business Owner or Agency Representative to Claim it, maintain approved content, receive qualified Leads, and optionally buy a scarce Featured placement. Payment must never create authority over a Listing, and sponsored placement must never corrupt organic ranking.
 
-Local775 needs one operational system that can launch a credible 100-Listing Reno/Sparks beta, preserve data provenance, prove Lead delivery and merchant response, and test willingness to pay for the $497 onboarding plus $297/month Featured founder offer. The product must integrate WorkOS, Supabase, GoHighLevel, Stripe, Vercel, Sentry, Linear, Google Maps Platform, and Cloudflare without creating conflicting systems of record or uncontrolled external effects.
+Local775 needs one operational system that can launch a credible 100-Listing Reno/Sparks seed, preserve data provenance, visibly demonstrate Basic, Standard, and Premium content tiers, prove Lead delivery and merchant response, and test willingness to pay for the separate $497 onboarding plus $297/month Featured founder offer. The product must integrate WorkOS, Supabase, GoHighLevel, Stripe, Vercel, Sentry, Linear, Google Maps Platform, and Cloudflare without creating conflicting systems of record or uncontrolled external effects.
 
 ## Solution
 
@@ -27,7 +27,7 @@ Build a mobile-first public directory and authenticated Studio on a single expli
 - Vercel Web Analytics provides aggregated traffic; Sentry provides redacted errors and sampled traces; Linear owns accountable delivery work.
 - Cloudflare remains authoritative DNS while Vercel serves the DNS-only apex and `www` web records.
 
-Launch with 100 individually reviewed Business Listings: five per accepted category in Reno and five per accepted category in Sparks. The ten launch categories are Screen Repair, HVAC, Plumbing, Electrical, Auto Repair, Restaurants, Dentists, Handyman, Roofing, and Veterinarians. The complete 20,436-row licensed workbook is imported into private immutable staging, normalized into private candidates, and never published directly.
+Launch with the top ten SERP results in each of the ten accepted seed categories. The 100 seed Listings target a 60% Basic, 30% Standard, and 10% Premium content-tier mix using approved enrichment evidence. Unclaimed and Unverified are visible labels, not exclusion states. Empty categories are absent from public navigation. The complete 20,436-row licensed workbook is imported into private immutable staging and normalized into private candidates; the 20,219 categorized company rows become the final cumulative directory round by the end of September 2026.
 
 The principal proof is not traffic. It is qualified Leads delivered reliably, accepted and contacted by participating Businesses, followed by measurable outcomes and at least five paid Featured activations within 30 days.
 
@@ -129,7 +129,10 @@ The principal proof is not traffic. It is qualified Leads delivered reliably, ac
 ### Product boundary and domain model
 
 - The public beta covers Reno and Sparks only. Spanish Springs, Lockwood, McCarran, and all other 775 places remain staged until separately accepted.
-- Launch publishes 100 reviewed Business Listings across the ten accepted categories. National corporate branches and unbranded individual practitioners are excluded from the initial cohort. Independent Businesses and locally operated franchises are eligible.
+- Launch publishes up to 100 valid Business Listings across the ten accepted categories using the top-ten SERP contract and no result padding. National corporate branches and unbranded individual practitioners are excluded from the initial cohort. Independent Businesses and locally operated franchises are eligible.
+- Basic, Standard, and Premium are free content-completeness tiers. Featured remains a separate paid and visibly Sponsored entitlement. Claim and information verification do not change content tier.
+- An otherwise valid Listing is not hidden because it is unclaimed or only partially enriched. It appears as Basic/Unverified after the minimum identity, relevance, closure, duplicate, rights, and safety gates pass.
+- Public category navigation and city/category navigation include only destinations with at least one visible Listing.
 - A Business can have multiple Business Listings. A Business Listing represents one physical location or service-area operation and owns its own NAP, categories, Claims, Listing Participation, Leads, entitlement, and call-tracking state.
 - Listing lifecycle is `draft → pending_review → published`, with reversible `suspended` and `archived` states. Publication is an explicit reviewed transition.
 - Claim lifecycle records submission, evidence, review, decision, revocation, and audit receipt. An approved Claim may create or update Listing Participation; a rejected Claim never changes public ownership.

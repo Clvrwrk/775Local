@@ -22,7 +22,7 @@ export function annualPriceWithFreeMonths(monthlyPriceCents, freeMonths) {
 export const DIRECTORY_PLANS = Object.freeze([
   {
     id: "free",
-    name: "Free",
+    name: "Free Listing",
     eyebrow: "Be findable",
     summary: "A useful local listing with the essentials neighbors need to reach you.",
     monthlyPriceCents: 0,
@@ -37,7 +37,7 @@ export const DIRECTORY_PLANS = Object.freeze([
   },
   {
     id: "basic",
-    name: "Basic",
+    name: "Owner Essentials",
     eyebrow: "Tell the full story",
     summary: "More room to explain what you do and show the work behind the name.",
     monthlyPriceCents: 1_000,
@@ -52,14 +52,14 @@ export const DIRECTORY_PLANS = Object.freeze([
   },
   {
     id: "standard",
-    name: "Standard",
+    name: "Owner Growth",
     eyebrow: "Turn visits into inquiries",
     summary: "A fuller storefront for businesses ready to generate and measure interest.",
     monthlyPriceCents: 1_500,
     annualPriceCents: 18_000,
     annualFreeMonths: 0,
     features: [
-      "Everything in Basic",
+      "Everything in Owner Essentials",
       "Up to 12 gallery photos",
       "One active offer",
       "Enhanced inquiry and listing-performance reporting",
@@ -67,7 +67,7 @@ export const DIRECTORY_PLANS = Object.freeze([
   },
   {
     id: "premium",
-    name: "Premium",
+    name: "Owner Pro",
     eyebrow: "Make the most of Local775",
     summary: "The complete future package, with the annual rate equal to ten monthly payments.",
     monthlyPriceCents: PREMIUM_MONTHLY_PRICE_CENTS,
@@ -77,7 +77,7 @@ export const DIRECTORY_PLANS = Object.freeze([
         : annualPriceWithFreeMonths(PREMIUM_MONTHLY_PRICE_CENTS, 2),
     annualFreeMonths: 2,
     features: [
-      "Everything in Standard",
+      "Everything in Owner Growth",
       "Up to 20 gallery photos",
       "A dedicated 775 tracking number and fuller reporting",
       "Eligibility for clearly labeled Sponsored placement, subject to inventory",

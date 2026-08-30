@@ -2,6 +2,19 @@
 
 This log captures settled project-level decisions that guide planning but do not independently justify an architectural decision record.
 
+## 2026-08-30 — Seed tiers and cumulative directory rollout
+
+- **Visibility:** A valid Business Listing remains public whether claimed or unclaimed. Unclaimed Listings are labeled `Unclaimed`; Listings whose information has not been checked are independently labeled `Unverified`. Claim, information status, content tier, and Featured placement are separate states.
+- **Category visibility:** Public category navigation contains only categories with at least one currently visible Listing. Empty categories and empty city/category pairs are not rendered as browse destinations.
+- **Content tiers:** `Basic`, `Standard`, and `Premium` describe free Listing content completeness, not price or ownership. Seed enrichment assigns the tier from available approved content. Photos count only when publication rights are cleared. `Featured` remains the separate paid and visibly Sponsored placement.
+- **Seed mix:** The first 100 Listings target 60 Basic, 30 Standard, and 10 Premium so each tier can be viewed. Quality floors may create an explicit shortfall; the system must not label incomplete content Premium merely to hit a quota.
+- **Later imports:** After the seed examples, newly imported unclaimed Listings enter as visible Basic/Unverified records once minimum identity, relevance, duplicate, closure, and safety checks pass. Failed or partial enrichment is retained and does not hide an otherwise valid Listing.
+- **Cumulative rounds:** Round 1 is the top 10 categories × top 10 SERP results (100). Round 2 is top 50 × top 10 (500). Round 3 is top 100 across all 21 groups × top 10 (1,000). Round 4 is top 500 across all groups × top 10 (5,000). Round 5 covers all mapped categories and all 20,219 categorized companies by the end of September 2026.
+- **Workbook count correction:** The Category Map contains 1,790 mapped category rows plus its header, not 1,791 category records. Runtime planning derives this count from data and never imports the header as a category.
+- **SERP deadline:** The existing accepted 232-category private SERP queue must reach a settled state before 2026-09-15. A short result set is retained without padding. Inaccessible domains receive at most three crawl attempts and then settle as partial evidence rather than freezing later batches.
+
+This section supersedes the earlier exact five-per-city publication mix and strict full-enrichment requirement while preserving provenance, rights, duplicate, closure, relevance, and safety controls.
+
 ## 2026-08-24 — Grill round 1
 
 - **First proof:** Demonstrate attributable merchant value and willingness to pay.

@@ -1,6 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
 import { CATEGORIES, CITIES } from "@/data/seed";
-import { fetchDirectoryListings } from "@/lib/supabase/public-directory.mjs";
+import {
+  fetchDirectoryCategories,
+  fetchDirectoryListings,
+} from "@/lib/supabase/public-directory.mjs";
 import type {
   BusinessCard,
   BusinessDetail,
@@ -17,6 +20,7 @@ type DirectoryFilters = {
   q?: string;
   slug?: string;
   featured?: boolean;
+  unclaimed?: boolean;
   limit?: number;
 };
 
@@ -34,9 +38,10 @@ const LAUNCH_CATEGORIES = new Set([
   "veterinarians",
 ]);
 
-const cities: City[] = CITIES.filter((city) => LAUNCH_CITIES.has(city.slug)).map(
-  (city, index) => ({ ...city, id: index + 1 }),
-);
+const cities: City[] = CITIES.filter((city) => LAUNCH_CITIES.has(city.slug)).map((city, index) => ({
+  ...city,
+  id: index + 1,
+}));
 const categories: Category[] = CATEGORIES.filter((category) =>
   LAUNCH_CATEGORIES.has(category.slug),
 ).map((category, index) => ({ ...category, id: index + 1 }));
@@ -70,13 +75,45 @@ export const listCities = createServerFn({ method: "GET" }).handler(async () => 
 
 export const listCategories = createServerFn({ method: "GET" }).handler(async () => categories);
 
+export const listPublishedCategories = createServerFn({ method: "GET" })
+  .validator((input?: { city?: string }) => ({ city: (input?.city ?? "").trim() }))
+  .handler(async ({ data }) => {
+    const rows = await fetchDirectoryCategories({ city: data.city });
+    return rows.map((row, index) => {
+      const known = categories.find((category) => category.slug === row.slug);
+      return {
+        id: known?.id ?? index + 1,
+        slug: row.slug,
+        name: row.name,
+        description: row.description,
+        synonyms: known?.synonyms ?? "",
+        icon: known?.icon ?? "map-pin",
+        listingCount: row.listingCount,
+      } satisfies Category;
+    });
+  });
+
 export const getCity = createServerFn({ method: "GET" })
   .validator((slug: string) => slug)
   .handler(async ({ data: slug }) => cities.find((city) => city.slug === slug) ?? null);
 
 export const getCategory = createServerFn({ method: "GET" })
   .validator((slug: string) => slug)
-  .handler(async ({ data: slug }) => categories.find((category) => category.slug === slug) ?? null);
+  .handler(async ({ data: slug }) => {
+    const visible = await fetchDirectoryCategories();
+    const row = visible.find((category) => category.slug === slug);
+    if (!row) return null;
+    const known = categories.find((category) => category.slug === slug);
+    return {
+      id: known?.id ?? 0,
+      slug: row.slug,
+      name: row.name,
+      description: row.description,
+      synonyms: known?.synonyms ?? "",
+      icon: known?.icon ?? "map-pin",
+      listingCount: row.listingCount,
+    } satisfies Category;
+  });
 
 export type SearchInput = {
   q?: string;
@@ -93,9 +130,13 @@ export const searchBusinesses = createServerFn({ method: "GET" })
     unclaimed: Boolean(input.unclaimed),
   }))
   .handler(async ({ data }) => {
-    // Claim availability is intentionally not exposed by the anonymous projection.
-    if (data.unclaimed) return [] as BusinessCard[];
-    return fetchCards({ q: data.q, city: data.city, category: data.category, limit: 100 });
+    return fetchCards({
+      q: data.q,
+      city: data.city,
+      category: data.category,
+      unclaimed: data.unclaimed,
+      limit: 100,
+    });
   });
 
 export const getBusiness = createServerFn({ method: "GET" })
@@ -114,7 +155,10 @@ export const getBusiness = createServerFn({ method: "GET" })
         name: categoryNames.get(categorySlug) ?? categorySlug,
       })),
       reviews: [] as BusinessDetail["reviews"],
-      photos: [] as BusinessDetail["photos"],
+      photos: (card as BusinessCard & { photos?: BusinessDetail["photos"] }).photos ?? [],
+      services: (card as BusinessCard & { services?: string[] }).services ?? [],
+      faqs: (card as BusinessCard & { faqs?: BusinessDetail["faqs"] }).faqs ?? [],
+      projects: (card as BusinessCard & { projects?: BusinessDetail["projects"] }).projects ?? [],
       offer: (card as BusinessCard & { offer?: BusinessDetail["offer"] }).offer ?? null,
     } satisfies BusinessDetail;
   });
@@ -123,35 +167,45 @@ export const featuredBusinesses = createServerFn({ method: "GET" }).handler(asyn
   fetchCards({ featured: true, limit: 8 }),
 );
 
+export const homeBusinesses = createServerFn({ method: "GET" }).handler(async () =>
+  fetchCards({ limit: 8 }),
+);
+
 export const submitLead = createServerFn({ method: "POST" })
-  .validator((input: {
-    businessId: number;
-    name: string;
-    phone: string;
-    email: string;
-    zip: string;
-    message: string;
-  }) => input)
+  .validator(
+    (input: {
+      businessId: number;
+      name: string;
+      phone: string;
+      email: string;
+      zip: string;
+      message: string;
+    }) => input,
+  )
   .handler(async () => ownerAccessUnavailable<{ ok: true }>());
 
 export const createListing = createServerFn({ method: "POST" })
-  .validator((input: {
-    name: string;
-    citySlug: string;
-    categorySlug: string;
-    phone: string;
-    street: string;
-    zip: string;
-    description: string;
-  }) => input)
+  .validator(
+    (input: {
+      name: string;
+      citySlug: string;
+      categorySlug: string;
+      phone: string;
+      street: string;
+      zip: string;
+      description: string;
+    }) => input,
+  )
   .handler(async () => ownerAccessUnavailable<{ slug: string }>());
 
 export const claimListing = createServerFn({ method: "POST" })
-  .validator((input: {
-    businessId: number;
-    method: "domain" | "card" | "storefront" | "vehicle";
-    filename: string;
-  }) => input)
+  .validator(
+    (input: {
+      businessId: number;
+      method: "domain" | "card" | "storefront" | "vehicle";
+      filename: string;
+    }) => input,
+  )
   .handler(async () =>
     ownerAccessUnavailable<{
       slug: string;
@@ -171,12 +225,9 @@ export const getResident = createServerFn({ method: "GET" }).handler(
 );
 
 export const saveResident = createServerFn({ method: "POST" })
-  .validator((input: {
-    displayName: string;
-    zip: string;
-    citySlug: string;
-    interests: string;
-  }) => input)
+  .validator(
+    (input: { displayName: string; zip: string; citySlug: string; interests: string }) => input,
+  )
   .handler(async () => ownerAccessUnavailable<{ ok: true }>());
 
 export const myCampaigns = createServerFn({ method: "GET" }).handler(
@@ -184,13 +235,15 @@ export const myCampaigns = createServerFn({ method: "GET" }).handler(
 );
 
 export const sendCampaign = createServerFn({ method: "POST" })
-  .validator((input: {
-    businessId: number;
-    name: string;
-    channel: "virtual" | "direct_mail";
-    citySlug: string;
-    categorySlug: string;
-    message: string;
-    includeOffer?: boolean;
-  }) => input)
+  .validator(
+    (input: {
+      businessId: number;
+      name: string;
+      channel: "virtual" | "direct_mail";
+      citySlug: string;
+      categorySlug: string;
+      message: string;
+      includeOffer?: boolean;
+    }) => input,
+  )
   .handler(async () => ownerAccessUnavailable<{ reach: number; includedOffer: string }>());

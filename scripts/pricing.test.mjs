@@ -11,7 +11,7 @@ test("directory pricing remains a future preview", () => {
   assert.equal(DIRECTORY_PRICING_STATUS, "future-preview");
 });
 
-test("approved Basic and Standard prices are exact", () => {
+test("approved owner-tool prices remain exact after separating content tier names", () => {
   const basic = DIRECTORY_PLANS.find((plan) => plan.id === "basic");
   const standard = DIRECTORY_PLANS.find((plan) => plan.id === "standard");
 
@@ -23,15 +23,18 @@ test("approved Basic and Standard prices are exact", () => {
     [standard.monthlyPriceCents, standard.annualPriceCents],
     [1_500, 18_000],
   );
+  assert.equal(basic.name, "Owner Essentials");
+  assert.equal(standard.name, "Owner Growth");
 });
 
-test("Premium stays unset until approved and annual billing gives two months free", () => {
+test("Owner Pro stays unset until approved and annual billing gives two months free", () => {
   const premium = DIRECTORY_PLANS.find((plan) => plan.id === "premium");
 
   assert.equal(PREMIUM_MONTHLY_PRICE_CENTS, null);
   assert.equal(premium.monthlyPriceCents, null);
   assert.equal(premium.annualPriceCents, null);
   assert.equal(premium.annualFreeMonths, 2);
+  assert.equal(premium.name, "Owner Pro");
   assert.equal(annualPriceWithFreeMonths(2_000, 2), 20_000);
 });
 

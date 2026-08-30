@@ -3,27 +3,28 @@ import { BusinessCardView } from "@/components/directory/business-card";
 import { SiteShell } from "@/components/layout/site-shell";
 import { categoryIcon } from "@/lib/directory/icons";
 import { robotsForListingCount } from "@/lib/directory/indexability.mjs";
-import { getCity, listCategories, searchBusinesses } from "@/lib/directory/queries";
+import { getCity, listPublishedCategories, searchBusinesses } from "@/lib/directory/queries";
 
 export const Route = createFileRoute("/nv/$city")({
   loader: async ({ params }) => {
     const [city, categories, results] = await Promise.all([
       getCity({ data: params.city }),
-      listCategories(),
+      listPublishedCategories({ data: { city: params.city } }),
       searchBusinesses({ data: { city: params.city } }),
     ]);
     if (!city) throw notFound();
     return { city, categories, results };
   },
   head: ({ loaderData, params }) => {
-    const robots = loaderData
-      ? robotsForListingCount("city", loaderData.results.length)
-      : null;
+    const robots = loaderData ? robotsForListingCount("city", loaderData.results.length) : null;
     return {
       meta: loaderData
         ? [
             { title: `Local businesses in ${loaderData.city.name}, NV | 775Directory` },
-            { name: "description", content: `Browse reviewed local business listings in ${loaderData.city.name}, Nevada.` },
+            {
+              name: "description",
+              content: `Browse reviewed local business listings in ${loaderData.city.name}, Nevada.`,
+            },
             ...(robots ? [robots] : []),
           ]
         : [],
@@ -63,7 +64,9 @@ function CityPage() {
         </div>
         <div className="mt-9 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {results.length === 0 ? (
-            <p className="rounded-[24px] border border-line bg-card p-8 text-sm leading-6 text-muted sm:col-span-2 lg:col-span-3">No reviewed listings are published in {city.name} yet.</p>
+            <p className="rounded-[24px] border border-line bg-card p-8 text-sm leading-6 text-muted sm:col-span-2 lg:col-span-3">
+              No reviewed listings are published in {city.name} yet.
+            </p>
           ) : (
             results.map((biz) => <BusinessCardView key={biz.id} biz={biz} />)
           )}

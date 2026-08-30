@@ -24,7 +24,7 @@ test("public design surfaces reject unsupported mock-directory claims", async ()
 
 test("commercial placement is disclosed and external paid links are sponsored", async () => {
   const source = await sources();
-  assert.match(source, />Sponsored</);
+  assert.match(source, />\s*Sponsored\s*</);
   assert.match(source, /sponsored noopener noreferrer/);
   assert.doesNotMatch(source, />Featured</);
 });

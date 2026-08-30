@@ -64,7 +64,9 @@ function PlanPrice({
         <p className="pb-1.5 text-sm text-muted">/ month</p>
       </div>
       <p className="mt-2 text-sm text-ink-soft">
-        {annualPriceCents === null ? "Annual rate coming soon" : `${dollars(annualPriceCents)} billed yearly`}
+        {annualPriceCents === null
+          ? "Annual rate coming soon"
+          : `${dollars(annualPriceCents)} billed yearly`}
       </p>
       {annualFreeMonths ? (
         <p className="mt-1 text-xs font-semibold uppercase tracking-[0.14em] text-gold-2">
@@ -98,8 +100,10 @@ function PricingPage() {
           <div>
             <p className="text-sm font-semibold">Nothing is for sale on this preview.</p>
             <p className="mt-1 text-sm leading-6 text-ink-soft">
-              These future plans do not change today’s listings, Claims, publication review,
-              organic rank, or Featured access. Payment will never prove ownership or verification.
+              These future plans do not change today’s listings, Claims, publication review, organic
+              rank, or Featured access. Payment will never prove ownership or verification.
+              Owner-tool plans are separate from the free Basic, Standard, and Premium content
+              tiers.
             </p>
           </div>
         </div>
@@ -122,11 +126,16 @@ function PricingPage() {
                     <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gold-2">
                       {plan.eyebrow}
                     </p>
-                    <span className="font-display text-lg font-semibold text-muted" aria-label={`Plan ${index + 1} of 4`}>
+                    <span
+                      className="font-display text-lg font-semibold text-muted"
+                      aria-label={`Plan ${index + 1} of 4`}
+                    >
                       {index + 1}/4
                     </span>
                   </div>
-                  <h2 className="mt-3 font-display text-3xl font-semibold tracking-tight">{plan.name}</h2>
+                  <h2 className="mt-3 font-display text-3xl font-semibold tracking-tight">
+                    {plan.name}
+                  </h2>
                   <p className="mt-2 min-h-20 text-sm leading-6 text-ink-soft">{plan.summary}</p>
                   <div className="my-5 border-t border-line pt-5">
                     <PlanPrice
@@ -173,13 +182,16 @@ function PricingPage() {
             </div>
             <p className="mt-3 text-sm leading-6 text-ink-soft">
               A paid plan can add richer presentation, response tools, and clearly disclosed
-              sponsored opportunities. Any Sponsored placement remains separate from organic results.
+              sponsored opportunities. Any Sponsored placement remains separate from organic
+              results.
             </p>
           </section>
           <section className="rounded-[24px] border border-line bg-card p-6">
             <div className="flex items-center gap-2 text-teal">
               <ShieldCheck className="size-5" aria-hidden="true" />
-              <h2 className="font-display text-2xl font-semibold text-ink">What paying never does</h2>
+              <h2 className="font-display text-2xl font-semibold text-ink">
+                What paying never does
+              </h2>
             </div>
             <p className="mt-3 text-sm leading-6 text-ink-soft">
               Payment never grants control of a listing, proves a business claim, purchases a

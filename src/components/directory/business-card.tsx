@@ -13,6 +13,9 @@ export function BusinessCardView({
   variant?: "sheet" | "photo";
 }) {
   const cover = biz.coverUrl || listingCover(biz.citySlug, biz.id);
+  const tierLabel = `${biz.contentTier[0].toUpperCase()}${biz.contentTier.slice(1)}`;
+  const claimLabel = biz.ownerVerified ? "Owner verified" : "Unclaimed";
+  const informationLabel = biz.verified ? "Information checked" : "Unverified";
 
   if (variant === "photo") {
     return (
@@ -27,6 +30,9 @@ export function BusinessCardView({
             alt=""
             className="size-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
           />
+          <span className="absolute left-3 top-3 rounded-full border border-white/30 bg-ink/72 px-2.5 py-1 text-[11px] font-semibold text-paper backdrop-blur-sm">
+            {tierLabel}
+          </span>
           {biz.featured ? (
             <span className="absolute right-3 top-3 rounded-full bg-gold px-2.5 py-1 text-[11px] font-semibold text-ink">
               Sponsored
@@ -37,6 +43,9 @@ export function BusinessCardView({
           <h3 className="font-medium leading-snug text-ink">{biz.name}</h3>
           <p className="mt-1 line-clamp-2 text-sm text-muted">
             {biz.tagline || `${biz.primaryCategory} in ${biz.cityName}`}
+          </p>
+          <p className="mt-2 text-[11px] font-medium text-teal">
+            {claimLabel} · {informationLabel}
           </p>
         </div>
       </Link>
@@ -56,6 +65,9 @@ export function BusinessCardView({
           Sponsored
         </span>
       ) : null}
+      <span className="absolute left-3 top-3 rounded-full border border-white/25 bg-ink/70 px-2.5 py-1 text-[11px] font-semibold text-paper backdrop-blur-sm">
+        {tierLabel}
+      </span>
       <div className="absolute inset-x-0 bottom-0 p-4 text-paper">
         <p className="text-xs font-medium uppercase tracking-wide text-paper/80">
           {biz.primaryCategory || "Local"} · {biz.cityName}
@@ -68,6 +80,9 @@ export function BusinessCardView({
             {biz.street}
           </span>
           <span className="tabular-nums">{formatPhone(biz.phone)}</span>
+          <span>
+            {claimLabel} · {informationLabel}
+          </span>
         </div>
       </div>
     </Link>

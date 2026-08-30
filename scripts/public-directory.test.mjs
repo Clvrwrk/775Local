@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
   buildDirectoryUrl,
+  fetchDirectoryCategories,
   fetchDirectoryListings,
   mapDirectoryListing,
 } from "../src/lib/supabase/public-directory.mjs";
@@ -28,6 +29,13 @@ const row = {
   published_at: "2026-08-24T20:00:00Z",
   category_slugs: ["screen-repair"],
   is_featured: false,
+  content_tier: "standard",
+  primary_category_slug: "screen-repair",
+  primary_category_name: "Screen Repair",
+  services: ["Window screens"],
+  faqs: [],
+  projects: [],
+  photo_urls: [],
   offer_title: null,
   offer_details: null,
   offer_code: null,
@@ -40,6 +48,7 @@ test("the REST query targets only the reviewed public projection", () => {
     category: "screen-repair",
     q: "screen shop",
     slug: "sparks-screen-shop",
+    unclaimed: true,
     limit: 12,
   });
 
@@ -48,6 +57,7 @@ test("the REST query targets only the reviewed public projection", () => {
   assert.equal(url.searchParams.get("city_slug"), "eq.sparks");
   assert.equal(url.searchParams.get("category_slugs"), "cs.{screen-repair}");
   assert.equal(url.searchParams.get("current_slug"), "eq.sparks-screen-shop");
+  assert.equal(url.searchParams.get("owner_verified_at"), "is.null");
   assert.equal(url.searchParams.get("limit"), "12");
   assert.doesNotMatch(url.toString(), /email|claim|lead|billing|source_payload/i);
 });
@@ -65,6 +75,43 @@ test("the public row mapper does not invent ratings, reviews, ownership, or a st
   assert.equal(listing.claimedBy, null);
   assert.equal(listing.email, undefined);
   assert.equal(listing.verified, true);
+  assert.equal(listing.contentTier, "standard");
+  assert.equal(listing.primaryCategory, "Screen Repair");
+});
+
+test("category discovery returns only non-empty database projections", async () => {
+  const requests = [];
+  const categories = await fetchDirectoryCategories({
+    env: {
+      SUPABASE_URL: "https://preview.supabase.co",
+      SUPABASE_PUBLISHABLE_KEY: "publishable-test-key",
+    },
+    city: "sparks",
+    fetchImpl: async (input) => {
+      requests.push(String(input));
+      return new Response(
+        JSON.stringify([
+          {
+            city_slug: "sparks",
+            slug: "screen-repair",
+            name: "Screen Repair",
+            description: "Repair services",
+            listing_count: 3,
+          },
+        ]),
+      );
+    },
+  });
+  assert.equal(new URL(requests[0]).pathname, "/rest/v1/directory_city_categories");
+  assert.equal(new URL(requests[0]).searchParams.get("city_slug"), "eq.sparks");
+  assert.deepEqual(categories, [
+    {
+      slug: "screen-repair",
+      name: "Screen Repair",
+      description: "Repair services",
+      listingCount: 3,
+    },
+  ]);
 });
 
 test("an unconfigured environment fails safe without a synthetic data fallback", async () => {

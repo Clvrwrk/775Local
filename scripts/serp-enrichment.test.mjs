@@ -82,18 +82,58 @@ test("receipt reconciliation excludes stale successes and superseded failures", 
   ];
 
   assert.deepEqual(summarizeCurrentSearchReceipts(search, receipts), {
+    targetResultCount: 20,
     resultCount: 20,
     evidenceCompleteCount: 18,
     failureCount: 1,
+    exhaustedFailureCount: 0,
+    retryableFailureCount: 1,
     missingReceiptCount: 1,
     invalidReceiptCount: 0,
     staleReceiptCount: 2,
     shortfall: 0,
     filterVersion: "business-controlled-domain-v10",
     filterVersionAccepted: true,
+    completionStatus: "pending",
     complete: false,
+    partial: false,
     blocked: false,
   });
+});
+
+test("shortfalls and exhausted crawls settle as partial data without padding", () => {
+  const results = [
+    { domain: "complete.example", url: "https://complete.example/" },
+    { domain: "unavailable.example", url: "https://unavailable.example/" },
+  ];
+  const summary = summarizeCurrentSearchReceipts(
+    {
+      filterVersion: "business-controlled-domain-v10",
+      targetResultCount: 10,
+      shortfall: 8,
+      results,
+    },
+    [
+      {
+        reviewStatus: "private_candidate",
+        serp: results[0],
+        crawl: { pageCount: 1, attemptCount: 1 },
+        sourcePages: [{ url: results[0].url }],
+      },
+      {
+        reviewStatus: "crawl_failed",
+        serp: results[1],
+        crawl: { pageCount: 0, attemptCount: 3 },
+      },
+    ],
+    { maxCrawlAttempts: 3 },
+  );
+
+  assert.equal(summary.complete, true);
+  assert.equal(summary.partial, true);
+  assert.equal(summary.completionStatus, "complete_with_partial_data");
+  assert.equal(summary.exhaustedFailureCount, 1);
+  assert.equal(summary.shortfall, 8);
 });
 
 test("same-domain evidence for a different result URL stays stale", () => {
@@ -159,6 +199,16 @@ test("DataForSEO retries and terminal task failures are appended to the provider
   assert.match(source, /category_search_task_failure/);
   assert.match(source, /dataforseoTaskId: task\?\.id \?\? null/);
   assert.match(source, /dataforseoCostUsd: task\?\.cost == null \? null : Number\(task\.cost\)/);
+});
+
+test("same-filter search retries archive the prior receipt before replacement", async () => {
+  const source = await readFile(new URL("./serp-enrichment.mjs", import.meta.url), "utf8");
+  assert.match(source, /superseded-searches/);
+  assert.match(source, /await archiveSearchReceipt\(category, prior\)/);
+  assert.ok(
+    source.indexOf("await archiveSearchReceipt(category, prior)") <
+      source.indexOf("const [serp, tavilyResult, exaResult]"),
+  );
 });
 
 test("SERP query aliases are explicit, unique, and bounded", () => {
