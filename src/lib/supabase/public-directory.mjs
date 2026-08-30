@@ -118,7 +118,7 @@ export function mapDirectoryListing(row, names = {}) {
     description: String(row.description ?? ""),
     phone: String(row.phone_e164 ?? ""),
     street: row.street_address ? String(row.street_address) : "Service area",
-    zip: String(row.postal_code),
+    zip: String(row.postal_code ?? ""),
     rating: null,
     reviewCount: null,
     hours: "Call or visit the business website for current hours.",
