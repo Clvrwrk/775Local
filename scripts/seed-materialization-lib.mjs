@@ -27,7 +27,7 @@ function about(pages, fallback) {
     for (const value of paragraphs(page.markdown)) {
       if (value.length < 120 || value.length > 900) continue;
       if (
-        /privacy|terms|cookie|testimonial|all rights reserved|accessing our website|information about you|submit email address/i.test(
+        /privacy|terms|cookie|testimonial|all rights reserved|accessing our website|information about you|submit email address|no representations as to accuracy|all information is provided/i.test(
           value,
         )
       )
@@ -52,7 +52,7 @@ function services(pages) {
       const value = clean(line.replace(/^#{2,4}\s+|^[-*]\s+/, ""));
       if (value.length < 4 || value.length > 80 || reject.test(value)) continue;
       if (
-        /privacy|cookie|financing|coupon|career|employment|testimonial|toggle|scroll to top|business hours|language spoken|insurance|^address$/i.test(
+        /privacy|cookie|financing|coupon|career|employment|testimonial|toggle|scroll to top|business hours|language spoken|insurance|^address$|typed the web address|page you were looking for|refresh button|go back to homepage/i.test(
           value,
         )
       )
@@ -209,6 +209,7 @@ export async function buildSerpSeed(root) {
     let selected = 0;
     for (const result of search.results) {
       if (used.has(result.domain)) continue;
+      if (!String(result.url).startsWith("https://")) continue;
       let receipt = null;
       try {
         receipt = JSON.parse(
