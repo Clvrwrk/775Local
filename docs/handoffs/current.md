@@ -2,12 +2,24 @@
 
 **Project:** 775 Directory (Local775)
 **Repo:** https://github.com/Clvrwrk/775Local.git
-**Production URL:** not yet deployed; approved canonical target is https://775directory.com
-**Date:** 2026-08-26
-**Agent:** Project Lead / Lead Orchestrator
-**Reason:** User-requested end of session
+**Production URL:** https://775directory.com
+**Date:** 2026-08-30
+**Agent:** Local775 nightly SERP enrichment
+**Reason:** Bounded CLE-104 batch continuation
 
 ---
+
+## 2026-08-30 — CLE-104 batch-01 bounded retry
+
+- **Receipt:** `docs/CLE-104-SERP-ENRICHMENT-BATCH-01-2026-08-30.md`; private artifacts remain under `/Users/chussey/Library/CloudStorage/Dropbox-AIA4/Cleverwork Main/Local775Directory/serp-enrichment`.
+- **Bounded outcome:** Screen Repair was re-searched under accepted filter v10; DataForSEO plus Exa/Tavily retained 13 eligible domains and preserved a seven-result source shortfall without padding. Firecrawl retried the ten current failures, and all ten returned zero pages with retained job IDs and zero measured credits.
+- **Batch state:** 393 current private candidates, 383 evidence-complete, ten current failures, 16 completed categories, four pending categories, and zero terminal blocked categories. Pending priorities remain 1, 7, 10, and 20. Do not advance to batch 02.
+- **Provider accounting:** this run appended 11 ledger events: one six-task Screen Repair search totaling $0.0660 DataForSEO, $0.0070 Exa, one Tavily corroboration request with no exposed cost/credits, and ten zero-page Firecrawl failures. Cumulative known batch-01 accounting is $1.1650 DataForSEO plus four unavailable pre-fix attempt costs, $0.3920 Exa, and 56 Tavily requests. The current-filter Firecrawl lineage is 137 events with 1,773 pages, 60 cap flags, and 1,780 measured credits; the full append-only history also retains 22 superseded filter-v2 events.
+- **Durability correction:** same-filter searches previously replaced the prior current search JSON without archival. The August 29 ranked-result payload cannot be reconstructed exactly, although its provider tasks, costs, retries, and counts remain in the ledger and receipt. The runner now archives every replaceable search receipt before provider calls and retains same-filter retries under `superseded-searches/`.
+- **Verification:** 109/109 Node 24 tests, typecheck, lint, secret scan, supported-file Prettier, diff checks, and the deterministic Node 24 production build pass.
+- **Effects:** no Listing review/selection/publication, Supabase write, deployment, DNS change, external message/call beyond required Linear accounting, payment, or Production effect occurred.
+
+**Resume here:** rerun the same fixed-window command. It must remain in batch 01 and retry only current failures for priorities 1, 7, 10, and 20. Screen Repair may become terminal with a seven-result source shortfall only after all 13 retained domains have valid evidence. Do not pad, advance, select, publish, write Supabase, or deploy.
 
 ## 2026-08-29 — CLE-104 batch-01 user-directed continuation
 

@@ -69,6 +69,7 @@ const batchId = `batch-${String(Math.ceil((batch[0]?.priority ?? 1) / batchSize)
 const batchRoot = join(outputRoot, batchId);
 const listingsRoot = join(batchRoot, "listings");
 const supersededListingsRoot = join(batchRoot, "superseded-listings");
+const supersededSearchesRoot = join(batchRoot, "superseded-searches");
 await mkdir(listingsRoot, { recursive: true });
 
 const atomicJson = async (path, value) => {
@@ -89,6 +90,19 @@ const exists = async (path) =>
     () => true,
     () => false,
   );
+const archiveSearchReceipt = async (category, prior) => {
+  await mkdir(supersededSearchesRoot, { recursive: true });
+  const fingerprint = createHash("sha256").update(JSON.stringify(prior)).digest("hex").slice(0, 16);
+  const observedAt = String(prior.researchedAt ?? prior.revalidatedAt ?? "unknown-time").replace(
+    /[^0-9A-Za-z_-]/g,
+    "-",
+  );
+  const archivePath = join(
+    supersededSearchesRoot,
+    `${category.slug}-search--${observedAt}--${fingerprint}.json`,
+  );
+  if (!(await exists(archivePath))) await atomicJson(archivePath, prior);
+};
 const sleep = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
 const authorization = () =>
   `Basic ${Buffer.from(`${process.env.DATAFORSEO_LOGIN}:${process.env.DATAFORSEO_PASSWORD}`).toString("base64")}`;
@@ -288,6 +302,7 @@ async function runSearch() {
     if (await exists(path)) {
       const prior = JSON.parse(await readFile(path, "utf8"));
       if (prior.filterVersion === FILTER_VERSION && prior.shortfall === 0) continue;
+      await archiveSearchReceipt(category, prior);
       if (prior.filterVersion && prior.filterVersion !== FILTER_VERSION) {
         const archivePath = join(batchRoot, `${category.slug}-search.${prior.filterVersion}.json`);
         if (!(await exists(archivePath))) await atomicJson(archivePath, prior);

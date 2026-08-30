@@ -161,6 +161,16 @@ test("DataForSEO retries and terminal task failures are appended to the provider
   assert.match(source, /dataforseoCostUsd: task\?\.cost == null \? null : Number\(task\.cost\)/);
 });
 
+test("same-filter search retries archive the prior receipt before replacement", async () => {
+  const source = await readFile(new URL("./serp-enrichment.mjs", import.meta.url), "utf8");
+  assert.match(source, /superseded-searches/);
+  assert.match(source, /await archiveSearchReceipt\(category, prior\)/);
+  assert.ok(
+    source.indexOf("await archiveSearchReceipt(category, prior)") <
+      source.indexOf("const [serp, tavilyResult, exaResult]"),
+  );
+});
+
 test("SERP query aliases are explicit, unique, and bounded", () => {
   assert.deepEqual(
     categorySerpQueries({
