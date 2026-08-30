@@ -4,7 +4,7 @@ import { SiteShell } from "@/components/layout/site-shell";
 import { getCategory, getCity, searchBusinesses } from "@/lib/directory/queries";
 import { robotsForListingCount } from "@/lib/directory/indexability.mjs";
 
-export const Route = createFileRoute("/nv/$city/$category")({
+export const Route = createFileRoute("/nv_/$city/$category")({
   loader: async ({ params }) => {
     const [city, category, results] = await Promise.all([
       getCity({ data: params.city }),
