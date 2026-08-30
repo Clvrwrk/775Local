@@ -31,13 +31,16 @@ const expectedOutputRoot =
 const expectedQueuePath = `${expectedOutputRoot}/category-queue.json`;
 const stage = args.get("--stage") ?? "all";
 const batchSize = Number(args.get("--batch-size") ?? 20);
+const maxCrawlAttempts = Number(args.get("--max-crawl-attempts") ?? 3);
 if (!queuePath || !outputRoot || !["search", "crawl", "all", "reconcile"].includes(stage)) {
   throw new Error(
-    "usage: --queue PATH --output PATH [--stage search|crawl|all|reconcile] [--batch-size 1..20]",
+    "usage: --queue PATH --output PATH [--stage search|crawl|all|reconcile] [--batch-size 1..20] [--max-crawl-attempts 1..5]",
   );
 }
 if (!Number.isInteger(batchSize) || batchSize < 1 || batchSize > 20)
   throw new Error("invalid batch size");
+if (!Number.isInteger(maxCrawlAttempts) || maxCrawlAttempts < 1 || maxCrawlAttempts > 5)
+  throw new Error("invalid max crawl attempts");
 if (queuePath !== expectedQueuePath || outputRoot !== expectedOutputRoot)
   throw new Error("queue and output must use the approved Local775 enrichment paths");
 
@@ -48,6 +51,7 @@ const progress = await readFile(progressPath, "utf8").then(JSON.parse, () => ({
 }));
 const completedPriorities = new Set(progress.completedPriorities ?? []);
 const blockedPriorities = new Set(progress.blockedPriorities ?? []);
+const partialPriorities = new Set(progress.partialPriorities ?? []);
 const effectiveQueue = queueReceipt.queue.map((entry) => ({
   ...entry,
   status:
@@ -69,6 +73,7 @@ const batchId = `batch-${String(Math.ceil((batch[0]?.priority ?? 1) / batchSize)
 const batchRoot = join(outputRoot, batchId);
 const listingsRoot = join(batchRoot, "listings");
 const supersededListingsRoot = join(batchRoot, "superseded-listings");
+const supersededSearchesRoot = join(batchRoot, "superseded-searches");
 await mkdir(listingsRoot, { recursive: true });
 
 const atomicJson = async (path, value) => {
@@ -89,6 +94,19 @@ const exists = async (path) =>
     () => true,
     () => false,
   );
+const archiveSearchReceipt = async (category, prior) => {
+  await mkdir(supersededSearchesRoot, { recursive: true });
+  const fingerprint = createHash("sha256").update(JSON.stringify(prior)).digest("hex").slice(0, 16);
+  const observedAt = String(prior.researchedAt ?? prior.revalidatedAt ?? "unknown-time").replace(
+    /[^0-9A-Za-z_-]/g,
+    "-",
+  );
+  const archivePath = join(
+    supersededSearchesRoot,
+    `${category.slug}-search--${observedAt}--${fingerprint}.json`,
+  );
+  if (!(await exists(archivePath))) await atomicJson(archivePath, prior);
+};
 const sleep = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
 const authorization = () =>
   `Basic ${Buffer.from(`${process.env.DATAFORSEO_LOGIN}:${process.env.DATAFORSEO_PASSWORD}`).toString("base64")}`;
@@ -114,7 +132,12 @@ async function fetchJson(url, options, label) {
   return body;
 }
 
-async function dataForSeoTask(category, city, query, attempt = 1) {
+function targetResultCount(category) {
+  const requested = Number(category?.targetListings ?? 20);
+  return Number.isInteger(requested) ? Math.min(20, Math.max(1, requested)) : 20;
+}
+
+async function dataForSeoTask(category, city, query, limit, attempt = 1) {
   if (!process.env.DATAFORSEO_LOGIN || !process.env.DATAFORSEO_PASSWORD)
     throw new Error("DataForSEO credentials are unavailable");
   const body = await fetchJson(
@@ -155,7 +178,7 @@ async function dataForSeoTask(category, city, query, attempt = 1) {
       status: "retrying",
     });
     await sleep(2000 * attempt);
-    return dataForSeoTask(category, city, query, attempt + 1);
+    return dataForSeoTask(category, city, query, limit, attempt + 1);
   }
   if (task?.status_code !== 20000) {
     await appendLedger({
@@ -186,22 +209,23 @@ async function dataForSeoTask(category, city, query, attempt = 1) {
       items
         .map((item) => ({ ...item, serpCity: city }))
         .filter((item) => isCategoryRelevantResult(category, item)),
-      20,
+      limit,
     ),
   };
 }
 
 async function dataForSeo(category) {
+  const limit = targetResultCount(category);
   const tasks = [];
   let results = [];
   for (const query of categorySerpQueries(category)) {
     for (const city of ["Reno", "Sparks"]) {
-      if (results.length >= 20) break;
-      const task = await dataForSeoTask(category, city, query);
+      if (results.length >= limit) break;
+      const task = await dataForSeoTask(category, city, query, limit);
       tasks.push(task);
-      results = chooseBusinessResults([...results, ...task.results], 20);
+      results = chooseBusinessResults([...results, ...task.results], limit);
     }
-    if (results.length >= 20) break;
+    if (results.length >= limit) break;
   }
   return {
     tasks: tasks.map(({ taskId, costUsd, checkUrl, query, city }) => ({
@@ -284,15 +308,17 @@ async function exa(category) {
 
 async function runSearch() {
   for (const category of batch) {
+    const target = targetResultCount(category);
     const path = join(batchRoot, `${category.slug}-search.json`);
     if (await exists(path)) {
       const prior = JSON.parse(await readFile(path, "utf8"));
-      if (prior.filterVersion === FILTER_VERSION && prior.shortfall === 0) continue;
+      if (prior.filterVersion === FILTER_VERSION) continue;
+      await archiveSearchReceipt(category, prior);
       if (prior.filterVersion && prior.filterVersion !== FILTER_VERSION) {
         const archivePath = join(batchRoot, `${category.slug}-search.${prior.filterVersion}.json`);
         if (!(await exists(archivePath))) await atomicJson(archivePath, prior);
-        const revalidatedResults = revalidateSearchResults(category, prior.results, 20);
-        if (revalidatedResults.length === 20 && Number(prior.shortfall ?? 0) === 0) {
+        const revalidatedResults = revalidateSearchResults(category, prior.results, target);
+        if (revalidatedResults.length === target && Number(prior.shortfall ?? 0) === 0) {
           const revalidatedAt = new Date().toISOString();
           await atomicJson(path, {
             ...prior,
@@ -349,11 +375,12 @@ async function runSearch() {
         "Google rank is DataForSEO mobile organic rank; directories and social/search platforms are excluded.",
         "Provider results are snapshots, not a registry.",
       ],
+      targetResultCount: target,
       results: serp.results.map((item) => ({
         ...item,
         corroboratedBySemanticSearch: corroboratingDomains.has(item.domain),
       })),
-      shortfall: Math.max(0, 20 - serp.results.length),
+      shortfall: Math.max(0, target - serp.results.length),
     };
     await atomicJson(path, receipt);
     await appendLedger({
@@ -455,10 +482,17 @@ async function crawlResult(category, result) {
     listingsRoot,
     `${category.slug}--${result.domain.replace(/[^a-z0-9.-]/g, "-")}.json`,
   );
+  let prior = null;
   if (await exists(path)) {
-    const prior = JSON.parse(await readFile(path, "utf8"));
+    prior = JSON.parse(await readFile(path, "utf8"));
     if (
       isEvidenceCompleteReceipt(prior) &&
+      normalizeResultUrl(prior.serp?.url) === normalizeResultUrl(result.url)
+    )
+      return;
+    if (
+      prior.reviewStatus === "crawl_failed" &&
+      Number(prior.crawl?.attemptCount ?? 1) >= maxCrawlAttempts &&
       normalizeResultUrl(prior.serp?.url) === normalizeResultUrl(result.url)
     )
       return;
@@ -475,6 +509,11 @@ async function crawlResult(category, result) {
       if (!(await exists(archivePath))) await atomicJson(archivePath, prior);
     }
   }
+  const attemptCount =
+    prior?.reviewStatus === "crawl_failed" &&
+    normalizeResultUrl(prior.serp?.url) === normalizeResultUrl(result.url)
+      ? Number(prior.crawl?.attemptCount ?? 1) + 1
+      : 1;
   let crawl;
   try {
     crawl = await collectFirecrawlPages(result.url);
@@ -491,6 +530,7 @@ async function crawlResult(category, result) {
       serp: result,
       crawl: {
         provider: "firecrawl",
+        attemptCount,
         jobId: crawl.jobId,
         pageLimit: 25,
         pageCount: crawl.pages.length,
@@ -526,6 +566,7 @@ async function crawlResult(category, result) {
       firecrawlJobId: crawl.jobId,
       firecrawlCreditsUsed: crawl.creditsUsed,
       pageCount: crawl.pages.length,
+      attemptCount,
       status: "complete",
     });
     process.stdout.write(`${category.priority}\t${result.domain}\t${crawl.pages.length} pages\n`);
@@ -543,6 +584,7 @@ async function crawlResult(category, result) {
       serp: result,
       crawl: {
         provider: "firecrawl",
+        attemptCount,
         jobId: crawl?.jobId ?? error.firecrawlJobId ?? null,
         pageLimit: 25,
         pageCount: crawl?.pages.length ?? 0,
@@ -564,6 +606,7 @@ async function crawlResult(category, result) {
       status: "failed",
       error: failureMessage,
       failureRecordedAt,
+      attemptCount,
     });
     process.stderr.write(`${category.priority}\t${result.domain}\tFAILED ${failureMessage}\n`);
   }
@@ -595,6 +638,7 @@ if (["crawl", "all", "reconcile"].includes(stage)) {
     );
     const receiptSummary = summarizeCurrentSearchReceipts(search, receipts, {
       expectedFilterVersion: FILTER_VERSION,
+      maxCrawlAttempts,
     });
     categorySummaries.push({
       priority: category.priority,
@@ -606,12 +650,15 @@ if (["crawl", "all", "reconcile"].includes(stage)) {
     else completedPriorities.delete(category.priority);
     if (receiptSummary.blocked) blockedPriorities.add(category.priority);
     else blockedPriorities.delete(category.priority);
+    if (receiptSummary.partial) partialPriorities.add(category.priority);
+    else partialPriorities.delete(category.priority);
   }
   await atomicJson(progressPath, {
     schemaVersion: 1,
     updatedAt: new Date().toISOString(),
     completedPriorities: [...completedPriorities].sort((a, b) => a - b),
     blockedPriorities: [...blockedPriorities].sort((a, b) => a - b),
+    partialPriorities: [...partialPriorities].sort((a, b) => a - b),
     completedCategoryCount: completedPriorities.size,
     blockedCategoryCount: blockedPriorities.size,
     categoryCount: queueReceipt.categoryCount,

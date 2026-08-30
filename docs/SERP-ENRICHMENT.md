@@ -5,7 +5,7 @@ This workflow creates private research candidates. It never selects, publishes, 
 ## Evidence contract
 
 - The queue is derived from the licensed Local775 workbook. A category must have at least 20 source rows, except for the explicitly accepted launch categories.
-- Each run processes at most 20 pending categories.
+- Each run processes at most 20 pending categories. A queue entry may request 10 or 20 retained results; the runner never pads a short result set.
 - DataForSEO is the Google mobile-organic ranking source. The runner requests depth 100, removes directory, marketplace, editorial-listicle, social, search, synthetic reserved-phone, and duplicate domains, applies bounded category relevance rules, and retains the first 20 business-controlled domains. Screen Repair requires both explicit Reno/Sparks/Northern Nevada evidence and explicit repair, rescreening, fixing, damage, or screen-replacement language; it rejects phone/device repair, auto glass, fireplace/chimney screens, generic or non-local service pages, generic window replacement, known device-repair hosts, manufacturer-owned distributor pages, unbranded lead-form sites, and new-screen-only sellers.
 - Tavily and Exa provide category-level corroboration. Their results never replace DataForSEO rank.
 - Firecrawl recursively crawls each retained domain with robots respected, same-domain links only, discovery depth 3, query parameters ignored, and a hard 25-page cap. A receipt records when the cap is hit.
@@ -17,7 +17,7 @@ Large and potentially sensitive raw artifacts stay outside Git at:
 
 `/Users/chussey/Library/CloudStorage/Dropbox-AIA4/Cleverwork Main/Local775Directory/serp-enrichment`
 
-The root contains the immutable category queue, resumable `progress.json`, and append-only `provider-ledger.jsonl`. The ledger preserves each future search/crawl cost or credit event, including DataForSEO task retries and terminal failures, crawl failures, zero-cost filter revalidations, and unavailable-cost flags, even when a category receipt is replaced by a retry. Superseded search receipts are archived before replacement. A prior search receipt may be promoted to a new filter version without a provider call only when every retained result still passes the current filter and the receipt already contains 20 results with no shortfall; otherwise the category is searched again. Each fixed 20-category batch contains provider search receipts, one JSON crawl/evidence receipt per candidate, and a summary. Completion counts only evidence receipts for domains in the current search receipt; stale or superseded domains cannot satisfy the target. Failed crawls are retried inside their original batch; completed candidates are idempotently skipped. An evidence-backed SERP shortfall becomes a terminal blocked category instead of looping forever or being padded.
+The root contains the immutable category queue, resumable `progress.json`, and append-only `provider-ledger.jsonl`. The ledger preserves each future search/crawl cost or credit event, including DataForSEO task retries and terminal failures, crawl failures, zero-cost filter revalidations, and unavailable-cost flags, even when a category receipt is replaced by a retry. Superseded search receipts are archived before replacement; repeated searches under the same accepted filter are retained in the batch's `superseded-searches/` directory with timestamp-and-content-hash filenames. An accepted current-filter search receipt is reused even when it contains a shortfall, preventing paid searches from looping in an attempt to manufacture unavailable results. Each fixed 20-category batch contains provider search receipts, one JSON crawl/evidence receipt per candidate, and a summary. Completion counts only evidence receipts for domains in the current search receipt; stale or superseded domains cannot satisfy the target. Failed crawls are retried at most three times; an exhausted failure and any honest result shortfall settle as `complete_with_partial_data`. Completed and exhausted candidates are idempotently skipped. Partial evidence can produce a Basic/Unverified Listing after the separate publication safety gate; it is never silently discarded or mislabeled as verified.
 
 Before resuming a paused retry batch, rebuild the checkpoint and summary from the current-domain joins without calling a provider:
 
@@ -43,7 +43,7 @@ npm run enrich:serp -- \
   --batch-size 20
 ```
 
-The process fails closed when credentials or provider responses are unavailable. It does not lower the 20-result target, broaden crawl scope, or publish partial data to make a batch appear complete.
+The process fails closed when credentials or provider responses are unavailable. It does not lower a queue entry's result target, broaden crawl scope, pad shortfalls, or publish directly. `complete_with_partial_data` means the private evidence attempt is settled, not that a Listing was reviewed, verified, or published.
 
 ## Accounting
 
