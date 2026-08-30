@@ -10,6 +10,7 @@ alter table app.business_listings add constraint business_listings_location_comp
 create table app.serp_seed_publication_batches (
   id uuid primary key default extensions.gen_random_uuid(),
   receipt_sha256 text not null unique check (receipt_sha256 ~ '^[a-f0-9]{64}$'),
+  payload_fingerprint text not null check (payload_fingerprint ~ '^[a-f0-9]{64}$'),
   filter_version text not null check (filter_version = 'business-controlled-domain-v10'),
   listing_count integer not null check (listing_count = 100),
   category_count integer not null check (category_count = 10),
@@ -81,6 +82,11 @@ declare
   bad_tier_count_value integer;
   receipt_sha_value text := seed ->> 'receiptSha256';
   filter_version_value text := seed ->> 'filterVersion';
+  payload_fingerprint_value text := encode(
+    extensions.digest((seed -> 'listings')::text, 'sha256'),
+    'hex'
+  );
+  stored_payload_fingerprint_value text;
 begin
   if jsonb_typeof(seed) <> 'object'
      or jsonb_typeof(seed -> 'listings') <> 'array'
@@ -94,10 +100,15 @@ begin
     raise exception 'stale SERP seed filter';
   end if;
 
-  select id into batch_id_value
+  perform pg_advisory_xact_lock(hashtextextended(receipt_sha_value, 0));
+
+  select id, payload_fingerprint into batch_id_value, stored_payload_fingerprint_value
   from app.serp_seed_publication_batches
   where receipt_sha256 = receipt_sha_value;
   if batch_id_value is not null then
+    if stored_payload_fingerprint_value <> payload_fingerprint_value then
+      raise exception 'SERP seed receipt hash conflicts with a different payload';
+    end if;
     return jsonb_build_object(
       'batchId', batch_id_value,
       'receiptSha256', receipt_sha_value,
@@ -193,6 +204,7 @@ begin
 
   insert into app.serp_seed_publication_batches (
     receipt_sha256,
+    payload_fingerprint,
     filter_version,
     listing_count,
     category_count,
@@ -200,6 +212,7 @@ begin
     partial_evidence_count
   ) values (
     receipt_sha_value,
+    payload_fingerprint_value,
     filter_version_value,
     listing_count_value,
     category_count_value,

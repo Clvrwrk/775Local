@@ -51,6 +51,11 @@ test("seed publication stays exact, unclaimed, unverified, and idempotent", asyn
   assert.match(sql, /information_checked_at, owner_verified_at, published_at/);
   assert.match(sql, /'published', null, null, statement_timestamp\(\)/);
   assert.match(sql, /where receipt_sha256 = receipt_sha_value/);
+  assert.match(
+    sql,
+    /payload_fingerprint_value <> stored_payload_fingerprint_value|stored_payload_fingerprint_value <> payload_fingerprint_value/,
+  );
+  assert.match(sql, /pg_advisory_xact_lock\(hashtextextended\(receipt_sha_value, 0\)\)/);
   assert.match(sql, /'idempotent', true/);
   assert.match(sql, /hide_street,[\s\S]*true,/);
   assert.match(
