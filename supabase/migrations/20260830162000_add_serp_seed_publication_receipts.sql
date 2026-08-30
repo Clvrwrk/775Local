@@ -36,6 +36,9 @@ create table app.serp_seed_publication_receipts (
   unique (batch_id, category_slug, domain)
 );
 
+create index serp_seed_publication_receipts_category_idx
+  on app.serp_seed_publication_receipts (category_slug);
+
 alter table app.serp_seed_publication_batches enable row level security;
 alter table app.serp_seed_publication_receipts enable row level security;
 revoke all on app.serp_seed_publication_batches, app.serp_seed_publication_receipts
