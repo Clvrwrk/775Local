@@ -1,11 +1,13 @@
 begin;
 
 alter table app.business_listings alter column postal_code drop not null;
-alter table app.business_listings drop constraint business_listings_postal_code_check;
+alter table app.business_listings drop constraint if exists business_listings_postal_code_check;
 alter table app.business_listings add constraint business_listings_postal_code_check
-  check (postal_code is null or postal_code ~ '^89[0-9]{3}$');
+  check (postal_code is null or postal_code ~ '^89[0-9]{3}$') not valid;
+alter table app.business_listings validate constraint business_listings_postal_code_check;
 alter table app.business_listings add constraint business_listings_location_completeness_check
-  check (is_service_area or postal_code is not null);
+  check (is_service_area or postal_code is not null) not valid;
+alter table app.business_listings validate constraint business_listings_location_completeness_check;
 
 create table app.serp_seed_publication_batches (
   id uuid primary key default extensions.gen_random_uuid(),
@@ -86,6 +88,7 @@ declare
     extensions.digest((seed -> 'listings')::text, 'sha256'),
     'hex'
   );
+  computed_receipt_sha_value text;
   stored_payload_fingerprint_value text;
 begin
   if jsonb_typeof(seed) <> 'object'
@@ -95,6 +98,29 @@ begin
   end if;
   if receipt_sha_value is null or receipt_sha_value !~ '^[a-f0-9]{64}$' then
     raise exception 'invalid SERP seed receipt hash';
+  end if;
+  select encode(
+    extensions.digest(
+      string_agg(
+        concat_ws(
+          '|',
+          coalesce(item ->> 'domain', ''),
+          coalesce(item ->> 'slug', ''),
+          coalesce(item ->> 'categorySlug', ''),
+          coalesce(item ->> 'serpRank', ''),
+          coalesce(item ->> 'contentTier', ''),
+          coalesce(item ->> 'evidenceStatus', ''),
+          coalesce(item ->> 'sourceCheckedAt', '')
+        ),
+        E'\n' order by ordinal
+      ),
+      'sha256'
+    ),
+    'hex'
+  ) into computed_receipt_sha_value
+  from jsonb_array_elements(seed -> 'listings') with ordinality as listing(item, ordinal);
+  if receipt_sha_value <> computed_receipt_sha_value then
+    raise exception 'SERP seed receipt hash does not match its normalized Listing manifest';
   end if;
   if filter_version_value <> 'business-controlled-domain-v10' then
     raise exception 'stale SERP seed filter';
@@ -173,7 +199,8 @@ begin
        or item ->> 'slug' !~ '^[a-z0-9]+(?:-[a-z0-9]+)*$'
        or item ->> 'citySlug' not in ('reno', 'sparks')
        or (item ->> 'postalCode' is not null and item ->> 'postalCode' !~ '^89[0-9]{3}$')
-       or (coalesce((item ->> 'isServiceArea')::boolean, false) = false
+       or jsonb_typeof(item -> 'isServiceArea') is distinct from 'boolean'
+       or ((item ->> 'isServiceArea')::boolean = false
            and item ->> 'postalCode' is null)
        or jsonb_typeof(item -> 'services') <> 'array'
        or jsonb_typeof(item -> 'faqs') <> 'array'

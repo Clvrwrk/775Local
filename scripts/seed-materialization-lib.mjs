@@ -147,6 +147,23 @@ function slug(domain) {
     .replace(/^-|-$/g, "");
 }
 
+function seedReceipt(listings) {
+  const manifest = listings
+    .map((row) =>
+      [
+        row.domain,
+        row.slug,
+        row.categorySlug,
+        row.serpRank,
+        row.contentTier,
+        row.evidenceStatus,
+        row.sourceCheckedAt,
+      ].join("|"),
+    )
+    .join("\n");
+  return createHash("sha256").update(manifest).digest("hex");
+}
+
 function quality(row) {
   const modules = {
     description: row.description.length >= 120,
@@ -201,6 +218,7 @@ export async function buildSerpSeed(root) {
     10,
   );
   const used = new Set();
+  const usedSlugs = new Set();
   const rows = [];
   for (const category of queue) {
     const search = JSON.parse(await readFile(join(batch, `${category.slug}-search.json`), "utf8"));
@@ -209,6 +227,7 @@ export async function buildSerpSeed(root) {
     let selected = 0;
     for (const result of search.results) {
       if (used.has(result.domain)) continue;
+      if (usedSlugs.has(slug(result.domain))) continue;
       if (!String(result.url).startsWith("https://")) continue;
       let receipt = null;
       try {
@@ -248,6 +267,7 @@ export async function buildSerpSeed(root) {
         sourceUrls: (receipt?.evidence?.sourceUrls ?? [result.url]).slice(0, 10),
       };
       used.add(result.domain);
+      usedSlugs.add(row.slug);
       rows.push(row);
       selected += 1;
       if (selected === 10) break;
@@ -256,6 +276,6 @@ export async function buildSerpSeed(root) {
       throw new Error(`${category.slug} produced ${selected} unique candidates.`);
   }
   const listings = assignMaterializedTiers(rows);
-  const receiptSha256 = createHash("sha256").update(JSON.stringify(listings)).digest("hex");
+  const receiptSha256 = seedReceipt(listings);
   return { schemaVersion: 1, filterVersion: SEED_FILTER_VERSION, receiptSha256, listings };
 }
