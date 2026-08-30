@@ -30,10 +30,12 @@ function PlanPrice({
   monthlyPriceCents,
   annualPriceCents,
   annualFreeMonths,
+  onboardingPriceCents,
 }: {
   monthlyPriceCents: number | null;
   annualPriceCents: number | null;
   annualFreeMonths: number;
+  onboardingPriceCents?: number;
 }) {
   if (monthlyPriceCents === null) {
     return (
@@ -68,6 +70,11 @@ function PlanPrice({
           ? "Annual rate coming soon"
           : `${dollars(annualPriceCents)} billed yearly`}
       </p>
+      {onboardingPriceCents ? (
+        <p className="mt-1 text-xs font-semibold uppercase tracking-[0.14em] text-gold-2">
+          Plus {dollars(onboardingPriceCents)} one-time onboarding
+        </p>
+      ) : null}
       {annualFreeMonths ? (
         <p className="mt-1 text-xs font-semibold uppercase tracking-[0.14em] text-gold-2">
           {annualFreeMonths} months free annually
@@ -110,15 +117,15 @@ function PricingPage() {
 
         <div className="relative mt-12">
           <div className="absolute left-[12.5%] right-[12.5%] top-4 hidden border-t border-dashed border-sage/60 lg:block" />
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-5">
             {DIRECTORY_PLANS.map((plan, index) => {
-              const premium = plan.id === "premium";
+              const emphasis = plan.id === "premium" || plan.id === "featured";
               return (
                 <article
                   key={plan.id}
                   className={cn(
                     "relative flex min-h-full flex-col rounded-[26px] border bg-card p-5 shadow-[0_14px_38px_rgba(28,26,22,0.07)]",
-                    premium ? "border-gold/70" : "border-line",
+                    emphasis ? "border-gold/70" : "border-line",
                   )}
                 >
                   <div className="absolute -top-2 left-1/2 z-10 hidden size-5 -translate-x-1/2 rounded-full border-4 border-paper bg-sage lg:block" />
@@ -128,9 +135,9 @@ function PricingPage() {
                     </p>
                     <span
                       className="font-display text-lg font-semibold text-muted"
-                      aria-label={`Plan ${index + 1} of 4`}
+                      aria-label={`Plan ${index + 1} of ${DIRECTORY_PLANS.length}`}
                     >
-                      {index + 1}/4
+                      {index + 1}/{DIRECTORY_PLANS.length}
                     </span>
                   </div>
                   <h2 className="mt-3 font-display text-3xl font-semibold tracking-tight">
@@ -142,6 +149,9 @@ function PricingPage() {
                       monthlyPriceCents={plan.monthlyPriceCents}
                       annualPriceCents={plan.annualPriceCents}
                       annualFreeMonths={plan.annualFreeMonths}
+                      onboardingPriceCents={
+                        "onboardingPriceCents" in plan ? plan.onboardingPriceCents : undefined
+                      }
                     />
                   </div>
                   <ul className="flex-1 space-y-3">
@@ -201,9 +211,10 @@ function PricingPage() {
         </div>
 
         <p className="mx-auto mt-8 max-w-2xl text-center text-xs leading-5 text-muted">
-          Draft plan names and features are prepared for future review and may change before paid
-          plans launch. Premium’s monthly rate is intentionally unset; its annual price will equal
-          ten monthly payments.
+          Owner-tool plan names and features remain a future preview. Premium’s monthly rate is
+          intentionally unset; its annual price will equal ten monthly payments. The Featured
+          founder package is a separate, approved concierge offer with disclosed Sponsored
+          placement.
         </p>
       </section>
     </SiteShell>

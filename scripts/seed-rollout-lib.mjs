@@ -46,6 +46,18 @@ export function forecastEnrichmentDeadline({
   from,
   deadline,
 }) {
+  if (!Number.isInteger(categoryCount) || categoryCount < 0)
+    throw new Error("categoryCount must be a non-negative integer");
+  if (
+    !Number.isInteger(completedCategoryCount) ||
+    completedCategoryCount < 0 ||
+    completedCategoryCount > categoryCount
+  )
+    throw new Error("completedCategoryCount must be between zero and categoryCount");
+  if (!Number.isInteger(batchSize) || batchSize < 1)
+    throw new Error("batchSize must be a positive integer");
+  if (!Number.isInteger(runsPerDay) || runsPerDay < 1)
+    throw new Error("runsPerDay must be a positive integer");
   const start = new Date(from);
   const due = new Date(deadline);
   if (!Number.isFinite(start.valueOf()) || !Number.isFinite(due.valueOf()) || due <= start)

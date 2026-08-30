@@ -37,7 +37,7 @@ export const DIRECTORY_PLANS = Object.freeze([
   },
   {
     id: "basic",
-    name: "Owner Essentials",
+    name: "Owner tools — Basic",
     eyebrow: "Tell the full story",
     summary: "More room to explain what you do and show the work behind the name.",
     monthlyPriceCents: 1_000,
@@ -52,14 +52,14 @@ export const DIRECTORY_PLANS = Object.freeze([
   },
   {
     id: "standard",
-    name: "Owner Growth",
+    name: "Owner tools — Standard",
     eyebrow: "Turn visits into inquiries",
     summary: "A fuller storefront for businesses ready to generate and measure interest.",
     monthlyPriceCents: 1_500,
     annualPriceCents: 18_000,
     annualFreeMonths: 0,
     features: [
-      "Everything in Owner Essentials",
+      "Everything in Owner tools — Basic",
       "Up to 12 gallery photos",
       "One active offer",
       "Enhanced inquiry and listing-performance reporting",
@@ -67,7 +67,7 @@ export const DIRECTORY_PLANS = Object.freeze([
   },
   {
     id: "premium",
-    name: "Owner Pro",
+    name: "Owner tools — Premium",
     eyebrow: "Make the most of Local775",
     summary: "The complete future package, with the annual rate equal to ten monthly payments.",
     monthlyPriceCents: PREMIUM_MONTHLY_PRICE_CENTS,
@@ -77,10 +77,26 @@ export const DIRECTORY_PLANS = Object.freeze([
         : annualPriceWithFreeMonths(PREMIUM_MONTHLY_PRICE_CENTS, 2),
     annualFreeMonths: 2,
     features: [
-      "Everything in Owner Growth",
+      "Everything in Owner tools — Standard",
       "Up to 20 gallery photos",
       "A dedicated 775 tracking number and fuller reporting",
-      "Eligibility for clearly labeled Sponsored placement, subject to inventory",
+      "Additional owner tools defined before this future plan opens",
+    ],
+  },
+  {
+    id: "featured",
+    name: "Featured founder package",
+    eyebrow: "Sponsored reach",
+    summary: "The separately approved concierge package with disclosed Sponsored placement.",
+    onboardingPriceCents: 49_700,
+    monthlyPriceCents: 29_700,
+    annualPriceCents: null,
+    annualFreeMonths: 0,
+    features: [
+      "Clearly labeled Sponsored placement, subject to inventory",
+      "Dedicated 775 tracking number",
+      "Concierge onboarding and fuller reporting",
+      "Payment never grants Claim or Listing authority",
     ],
   },
 ]);

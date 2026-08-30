@@ -49,3 +49,18 @@ test("the current 232-category queue fits before September 15 with nightly batch
   assert.equal(forecast.onTrack, true);
   assert.ok(forecast.slackRuns >= 4);
 });
+
+test("deadline forecasts reject impossible execution capacity", () => {
+  const base = {
+    categoryCount: 232,
+    completedCategoryCount: 16,
+    from: "2026-08-30T08:00:00-07:00",
+    deadline: "2026-09-15T00:00:00-07:00",
+  };
+  assert.throws(() => forecastEnrichmentDeadline({ ...base, batchSize: 0 }), /batchSize/);
+  assert.throws(() => forecastEnrichmentDeadline({ ...base, runsPerDay: 0 }), /runsPerDay/);
+  assert.throws(
+    () => forecastEnrichmentDeadline({ ...base, completedCategoryCount: 233 }),
+    /completedCategoryCount/,
+  );
+});
