@@ -126,7 +126,7 @@ begin
     raise exception 'stale SERP seed filter';
   end if;
 
-  perform pg_advisory_xact_lock(hashtextextended(receipt_sha_value, 0));
+  perform pg_advisory_xact_lock(hashtextextended('local775:serp-seed-publication', 0));
 
   select id, payload_fingerprint into batch_id_value, stored_payload_fingerprint_value
   from app.serp_seed_publication_batches
