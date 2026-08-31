@@ -27,9 +27,9 @@ type StudioRole = NonNullable<ClaimReceipt["role"]>;
 
 const roleLabels: Record<StudioRole, string> = {
   operator: "Listing Admin",
-  business_owner: "Business Owner",
+  business_owner: "Listing Owner",
   listing_manager: "Listing Manager",
-  agency_representative: "Agency Representative",
+  agency_representative: "Listing Agency",
   lead_recipient: "Lead Recipient",
 };
 
@@ -200,8 +200,8 @@ function StudioPage() {
             <Megaphone className="size-5 text-gold-2" />
             <h2 className="mt-3 font-display text-xl font-semibold">GHL operations</h2>
             <p className="mt-2 text-sm leading-6 text-muted">
-              Supabase outbox events will project Contacts, Directory Listings, Listing
-              Participations, and Lead Opportunities into the dedicated Local775 location.
+              Supabase outbox events will project Contacts, one Listings object, labeled role
+              relations, and Lead Opportunities into the dedicated Local775 location.
             </p>
           </section>
         </div>

@@ -305,6 +305,12 @@ The ten accepted launch categories currently defined by the product are Screen R
 - Vercel currently selects Node.js 24.x. The repository does not yet declare an `engines.node` contract or a version file that keeps local development and CI on the same runtime.
 - Existing tests concentrate on inherited app-builder/Grok behaviors and do not prove Local775 Listings, Claims, Leads, RLS, integration outbox/inbox, publication receipts, privacy deletion, accessibility, or rollback.
 
+## 2026-08-31 — Accepted single-object GoHighLevel projection
+
+- **Supersedes Grill round 5 projection shape:** The earlier separate `Directory Listing` and `Listing Participation` custom-object design is replaced by one `Listings` custom object plus labeled Contact relations for Owner, Manager, Agency, and Lead Recipient. See ADR 0003.
+- **Authority remains unchanged:** Supabase owns Listing Participation, capability scope, seat limits, status, evidence, revocation, and audit history. A GHL relation is an operational projection and never grants or revokes Site authority.
+- **Workflow use:** GHL may route associated Contacts by relation label, while Supabase retains immutable event, delivery, and reconciliation receipts.
+
 ## 2026-08-24 — Grill round 19
 
 - **Build isolation:** A Vercel build only compiles the application. It may never apply database migrations. Reviewed migrations run through a separate gated job with their own proof and approval boundary.

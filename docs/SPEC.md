@@ -176,7 +176,7 @@ The principal proof is not traffic. It is qualified Leads delivered reliably, ac
 
 - Supabase Edge Functions and scheduled jobs execute integration adapters. Provider behavior is behind a narrow adapter seam so tests can use deterministic fakes without real effects.
 - A durable transactional outbox owns outbound work. A durable inbox records raw signed provider events before processing. Both enforce unique provider/event/idempotency keys.
-- GoHighLevel uses a dedicated Local775 location. Contact projects Person; Directory Listing custom object projects Business Listing; Listing Participation custom object projects the relationship; Opportunities represent Leads and Growth Leads.
+- GoHighLevel uses a dedicated Local775 location. A Contact projects a Person; one `Listings` custom object projects a Business Listing; labeled Contact-to-Listing relations project active Owner, Manager, Agency, and Lead Recipient assignments; Opportunities represent Leads and Growth Leads. Supabase retains the canonical Listing Participation and all authority, scope, seat-limit, evidence, and lifecycle facts. See ADR 0003.
 - Supabase-to-GoHighLevel projection is authoritative. GoHighLevel Listing edits become proposed changes requiring validation/review in Supabase.
 - Lead delivery persists first, projects to GoHighLevel, notifies verified Lead Recipients by email/SMS, records receipts, retries failures, dead-letters exhausted work, and escalates to Operators.
 - Stripe connected through GoHighLevel processes payment. Signed transaction events enter the inbox and append billing events; Supabase computes entitlement.
