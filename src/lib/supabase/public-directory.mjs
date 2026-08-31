@@ -32,9 +32,7 @@ const PUBLIC_COLUMNS = [
 
 /** @param {unknown} value */
 function safeToken(value) {
-  return typeof value === "string" && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value)
-    ? value
-    : "";
+  return typeof value === "string" && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value) ? value : "";
 }
 
 /**
@@ -56,9 +54,14 @@ export function buildDirectoryUrl(baseUrl, filters = {}) {
   if (slug) url.searchParams.set("current_slug", `eq.${slug}`);
   if (filters.featured === true) url.searchParams.set("is_featured", "eq.true");
 
-  const q = typeof filters.q === "string"
-    ? filters.q.normalize("NFKC").replace(/[^\p{L}\p{N}\s'-]/gu, " ").trim().slice(0, 80)
-    : "";
+  const q =
+    typeof filters.q === "string"
+      ? filters.q
+          .normalize("NFKC")
+          .replace(/[^\p{L}\p{N}\s'-]/gu, " ")
+          .trim()
+          .slice(0, 80)
+      : "";
   if (q) {
     const pattern = `*${q.replace(/\s+/g, "*")}*`;
     url.searchParams.set(

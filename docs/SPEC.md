@@ -92,6 +92,9 @@ The principal proof is not traffic. It is qualified Leads delivered reliably, ac
 57. As an Agency Representative, I want a Business Owner to delegate specific Listings and permissions, so that I can help without becoming the owner.
 58. As an Agency Representative, I want delegation to be optionally expiring and revocable, so that temporary engagements do not create permanent access.
 59. As a privileged user, I want an email change to suspend Operator and Lead Recipient privileges until reapproval, so that inbox verification does not transfer authority automatically.
+    59a. As a Business Owner, I want to delegate a Listing Manager with less authority than an Owner, so that staff can operate the Listing without gaining ownership or delegation rights.
+    59b. As a Business Owner, I want each Business Listing limited to two active Business Owners, three Listing Managers, and three Agency Representatives, so that authority remains bounded and reviewable.
+    59c. As a Listing Participant, I want Studio capabilities derived from my server-authorized role and scope, so that hidden interface controls never substitute for authorization.
 60. As a Local775 Operator, I want access limited to one exact initial email allowlist, so that a company domain does not create broad administrative eligibility.
 61. As a Local775 Operator, I want MFA required through the Local775 Operations authentication policy, so that privileged access uses a second factor.
 62. As a Local775 Operator, I want a manual Operator Grant recorded separately from authentication, so that login never equals authorization.
@@ -134,6 +137,8 @@ The principal proof is not traffic. It is qualified Leads delivered reliably, ac
 - Listing lifecycle is `draft → pending_review → published`, with reversible `suspended` and `archived` states. Publication is an explicit reviewed transition.
 - Claim lifecycle records submission, evidence, review, decision, revocation, and audit receipt. An approved Claim may create or update Listing Participation; a rejected Claim never changes public ownership.
 - Listing Participation records person, Listing, role, scope, authority basis, status, consent source, start, optional expiry, revocation, and external identifiers. Payment never creates Listing Participation.
+- Each Business Listing permits at most two active Business Owners, three Listing Managers, and three Agency Representatives. Local775 Operators are separately granted and are not counted as Listing Participants.
+- The Studio may display Local775 Operator as “Listing Admin,” but the canonical authorization role remains Local775 Operator. Capability decreases from Operator to Business Owner to Listing Manager to Agency Representative, and every command remains default-deny at the server and Row Level Security layers.
 - Lead lifecycle is `submitted → queued → delivered → viewed → accepted → contacted → won | lost | spam`. Transitions are append-audited and idempotent.
 - Featured entitlement is derived from immutable billing events and accepted commercial rules. It is not a mutable CRM boolean.
 - Trust labels are independent: Information checked describes Local775 data review; Owner verified describes Claim authority.

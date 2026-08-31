@@ -13,27 +13,34 @@ const files = [
 ];
 
 async function sources() {
-  return (await Promise.all(files.map((file) => readFile(new URL(`../${file}`, import.meta.url), "utf8")))).join("\n");
+  return (
+    await Promise.all(files.map((file) => readFile(new URL(`../${file}`, import.meta.url), "utf8")))
+  ).join("\n");
 }
 
 test("public design surfaces reject unsupported mock-directory claims", async () => {
   const source = await sources();
-  assert.doesNotMatch(source, /4,200\+|every listing verified|#1 rated|182 reviews|response time: under/i);
+  assert.doesNotMatch(
+    source,
+    /4,200\+|every listing verified|#1 rated|182 reviews|response time: under/i,
+  );
   assert.match(source, /No placeholder businesses are shown/);
 });
 
 test("commercial placement is disclosed and external paid links are sponsored", async () => {
   const source = await sources();
-  assert.match(source, />Sponsored</);
+  assert.match(source, />\s*Sponsored\s*</);
   assert.match(source, /sponsored noopener noreferrer/);
-  assert.doesNotMatch(source, />Featured</);
+  assert.doesNotMatch(source, />\s*Featured\s*</);
 });
 
-test("unavailable lead and claim pipelines are not presented as working forms", async () => {
+test("Lead pipeline stays unavailable while Claim submission is truthfully review-gated", async () => {
   const listing = await readFile(new URL("../src/routes/biz.$slug.tsx", import.meta.url), "utf8");
   const claim = await readFile(new URL("../src/routes/claim.tsx", import.meta.url), "utf8");
   assert.doesNotMatch(listing, /Request a quote|submitLead|QuoteForm/);
-  assert.match(claim, /not accepting submissions yet/i);
+  assert.match(claim, /Claim remains read-only/);
+  assert.match(claim, /payment and authentication never grant authority/);
+  assert.doesNotMatch(claim, /Leads now come to you|take it over/);
 });
 
 test("official design-system assets are used for the brand shell", async () => {

@@ -34,9 +34,10 @@ const LAUNCH_CATEGORIES = new Set([
   "veterinarians",
 ]);
 
-const cities: City[] = CITIES.filter((city) => LAUNCH_CITIES.has(city.slug)).map(
-  (city, index) => ({ ...city, id: index + 1 }),
-);
+const cities: City[] = CITIES.filter((city) => LAUNCH_CITIES.has(city.slug)).map((city, index) => ({
+  ...city,
+  id: index + 1,
+}));
 const categories: Category[] = CATEGORIES.filter((category) =>
   LAUNCH_CATEGORIES.has(category.slug),
 ).map((category, index) => ({ ...category, id: index + 1 }));
@@ -93,9 +94,15 @@ export const searchBusinesses = createServerFn({ method: "GET" })
     unclaimed: Boolean(input.unclaimed),
   }))
   .handler(async ({ data }) => {
-    // Claim availability is intentionally not exposed by the anonymous projection.
-    if (data.unclaimed) return [] as BusinessCard[];
-    return fetchCards({ q: data.q, city: data.city, category: data.category, limit: 100 });
+    const results = await fetchCards({
+      q: data.q,
+      city: data.city,
+      category: data.category,
+      limit: 100,
+    });
+    // Owner-verified is already a public trust label. Public Claim discovery uses
+    // only that public fact and never exposes Claims or Listing Participation.
+    return data.unclaimed ? results.filter((listing) => !listing.ownerVerified) : results;
   });
 
 export const getBusiness = createServerFn({ method: "GET" })
@@ -124,41 +131,31 @@ export const featuredBusinesses = createServerFn({ method: "GET" }).handler(asyn
 );
 
 export const submitLead = createServerFn({ method: "POST" })
-  .validator((input: {
-    businessId: number;
-    name: string;
-    phone: string;
-    email: string;
-    zip: string;
-    message: string;
-  }) => input)
+  .validator(
+    (input: {
+      businessId: number;
+      name: string;
+      phone: string;
+      email: string;
+      zip: string;
+      message: string;
+    }) => input,
+  )
   .handler(async () => ownerAccessUnavailable<{ ok: true }>());
 
 export const createListing = createServerFn({ method: "POST" })
-  .validator((input: {
-    name: string;
-    citySlug: string;
-    categorySlug: string;
-    phone: string;
-    street: string;
-    zip: string;
-    description: string;
-  }) => input)
+  .validator(
+    (input: {
+      name: string;
+      citySlug: string;
+      categorySlug: string;
+      phone: string;
+      street: string;
+      zip: string;
+      description: string;
+    }) => input,
+  )
   .handler(async () => ownerAccessUnavailable<{ slug: string }>());
-
-export const claimListing = createServerFn({ method: "POST" })
-  .validator((input: {
-    businessId: number;
-    method: "domain" | "card" | "storefront" | "vehicle";
-    filename: string;
-  }) => input)
-  .handler(async () =>
-    ownerAccessUnavailable<{
-      slug: string;
-      already: boolean;
-      method: "domain" | "card" | "storefront" | "vehicle";
-    }>(),
-  );
 
 export const myListings = createServerFn({ method: "GET" }).handler(
   async () => [] as BusinessCard[],
@@ -171,12 +168,9 @@ export const getResident = createServerFn({ method: "GET" }).handler(
 );
 
 export const saveResident = createServerFn({ method: "POST" })
-  .validator((input: {
-    displayName: string;
-    zip: string;
-    citySlug: string;
-    interests: string;
-  }) => input)
+  .validator(
+    (input: { displayName: string; zip: string; citySlug: string; interests: string }) => input,
+  )
   .handler(async () => ownerAccessUnavailable<{ ok: true }>());
 
 export const myCampaigns = createServerFn({ method: "GET" }).handler(
@@ -184,13 +178,15 @@ export const myCampaigns = createServerFn({ method: "GET" }).handler(
 );
 
 export const sendCampaign = createServerFn({ method: "POST" })
-  .validator((input: {
-    businessId: number;
-    name: string;
-    channel: "virtual" | "direct_mail";
-    citySlug: string;
-    categorySlug: string;
-    message: string;
-    includeOffer?: boolean;
-  }) => input)
+  .validator(
+    (input: {
+      businessId: number;
+      name: string;
+      channel: "virtual" | "direct_mail";
+      citySlug: string;
+      categorySlug: string;
+      message: string;
+      includeOffer?: boolean;
+    }) => input,
+  )
   .handler(async () => ownerAccessUnavailable<{ reach: number; includedOffer: string }>());
