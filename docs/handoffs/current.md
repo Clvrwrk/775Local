@@ -3,7 +3,7 @@
 **Project:** 775 Directory (Local775)
 **Repo:** https://github.com/Clvrwrk/775Local.git
 **Production URL:** https://775directory.com
-**Date:** 2026-08-29 10:59 PDT
+**Date:** 2026-08-31 19:01 PDT
 **Agent:** Lead Orchestrator
 **Reason:** User-requested Linear handoff
 
@@ -11,161 +11,158 @@
 
 ## Accomplished This Session
 
-### Production launch and canonical domain
+### Review-gated Claim foundation
 
-- `src/`, `public/`, and `docs/`: Consolidated the reviewed Local775 public directory shell without inventing Listings, ratings, reviews, business facts, or working Claim/lead actions.
-- `src/lib/directory/indexability.mjs`: Added reviewed-Listing thresholds so thin city, category, and city/category pages remain `noindex, follow`.
-- `public/robots.txt` and `public/sitemap.xml`: Published the honest six-URL launch crawl contract.
-- `vercel.json`: Added the permanent `www` → apex redirect and `X-Robots-Tag: noindex` for public Vercel aliases.
-- Cloudflare: Cut apex and `www` from the former Namecheap forwarding/parking targets to Vercel while preserving all registrar MX and SPF records.
-- Vercel: Deployed reviewed `main`; final receipt-only production deployment `dpl_Biz96WB8ztHQk5PgU5quAT814HMd` is Ready and owns the apex and `www` aliases.
+- `supabase/migrations/20260831120000_add_claim_commands_and_listing_manager.sql`: Added authenticated Claim commands, idempotent Admin decisions, audit/outbox writes, Listing Manager support, and the transaction-locked two-Owner cap.
+- `supabase/tests/claims_workflow.sql`: Added the database acceptance contract for Claim transitions, authorization, idempotency, concurrency, and public/private boundaries; execution remains a P00 gate because Docker was unavailable.
+- `src/lib/directory/claim-handler.mjs`, `src/lib/directory/claims.ts`, and `src/lib/supabase/claim-commands.mjs`: Added the server-side Claim domain and Supabase command seam with redacted failures and WorkOS-derived identity.
+- `src/routes/studio.$slug.tsx`: Added the role-aware Studio shell and aligned visible roles to Listing Admin, Listing Owner, Listing Manager, and Listing Agency.
+- `scripts/claim-commands.test.mjs`: Added focused Claim command and authority-boundary coverage.
 
-### Indexing activation and durable evidence
+### Full Site ↔ Supabase ↔ GHL build plan
 
-- `scripts/submit-indexnow.mjs`: Added bounded IndexNow submission with no-secret success/failure receipts and the provider's 10,000-URL request limit.
-- `scripts/indexnow.test.mjs`: Added success, empty-sitemap, provider-failure, sitemap-failure, and URL-boundary coverage.
-- `public/738605bcc41cbc13f8943448c1bdae49.txt`: Hosted the public IndexNow verification key.
-- IndexNow: Accepted all six current sitemap URLs with HTTP 202 at `2026-08-29T15:44:31.313Z`.
-- `docs/evidence/cle-117/2026-08-29-cloudflare-pre-cutover.json`: Retained the sanitized API-native DNS rollback snapshot.
-- `docs/evidence/cle-117/2026-08-29-live-desktop.png` and `2026-08-29-live-mobile.png`: Retained post-cutover visual acceptance artifacts with hashes in the launch receipt.
-- `docs/CLE-117-PRODUCTION-GO-LIVE-2026-08-29.md`: Recorded reviewed PR lineage, deployment, DNS, crawl, visual, IndexNow, and retained blocker evidence.
-- Google Search Console: Confirmed the connector is authenticated but the account does not own `sc-domain:775directory.com`; sitemap submission returned HTTP 403. Confirmed Google indexing is not claimed.
+- `docs/CLAIMS-STUDIO-GHL-INTEGRATION-PLAN.md`: Wrote the implementation-ready P00-P12 plan with exact files, dependencies, commands, acceptance criteria, effect gates, capability matrix, Claim/Lead/Growth Lead lifecycles, GHL manifest, message receipts, OAuth/Ed25519 webhook boundary, reconciliation, Preview acceptance, Production canary, and operations handoff.
+- `docs/adr/0003-single-gohighlevel-listings-object.md`: Accepted one GHL `Listings` custom object plus labeled Contact relations while Supabase retains canonical authority.
+- `docs/adr/0002-platform-ownership-and-integration-boundaries.md`: Marked the superseded two-custom-object projection and preserved all other platform boundaries.
+- `docs/SPEC.md` and `docs/PROJECT-DECISIONS.md`: Reconciled the accepted single-object GHL projection, Supabase authority, and labeled role relations.
+- Independent plan checker: passed the final goal-backward review with no blockers or warnings after Lead Recipient, manifest/API, credential-principal, Growth Lead, scanner, and exact-verification gaps were closed.
 
-### Review, verification, and accounting
+### Verification and Linear accounting
 
-- [PR #4](https://github.com/Clvrwrk/775Local/pull/4): Merged the launch surface at `17e7808`.
-- [PR #5](https://github.com/Clvrwrk/775Local/pull/5): Merged canonical-host controls at `76d8d4d`.
-- [PR #6](https://github.com/Clvrwrk/775Local/pull/6): Merged IndexNow activation at `0d6065f` after all review findings were fixed.
-- [PR #7](https://github.com/Clvrwrk/775Local/pull/7): Merged the durable launch receipt and evidence at `4ec4166` after all review findings were fixed.
-- Local verification: 127/127 Node 24 tests, TypeScript, ESLint, secret scan, Prettier for new artifacts, JSON validation, and diff check passed.
-- Hosted verification: Foundation Gate, Vercel, Greptile, CodeRabbit, and Cursor Security checks passed at the reviewed fixed points.
-- Linear: Reconciled CAT-81/CLE-117 and CAT-82/CLE-107 in both directions and posted the disk receipt/current-state comments to all four issues.
-- Outreach boundary: No Listing was selected or published, Supabase Production was not written, and no seed outreach was sent.
+- Repository verification passed: 133 Node tests, TypeScript, ESLint, Production build, Prettier, `git diff --check`, and secret scan.
+- `CAT-82 ↔ CLE-107`: Updated the existing Claim trail instead of creating a duplicate; wrote and reread the current retrospective receipt.
+- `CAT-165 ↔ CLE-108`: Created and verified the retrospective Listing Studio planning trail and receipt.
+- `CAT-164 ↔ CLE-109`: Created and verified the retrospective Resident/Growth Lead planning trail and receipt.
+- `CAT-163 ↔ CLE-110`: Created and verified the retrospective Site/Supabase/GHL integration planning trail and receipt.
+- Posted current-state comments to all eight CAT/CLE issues and `atRisk` project updates to the two owning projects. No credential, push, migration, GHL provisioning, Contact, Opportunity, message, webhook subscription, outreach, or deployment occurred.
 
 ## Linear Accounting
 
-- **Project:** [775 Directory — Launch Ops & Learning](https://linear.app/cleverwork/project/775-directory-launch-ops-and-learning-7ca2c7426011)
-- **Related project:** [775 Directory — Identity, Claims & Trust](https://linear.app/cleverwork/project/775-directory-identity-claims-and-trust-432396f134d4)
-- **Milestones:** OPS-1 — Controlled 775 Launch; TRUST-1 — Claims & Evidence Production-Safe
-- **Issues created/updated:** CAT-81, CLE-117, CAT-82, CLE-107
+- **Projects:**
+  - [775 Directory — Identity, Claims & Trust](https://linear.app/cleverwork/project/775-directory-identity-claims-and-trust-432396f134d4)
+  - [775 Directory — Merchant Value & Revenue](https://linear.app/cleverwork/project/775-directory-merchant-value-and-revenue-e677ccc62961)
+- **Milestones:** TRUST-1 — Claims & Evidence Production-Safe; REV-1 — Merchant Value Beta Proven
+- **Issues created/updated:** CAT-82, CLE-107, CAT-165, CLE-108, CAT-164, CLE-109, CAT-163, CLE-110
 - **CAT issue/trails:**
-  - [CAT-81 — trail for CLE-117: Launch 775Directory production and indexing](https://linear.app/cleverwork/issue/CAT-81/trailcle-117-launch-775directory-production-and-indexing)
   - [CAT-82 — trail for CLE-107: Complete Local775 Claim flow and seed outreach](https://linear.app/cleverwork/issue/CAT-82/trailcle-107-complete-local775-claim-flow-and-seed-outreach)
+  - [CAT-165 — trail for CLE-108: Plan role-filtered Local775 Listing Studio](https://linear.app/cleverwork/issue/CAT-165/trailcle-108-plan-role-filtered-local775-listing-studio)
+  - [CAT-164 — trail for CLE-109: Plan Resident and Growth Lead workflows](https://linear.app/cleverwork/issue/CAT-164/trailcle-109-plan-resident-and-growth-lead-workflows)
+  - [CAT-163 — trail for CLE-110: Plan Site-Supabase-GHL synchronization](https://linear.app/cleverwork/issue/CAT-163/trailcle-110-plan-site-supabase-ghl-synchronization)
 - **Foreign issues:**
-  - [CLE-117 — Launch gate: production acceptance packet and controlled go-live](https://linear.app/cleverwork/issue/CLE-117/launch-gate-production-acceptance-packet-and-controlled-go-live) — Done
-  - [CLE-107 — Launch slice: business claim through approved ownership](https://linear.app/cleverwork/issue/CLE-107/launch-slice-business-claim-through-approved-ownership) — In Progress, blocked by CLE-104 and CLE-106
+  - [CLE-107 — Launch slice: business claim through approved ownership](https://linear.app/cleverwork/issue/CLE-107/launch-slice-business-claim-through-approved-ownership) — In Progress
+  - [CLE-108 — Launch slice: listing-owner studio and content moderation](https://linear.app/cleverwork/issue/CLE-108/launch-slice-listing-owner-studio-and-content-moderation) — Backlog
+  - [CLE-109 — Launch slice: resident inquiry through merchant outcome](https://linear.app/cleverwork/issue/CLE-109/launch-slice-resident-inquiry-through-merchant-outcome) — Backlog
+  - [CLE-110 — Launch slice: merchant operations synchronization and reconciliation](https://linear.app/cleverwork/issue/CLE-110/launch-slice-merchant-operations-synchronization-and-reconciliation) — Backlog
 - **Disk receipts:**
-  - `/Users/chussey/Library/CloudStorage/Dropbox-AIA4/Cleverwork Main/CODEX/docs/linear/teams/CLE/2026-08-29-local775-production-go-live.md`
-  - `/Users/chussey/Library/CloudStorage/Dropbox-AIA4/Cleverwork Main/CODEX/docs/linear/teams/CLE/2026-08-29-local775-claim-outreach.md`
-- **Artifact links:** `docs/CLE-117-PRODUCTION-GO-LIVE-2026-08-29.md`, `docs/evidence/cle-117/`, PRs #4–#7, and this handoff
-- **Coverage:** light ticket-only coverage using the existing owning projects/issues; no duplicate session project or foreign issue created
-- **Accounting timing:** contemporaneous
-- **Verified:** 2026-08-29 10:57 PDT
-- **Gate:** PASS — both `CAT trail ↔ foreign issue ↔ disk receipt` triples resolve in Linear and on disk
+  - `/Users/chussey/Library/CloudStorage/Dropbox-AIA4/Cleverwork Main/CODEX/docs/linear/teams/CLE/2026-08-31-local775-claim-build-plan.md`
+  - `/Users/chussey/Library/CloudStorage/Dropbox-AIA4/Cleverwork Main/CODEX/docs/linear/teams/CLE/2026-08-31-local775-listing-studio-plan.md`
+  - `/Users/chussey/Library/CloudStorage/Dropbox-AIA4/Cleverwork Main/CODEX/docs/linear/teams/CLE/2026-08-31-local775-lead-workflow-plan.md`
+  - `/Users/chussey/Library/CloudStorage/Dropbox-AIA4/Cleverwork Main/CODEX/docs/linear/teams/CLE/2026-08-31-local775-ghl-integration-plan.md`
+- **Artifact links:** `docs/CLAIMS-STUDIO-GHL-INTEGRATION-PLAN.md`, ADR 0003, Claim migration/modules/tests, commits `29ebb0f` and `d7ffea6`, and this handoff
+- **Coverage:** full retrospective backfill across the two existing owning projects; no duplicate CLE issue or session project created
+- **Accounting timing:** retrospective backfill
+- **Verified:** 2026-08-31 19:01 PDT; all four Linear relations resolve in both directions, all four receipts were reread from the CODEX vault, and every referenced repository artifact/commit exists
+- **Gate:** PASS — `CAT trail ↔ foreign issue ↔ disk receipt` resolves for CLE-107, CLE-108, CLE-109, and CLE-110
 
 ## Git State
 
-- **Branch:** `codex/local775-linear-handoff-2026-08-29`, based on reviewed `origin/main`
-- **Last completed implementation commit:** `4ec4166` — "CLE-117: record 775Directory production go-live (#7)"
-- **Handoff commit:** this document and `docs/handoffs/archive/2026-08-29-1056.md` are committed together after verification
-- **Uncommitted changes after handoff commit:** none
+- **Branch:** `codex/claim-studio-ghl-plan`
+- **Last implementation commit:** `d7ffea6` — "docs: plan full Site Supabase GHL workflow"
+- **Prior Claim commit:** `29ebb0f` — "feat: add review-gated listing claims"
+- **Uncommitted changes before the handoff commit:** `docs/handoffs/current.md` and `docs/handoffs/archive/2026-08-31-1901.md` only
 
 ## Task Cut Off
 
-None — session ended at a clean boundary. The site is live, IndexNow submission is accepted, durable evidence is merged, and the accounting triples pass. Google Search Console ownership, reviewed Listing publication, Claim acceptance, and outreach remain explicitly incomplete.
+None — the Claim first slice and full implementation plan are locally committed, repository checks pass, independent planning review passes, and the Linear accounting graph is complete. Credentialed execution has not started.
 
 ## Next Task — Start Here
 
-**Task:** Verify the 775Directory Google Search Console domain property and submit the live sitemap.
+**Task:** Execute P00 baseline reconciliation and the read-only Local775 GHL location inventory.
 
 **What to check / do:**
 
-1. In the authenticated Google Search Console account, add and verify the domain property `sc-domain:775directory.com`; this may require Christopher to complete the Google identity/ownership step.
-2. Submit `https://775directory.com/sitemap.xml` and retain the provider response.
-3. Inspect the six sitemap canonicals and record indexed/not-indexed reasons without claiming indexing before Google confirms it.
-4. Update CAT-81 and the production go-live disk receipt with the Search Console receipt.
-5. Keep CLE-107/Claim/outreach blocked until CLE-104 reviewed Listing coverage and CLE-106 human authentication acceptance pass.
+1. Rebase `codex/claim-studio-ghl-plan` onto current canonical `main` and reconcile any newer Local775 migrations, published Listing state, and Linear dependencies before changing code.
+2. Run the isolated Supabase reset/pgTAP Claim acceptance and complete the human WorkOS Preview session, Actor projection, and negative Operator authorization journey.
+3. Receive the dedicated Local775 GHL Location ID and credentials only through the approved secret path: distinct runtime token; either a temporary provisioner token or the user-run UI checkpoint; and OAuth app/event-subscription access.
+4. Perform only the P00/P06 read-only location, schema, association, pipeline, workflow, duplicate-contact, and scope inventory. Stop on any identity or scope mismatch.
+5. Return the redacted inventory and request the next explicit gate before schema mutation, synthetic records, synthetic sends, Production migration, deployment, or any real communication.
 
-**If Search Console still returns HTTP 403:** Confirm the exact domain property is visible to the connected account. Do not create a URL-prefix substitute, change DNS blindly, expose OAuth credentials, or claim Google submission.
+**If Docker, WorkOS acceptance, credential scope, or GHL Location identity fails:** record the exact redacted blocker in the P00 receipt and stop. Do not bypass pgTAP, infer authorization from login, reuse the Homeworks Advantage GHL location, or proceed from a partial credential set.
 
-**Prompt to use:** "Read /Volumes/M1 Application SSD/Projects/Local775/docs/handoffs/current.md completely. Then verify sc-domain:775directory.com in Google Search Console, submit https://775directory.com/sitemap.xml, inspect the six canonical URLs, and update CAT-81 plus the production go-live receipt. Do not claim indexing until Google confirms it."
+**Prompt to use:** "Read /private/tmp/local775-claim-studio/docs/handoffs/current.md completely. Then execute P00 of docs/CLAIMS-STUDIO-GHL-INTEGRATION-PLAN.md: rebase and reconcile the baseline, run isolated pgTAP, complete the human WorkOS Preview authorization acceptance, and perform only the read-only GHL inventory using credentials from the approved secret path. Stop before any mutation or send and return the redacted receipt."
 
 ## Decisions Made This Session
 
-- **Live before corpus publication:** The honest empty-state directory may be public while Listings remain private; publication requires the existing reviewed-publication gate.
-- **Canonical host:** `https://775directory.com` is canonical; `www` permanently redirects and Vercel aliases are `noindex`.
-- **Thin-page policy:** Empty and below-threshold discovery pages remain out of the sitemap and `noindex, follow`.
-- **Indexing claims:** IndexNow HTTP 202 means accepted for processing, not indexed. Google indexing remains unconfirmed without Search Console ownership and inspection.
-- **Production data boundary:** Deployment and DNS were authorized and completed. Supabase Production schema/data, Listing selection/publication, Claim approval, outreach, calls, payments, and other financial effects remain separate gated actions.
-- **Identity is not authority:** WorkOS authentication never grants Operator, Listing, Claim, or owner authority by itself.
-- **Evidence durability:** DNS rollback state and visual acceptance must live in repository evidence, not temporary or user-specific paths.
+- **Supabase remains canonical:** Listing, Claim, participation, capabilities, Leads, entitlements, audit, inbox/outbox, and reconciliation state are never granted by GHL records or relations.
+- **One GHL custom object:** Project one `Listings` object and labeled Owner/Manager/Agency/Lead Recipient Contact relations; Supabase enforces the 2/3/3 seat limits.
+- **Lead Recipient is explicit:** Owners receive Resident Lead PII only when separately designated as an active verified Lead Recipient; fallback otherwise escalates to Admin without routine Lead PII.
+- **Growth Leads are separate:** A Growth Lead requires an explicit authenticated consulting-help command and separate consent; it is never inferred from Claim, Resident Lead, Featured, or payment state.
+- **Messages are receipt-bearing commands:** Product-critical communications use recipient-specific Supabase commands and immutable payload hashes; mutable Contact fields never carry event context.
+- **Native inbound requires OAuth Ed25519:** A Private Integration token does not create a signed webhook subscription. Without the OAuth channel, inbound translation stays disabled and reconciliation is read-only.
+- **Provider writes remain gated:** GHL pipeline/stage/workflow creation uses a reviewed Admin-UI checklist where the current API is read-only. Production database correction is forward-only.
+- **Claim Proof fails closed:** PDF/JPEG/PNG proof stays quarantined until pinned validation and ClamAV scanning pass; scanner failure never permits review or approval.
 
 ## Blockers Requiring Human Action
 
-1. **Google Search Console ownership** — Christopher must add/verify `sc-domain:775directory.com` in the connected Google account before sitemap submission can succeed.
-2. **CLE-106 human authentication acceptance** — a controlled user must complete WorkOS Google or Magic Auth so callback, session, Actor projection, and negative authorization can be proven.
-3. **CLE-104 reviewed publication coverage** — the private candidate set has not produced the reviewed public Listings required for Claim and outreach; eligibility must not be weakened to force coverage.
+1. **GHL credential handoff** — provide the dedicated Local775 Location ID, distinct runtime token, provisioning choice/token, OAuth app credentials, scope screenshots, duplicate-contact setting, and any approved synthetic recipients through the approved secret manager, not chat.
+2. **WorkOS Preview acceptance** — complete the human sign-in/session journey so callback, minimal Actor projection, and negative Operator authorization can be proven.
+3. **Claim scanner runtime decision** — approve an existing container runtime or a separately gated new runtime/spend if no approved environment can host the pinned scanner.
 
 ## Verification Commands
 
-1. `git status --short --branch` — should show the handoff branch clean after its reviewed merge, or `main...origin/main` clean after fast-forward.
-2. `/Users/chussey/.npm/_npx/387698761821791d/node_modules/node/bin/node --test 'scripts/**/*.test.mjs'` — should report 127 passing tests and zero failures.
-3. `npm run typecheck && npm run lint && npm run security:secrets` — should exit successfully and print `Secret scan passed.`
-4. `curl -I https://775directory.com` — should return HTTP 200 from Vercel.
-5. `curl -I https://www.775directory.com/handoff-check` — should return HTTP 308 to `https://775directory.com/handoff-check`.
-6. `curl -sS https://775directory.com/robots.txt` — should declare `https://775directory.com/sitemap.xml` and block private/runtime paths.
-7. `curl -sS https://775directory.com/sitemap.xml` — should contain exactly six apex canonical URLs.
-8. `npx vercel inspect https://reno-local-directory-ix9ce2hld-cleverwork.vercel.app --scope cleverwork` — should show Ready production deployment `dpl_Biz96WB8ztHQk5PgU5quAT814HMd` with apex and `www` aliases.
+1. `git status --short --branch` — should show `codex/claim-studio-ghl-plan` clean after the handoff commit.
+2. `npm test` — should report 133 passing tests and zero failures.
+3. `npm run typecheck && npm run lint && npm run build && npm run security:secrets` — should exit successfully and print `Secret scan passed.`
+4. `git diff --check` — should exit with no output.
+5. `npm run test:db` — after P00 adds the pinned Supabase CLI/script and Docker is available, should reset the isolated local database and pass all pgTAP suites.
+6. `node scripts/ghl/inventory.mjs --target preview` — only after P06 creates the script and credentials are securely configured; should be read-only and produce a redacted Location/schema inventory.
 
 ## Full Context
 
 ### What was built across ALL sessions (complete feature list)
 
-- Canonical GitHub/M1 SSD project authority, accepted product vocabulary, specification, decision log, provider boundaries, ADRs, deterministic Node 24 CI, secret scanning, and target-explicit database delivery.
-- Secure Supabase schema/RLS/public projection, audit/outbox foundations, private source import, deterministic candidate transformation, entity-risk review, reviewed selection, exact-100 publication command, and suspend/restore receipts.
-- Licensed Reno/Sparks corpus ingestion and private multi-provider SERP/website enrichment with DataForSEO, Exa, Tavily, and Firecrawl; no directory padding, stale receipt counting, or automatic publication.
-- Isolated WorkOS Staging authentication, safe callbacks/return paths, session policy, minimal Actor projection, separate Operator Grants, MFA/recent-auth requirements, and impersonation rejection.
-- Mobile-first Circle × Sierra design system, official 775Directory brand assets, truthful public directory/search/city/category/listing/offer/legal surfaces, commercial disclosures, and HTML-safe JSON-LD.
-- Vercel Production launch, Cloudflare apex/`www` cutover with mail preservation, canonical redirects, crawler controls, honest sitemap, post-cutover visual evidence, and rollback artifacts.
-- IndexNow verification/submission with durable receipts and provider limits; six current canonical URLs accepted.
-- Linear operating structure and verified CAT accounting for the production launch and Claim/outreach workstreams.
+- Canonical GitHub/M1 SSD project authority, product vocabulary, specification, decision log, provider boundaries, ADRs, deterministic Node 24 checks, secret scanning, and target-explicit database delivery.
+- Secure Supabase schema/RLS/public projection, audit/outbox foundations, private source import, deterministic candidate review, entity-risk screening, reviewed publication, and suspend/restore receipts.
+- Licensed Reno/Sparks corpus ingestion plus private multi-provider enrichment with strict receipt, relevance, and publication boundaries.
+- WorkOS Staging authentication, safe callbacks/return paths, session policy, minimal Actor projection, separate Operator Grants, recent-auth controls, and impersonation rejection.
+- Mobile-first Circle × Sierra public directory, search/city/category/listing/offer/legal surfaces, commercial disclosures, accessibility controls, and HTML-safe structured data.
+- Vercel/Cloudflare Production launch, canonical redirects, crawl controls, six-URL initial sitemap/IndexNow activation, visual evidence, and rollback receipts.
+- Exactly 100 reviewed yet unclaimed/unverified seed Listings were later published with deterministic publication receipts and live leaf-route verification.
+- Review-gated Claim first slice with server authority, idempotent decisions, two-Owner concurrency control, audit/outbox evidence, Listing Manager support, and role-aware Studio shell.
+- Accepted P00-P12 Site/Supabase/GHL build plan with one GHL `Listings` object, role relations, dynamic Studio, Resident/Growth Leads, communications, reconciliation, and controlled release gates.
+- Verified CAT/CLE/disk accounting across Claim, Studio, Lead, and GHL synchronization workstreams.
 
 ### Architecture decisions
 
-Supabase owns directory records, permissions, Claims, Leads, entitlements, audit events, media references, and integration state. WorkOS owns human authentication/session identity only. Vercel hosts the application. Cloudflare controls public DNS. GoHighLevel is a projected CRM/communications/phone/payment system and never overwrites public truth directly. Stripe executes payments through GoHighLevel. Provider writes require target-explicit, idempotent, receipt-backed workflows. Convex remains out of scope for v1.
+Supabase owns application data and authorization; WorkOS owns authentication; Vercel hosts; Cloudflare controls DNS; GHL operates CRM/communication execution and projects Supabase state. GHL edits become proposals/evidence, never direct public truth or authority. Provider work uses an external port with a deterministic fake, transactional outbox/inbox, idempotent bindings, append-only attempts, dead letters, replay, and reconciliation. Production effects are individually gated.
 
 ### Design system
 
-Preserve the Circle × Sierra direction in `docs/DESIGN.md`, `docs/DESIGN-SYSTEM.md`, and `docs/COMPONENTS.md`: pine/paper/gold palette, high-desert imagery, official Summit Seal/775Directory marks, mobile-first layouts, clear Sponsored labels, and truthful empty states. Maintain WCAG 2.2 AA and avoid mock-data claims.
+Preserve `docs/DESIGN.md`, `docs/DESIGN-SYSTEM.md`, and `docs/COMPONENTS.md`: pine/paper/gold palette, high-desert imagery, official Summit Seal/775Directory marks, mobile-first layouts, clear Sponsored labels, truthful empty/loading/degraded states, keyboard/focus support, and WCAG 2.2 AA.
 
 ### Key invariants
 
-- Authentication is not authorization; all privileged actions require server/database enforcement and explicit scoped authority.
-- Public means reviewed; private evidence, contact details, review state, and residential data never enter the anonymous projection.
-- Build is side-effect free; migrations, provider calls, publication, and outreach are separate target-explicit actions.
-- Bulk data is quarantined; import, enrichment, eligibility, selection, and publication are distinct auditable transitions.
-- Never weaken eligibility, RLS, authentication, security, accessibility, or evidence rules to force a pass.
-- Payment never grants Listing/Claim authority, and a failed Featured payment never removes the always-free Listing.
-- Search-engine submission is not indexing; report provider acceptance and inspection states exactly.
-- Secrets never enter source, Linear, receipts, handoffs, logs, or command output.
+- Authentication is not authorization; every privileged route/RPC rechecks a stable server capability.
+- Claim submission and payment never grant Listing authority, publication, Featured entitlement, or Lead access.
+- Public means reviewed; private proof, contacts, Lead PII, audit bodies, and provider payloads never enter anonymous projections.
+- Build is side-effect free; migrations, provider writes, sends, deployment, and publication have separate explicit gates and receipts.
+- GHL is a projection and communication executor; Supabase remains canonical and repairs are explicit/reconciled.
+- Service consent and marketing consent remain separate; DND and destination verification are enforced.
+- Secrets never enter source, Linear, receipts, handoffs, logs, URLs, or command output.
 
 ### Service / deployment map
 
-| Service                      | Detail                                                                                               |
-| ---------------------------- | ---------------------------------------------------------------------------------------------------- |
-| Canonical checkout           | `/Volumes/M1 Application SSD/Projects/Local775` on reviewed `main` after handoff merge               |
-| GitHub                       | https://github.com/Clvrwrk/775Local.git                                                              |
-| Production                   | https://775directory.com                                                                             |
-| Vercel                       | `cleverwork/reno-local-directory`; final receipt deployment `dpl_Biz96WB8ztHQk5PgU5quAT814HMd`       |
-| Cloudflare                   | Apex and `www` target Vercel; registrar MX/SPF preserved                                             |
-| Google Search Console        | Connector authenticated; `sc-domain:775directory.com` ownership missing; sitemap submission blocked  |
-| IndexNow                     | Six current sitemap URLs accepted with HTTP 202                                                      |
-| WorkOS                       | Isolated Local775 Staging application; human callback/session acceptance still required              |
-| Supabase Preview             | Migrations and private corpus foundations applied                                                    |
-| Supabase Production          | Infrastructure exists; schema/data remain untouched                                                  |
-| GoHighLevel                  | Dedicated Local775 communications location not confirmed; do not reuse Homeworks Advantage           |
-| Private enrichment artifacts | `/Users/chussey/Library/CloudStorage/Dropbox-AIA4/Cleverwork Main/Local775Directory/serp-enrichment` |
+| Service            | Detail                                                                                          |
+| ------------------ | ----------------------------------------------------------------------------------------------- |
+| Active worktree    | `/private/tmp/local775-claim-studio`, branch `codex/claim-studio-ghl-plan`                      |
+| Canonical checkout | `/Volumes/M1 Application SSD/Projects/Local775`; reconcile before execution                     |
+| GitHub             | https://github.com/Clvrwrk/775Local.git; current session commits are local and unpushed         |
+| Production         | https://775directory.com; no session deployment occurred                                        |
+| WorkOS             | Isolated Local775 Staging app; human Preview acceptance still required                          |
+| Supabase           | Canonical data/authorization; isolated Claim pgTAP remains P00; no session migration occurred   |
+| GoHighLevel        | Dedicated Local775 location/credentials not yet supplied; do not reuse Homeworks Advantage      |
+| CODEX receipts     | `/Users/chussey/Library/CloudStorage/Dropbox-AIA4/Cleverwork Main/CODEX/docs/linear/teams/CLE/` |
 
 ### Archived predecessor
 
-- `docs/handoffs/archive/2026-08-29-1056.md` — byte-for-byte archive of the previous project handoff.
+- `docs/handoffs/archive/2026-08-31-1901.md` — archive of the previously current Local775 handoff before this session update.
