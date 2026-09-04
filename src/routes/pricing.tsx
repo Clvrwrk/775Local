@@ -71,12 +71,12 @@ function PlanPrice({
           : `${dollars(annualPriceCents)} billed yearly`}
       </p>
       {onboardingPriceCents ? (
-        <p className="mt-1 text-xs font-semibold uppercase tracking-[0.14em] text-gold-2">
+        <p className="mt-1 text-xs font-semibold uppercase tracking-[0.14em] text-teal">
           Plus {dollars(onboardingPriceCents)} one-time onboarding
         </p>
       ) : null}
       {annualFreeMonths ? (
-        <p className="mt-1 text-xs font-semibold uppercase tracking-[0.14em] text-gold-2">
+        <p className="mt-1 text-xs font-semibold uppercase tracking-[0.14em] text-teal">
           {annualFreeMonths} months free annually
         </p>
       ) : null}
@@ -89,7 +89,7 @@ function PricingPage() {
     <SiteShell wash>
       <section className="app-page px-4 pb-10 pt-10 sm:pt-16">
         <div className="mx-auto max-w-3xl text-center">
-          <div className="inline-flex items-center gap-2 rounded-full border border-gold/35 bg-card px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.15em] text-gold-2 shadow-sm">
+          <div className="inline-flex items-center gap-2 rounded-full border border-gold/35 bg-card px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.15em] text-teal shadow-sm">
             <Sparkles className="size-3.5" aria-hidden="true" />
             Future pricing preview
           </div>
@@ -130,7 +130,7 @@ function PricingPage() {
                 >
                   <div className="absolute -top-2 left-1/2 z-10 hidden size-5 -translate-x-1/2 rounded-full border-4 border-paper bg-sage lg:block" />
                   <div className="flex items-center justify-between gap-3">
-                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gold-2">
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-teal">
                       {plan.eyebrow}
                     </p>
                     <span
@@ -165,8 +165,8 @@ function PricingPage() {
                   {plan.id === "free" ? (
                     <Link
                       to="/claim"
-                      search={{ q: "", city: "" }}
-                      className="mt-6 inline-flex h-11 items-center justify-center rounded-full bg-pine px-4 text-sm font-semibold text-paper hover:bg-teal focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pine"
+                      search={{ q: "", city: "reno" }}
+                      className="action-primary mt-6"
                     >
                       Claim a free listing
                     </Link>

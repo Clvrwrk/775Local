@@ -8,7 +8,9 @@ export const Route = createFileRoute("/login")({
     next: safeReturnPath(s.next),
     error: typeof s.error === "string" ? s.error : undefined,
   }),
-  head: () => ({ meta: [{ title: "Sign in | 775Directory" }, { name: "robots", content: "noindex, nofollow" }] }),
+  head: () => ({
+    meta: [{ title: "Sign in | 775Directory" }, { name: "robots", content: "noindex, nofollow" }],
+  }),
   component: Login,
 });
 
@@ -20,13 +22,12 @@ function Login() {
         <div className="mx-auto flex size-56 items-center justify-center rounded-full border border-gold/70">
           <div>
             <CircleMark className="mx-auto size-10 text-gold" />
-            <h1 className="mt-3 font-display text-3xl font-semibold leading-tight">
-              Join the 775
-            </h1>
+            <h1 className="mt-3 font-display text-3xl font-semibold leading-tight">Join the 775</h1>
           </div>
         </div>
         <p className="mt-6 text-sm text-ink-soft">
-          Claim a shop, register for neighborhood mail, or keep a punch card in your pocket.
+          Claim or manage your Reno business listing. Your account access is separate from approval
+          to manage a business.
         </p>
         {error ? (
           <p role="alert" className="mt-6 rounded-[16px] border border-line bg-card p-4 text-sm">
@@ -37,7 +38,7 @@ function Login() {
         ) : null}
         <a
           href={`/api/auth/sign-in?returnPathname=${encodeURIComponent(next)}`}
-          className="mt-8 inline-flex h-10 w-full items-center justify-center rounded-full bg-teal px-4 text-sm font-medium text-white hover:bg-teal/90"
+          className="action-primary mt-8 w-full"
         >
           Continue with email or Google
         </a>

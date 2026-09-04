@@ -1,4 +1,3 @@
-import { readFile } from "node:fs/promises";
 import { pathToFileURL } from "node:url";
 
 const host = "775directory.com";
@@ -7,7 +6,7 @@ const keyLocation = `https://${host}/${key}.txt`;
 const endpoint = "https://api.indexnow.org/indexnow";
 const maximumUrlsPerRequest = 10_000;
 
-/** Extract the canonical 775Directory URLs from the static production sitemap. */
+/** Extract the canonical 775Directory URLs from the production sitemap. */
 export function sitemapUrls(xml) {
   return [...xml.matchAll(/<loc>(https:\/\/775directory\.com\/[^<]*)<\/loc>/g)].map(
     (match) => match[1],
@@ -69,12 +68,21 @@ export async function submitIndexNow(
 
 /** Read and validate the sitemap while retaining a receipt for pre-request failures. */
 export async function runIndexNowSubmission({
-  readFileImpl = readFile,
+  readFileImpl,
   fetchImpl = globalThis.fetch,
   now = () => new Date(),
 } = {}) {
   try {
-    const sitemap = await readFileImpl(new URL("../public/sitemap.xml", import.meta.url), "utf8");
+    let sitemap;
+    if (readFileImpl) sitemap = await readFileImpl();
+    else {
+      const response = await fetchImpl(`https://${host}/sitemap.xml`, {
+        signal: AbortSignal.timeout(10_000),
+        redirect: "error",
+      });
+      if (!response.ok) throw new Error("sitemap_unavailable");
+      sitemap = await response.text();
+    }
     return await submitIndexNow(sitemapUrls(sitemap), { fetchImpl, now });
   } catch {
     return {
@@ -92,7 +100,7 @@ export async function runIndexNowSubmission({
   }
 }
 
-/** Read the repository sitemap, submit it, print the receipt, and set the exit status. */
+/** Read the live canonical sitemap, submit it, print the receipt, and set the exit status. */
 async function main() {
   const receipt = await runIndexNowSubmission();
   process.stdout.write(`${JSON.stringify(receipt, null, 2)}\n`);

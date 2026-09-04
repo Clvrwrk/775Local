@@ -11,11 +11,11 @@ import { homeBusinesses, listCities, listPublishedCategories } from "@/lib/direc
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "775Directory | Find local businesses in Northern Nevada" },
+      { title: "775Directory | Find local businesses in Reno" },
       {
         name: "description",
         content:
-          "Find reviewed local business listings across Reno, Sparks, and Northern Nevada's 775 area code.",
+          "Find local businesses in Reno. Browse services, check business details, and make your next call.",
       },
     ],
     links: [{ rel: "canonical", href: "https://775directory.com/" }],
@@ -41,14 +41,14 @@ function Home() {
         <div className="overflow-hidden rounded-[30px] bg-pine text-paper shadow-[0_24px_70px_rgba(28,26,22,0.16)] md:grid md:min-h-[34rem] md:grid-cols-[1.08fr_0.92fr]">
           <div className="relative z-10 flex flex-col justify-center px-6 py-10 sm:px-10 md:px-12 md:py-16">
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gold">
-              Northern Nevada, by locals
+              Reno, by locals
             </p>
             <h1 className="mt-4 max-w-xl font-display text-5xl font-semibold leading-[0.92] tracking-[-0.035em] sm:text-6xl lg:text-7xl">
               Find the local shop worth calling.
             </h1>
             <p className="mt-5 max-w-lg text-base leading-7 text-paper/76 sm:text-lg">
-              Search practical business details across Reno, Sparks, and the 775. Unclaimed listings
-              stay visible and are clearly labeled.
+              Find a shop or service in Reno. Check the details, visit their website, or give them a
+              call.
             </p>
             <div className="mt-7 max-w-xl rounded-[22px] bg-paper p-3 text-ink sm:p-4">
               <SearchBox cities={cities} />
@@ -58,14 +58,17 @@ function Home() {
                 Browse services <ArrowRight className="size-4" />
               </Link>
               <Link to="/cities" className="inline-flex items-center gap-1.5 hover:text-paper">
-                Choose a town <ArrowRight className="size-4" />
+                Explore Reno <ArrowRight className="size-4" />
               </Link>
             </div>
           </div>
           <div className="relative min-h-72 overflow-hidden md:min-h-full">
             <img
               src="/brand/imagery/mainstreet.jpg"
-              alt="A small Northern Nevada main street beneath the mountains"
+              alt="A regional main-street illustration beneath the Sierra"
+              fetchPriority="high"
+              width={1200}
+              height={900}
               className="absolute inset-0 size-full object-cover"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-pine/75 via-transparent to-pine/10 md:bg-gradient-to-r md:from-pine/45 md:via-transparent md:to-transparent" />
@@ -136,21 +139,21 @@ function Home() {
                 id="towns-heading"
                 className="mt-2 font-display text-4xl font-semibold tracking-tight sm:text-5xl"
               >
-                Pick your part of the 775.
+                A little closer to home.
               </h2>
               <p className="mt-4 max-w-md text-sm leading-6 text-ink-soft">
-                Launch coverage begins with reviewed listings in Reno and Sparks. More Northern
-                Nevada towns will open as their records clear review.
+                Our pilot starts in Reno. Explore local shops and service businesses, with clear
+                labels showing which details and ownership have been checked.
               </p>
               <Link
                 to="/cities"
                 className="mt-5 inline-flex items-center gap-1 text-sm font-semibold text-teal"
               >
-                See town pages <ArrowRight className="size-4" />
+                Browse Reno businesses <ArrowRight className="size-4" />
               </Link>
             </div>
-            <div className="grid gap-3 sm:grid-cols-2">
-              {cities.slice(0, 2).map((city, index) => (
+            <div className="grid gap-3">
+              {cities.map((city) => (
                 <Link
                   key={city.slug}
                   to="/nv/$city"
@@ -158,9 +161,7 @@ function Home() {
                   className="group relative min-h-72 overflow-hidden rounded-[26px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pine"
                 >
                   <img
-                    src={
-                      index === 0 ? "/brand/imagery/sierra-vista.jpg" : "/brand/imagery/workvan.jpg"
-                    }
+                    src={"/brand/imagery/sierra-vista.jpg"}
                     alt=""
                     className="absolute inset-0 size-full object-cover transition-transform duration-500 group-hover:scale-[1.025]"
                   />
@@ -194,7 +195,7 @@ function Home() {
           </div>
           <Link
             to="/search"
-            search={{ q: "", city: "", category: "" }}
+            search={{ q: "", city: "reno", category: "" }}
             className="inline-flex items-center gap-1 text-sm font-semibold text-teal"
           >
             Search all <ArrowRight className="size-4" />

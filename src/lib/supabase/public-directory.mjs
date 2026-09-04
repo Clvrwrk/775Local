@@ -33,7 +33,7 @@ const PUBLIC_COLUMNS = [
   "photo_urls",
 ].join(",");
 
-/** @typedef {{ city?: string, category?: string, q?: string, slug?: string, featured?: boolean, unclaimed?: boolean, limit?: number }} DirectoryFilters */
+/** @typedef {{ city?: string, category?: string, q?: string, slug?: string, featured?: boolean, unclaimed?: boolean, limit?: number, offset?: number }} DirectoryFilters */
 /** @typedef {{ SUPABASE_URL?: string, SUPABASE_PUBLISHABLE_KEY?: string }} PublicDirectoryEnv */
 /** @typedef {{ cityName?: string, categoryName?: string }} DisplayNames */
 
@@ -80,7 +80,9 @@ export function buildDirectoryUrl(baseUrl, filters = {}) {
 
   const requestedLimit = Number.isFinite(filters.limit) ? Number(filters.limit) : 100;
   url.searchParams.set("limit", String(Math.min(100, Math.max(1, Math.trunc(requestedLimit)))));
-  url.searchParams.set("order", "is_featured.desc,display_name.asc");
+  if (Number.isInteger(filters.offset) && Number(filters.offset) >= 0)
+    url.searchParams.set("offset", String(filters.offset));
+  url.searchParams.set("order", "display_name.asc,stable_id.asc");
   return url;
 }
 

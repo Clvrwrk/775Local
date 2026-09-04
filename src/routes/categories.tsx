@@ -7,10 +7,10 @@ export const Route = createFileRoute("/categories")({
   loader: () => listPublishedCategories({ data: {} }),
   head: () => ({
     meta: [
-      { title: "Local business categories | 775Directory" },
+      { title: "Reno business categories | 775Directory" },
       {
         name: "description",
-        content: "Browse local business categories across Reno, Sparks, and Northern Nevada.",
+        content: "Browse Reno businesses by service and find direct contact details.",
       },
     ],
     links: [{ rel: "canonical", href: "https://775directory.com/categories" }],

@@ -22,6 +22,7 @@ export type Category = {
 
 export type BusinessCard = {
   id: number;
+  sourceId: string;
   slug: string;
   name: string;
   tagline: string;
@@ -41,7 +42,8 @@ export type BusinessCard = {
   primaryCategory: string;
   primaryCategorySlug: string;
   categorySlugs: string[];
-  claimedBy: string | null;
+  /** Public projection never identifies an owner Actor. */
+  claimedBy: null;
   website: string;
   publicEmail: boolean;
   hideStreet: boolean;

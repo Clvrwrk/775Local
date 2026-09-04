@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { fetchDirectoryListings } from "@/lib/supabase/public-directory.mjs";
 import type { ListingPhoto, Offer } from "./types";
 
-const PHOTO_CAP = { claimed: 6, featured: 12 } as const;
+const PHOTO_CAP = { claimed: 3, featured: 20 } as const;
 
 function ownerAccessUnavailable<T>(): T {
   throw new Error("Owner access is unavailable until the WorkOS connection is configured.");
@@ -32,14 +32,16 @@ export const deleteListingPhoto = createServerFn({ method: "POST" })
   .handler(async () => ownerAccessUnavailable<{ ok: true }>());
 
 export const saveOffer = createServerFn({ method: "POST" })
-  .validator((input: {
-    businessId: number;
-    title: string;
-    details: string;
-    code: string;
-    expiresOn: string;
-    active: boolean;
-  }) => input)
+  .validator(
+    (input: {
+      businessId: number;
+      title: string;
+      details: string;
+      code: string;
+      expiresOn: string;
+      active: boolean;
+    }) => input,
+  )
   .handler(async () => ownerAccessUnavailable<{ ok: true }>());
 
 export const getOwnerOffer = createServerFn({ method: "GET" })
@@ -53,22 +55,29 @@ export const setFeaturedPackage = createServerFn({ method: "POST" })
   .handler(async () => ownerAccessUnavailable<{ featured: boolean }>());
 
 export const listActiveOffers = createServerFn({ method: "GET" }).handler(async () => {
-  const listings = await fetchDirectoryListings({ filters: { limit: 24 } });
+  const listings = await fetchDirectoryListings({ filters: { city: "reno", limit: 100 } });
   return listings.flatMap((listing) => {
     const offer = listing.offer as Offer | null;
     if (!offer) return [];
-    return [{
-      businessId: listing.id as number,
-      slug: listing.slug as string,
-      businessName: listing.name as string,
-      cityName: listing.cityName as string,
-      featured: listing.featured as boolean,
-      title: offer.title,
-      details: offer.details,
-      code: offer.code,
-      expiresOn: offer.expiresOn,
-    }];
+    return [
+      {
+        businessId: listing.id as number,
+        slug: listing.slug as string,
+        businessName: listing.name as string,
+        cityName: listing.cityName as string,
+        featured: listing.featured as boolean,
+        title: offer.title,
+        details: offer.details,
+        code: offer.code,
+        expiresOn: offer.expiresOn,
+      },
+    ];
   });
 });
 
-export type OwnerPhotoResult = { photos: ListingPhoto[]; cap: number; featured: boolean; slug: string };
+export type OwnerPhotoResult = {
+  photos: ListingPhoto[];
+  cap: number;
+  featured: boolean;
+  slug: string;
+};

@@ -1,18 +1,18 @@
+import { InquiryForm } from "@/components/directory/inquiry-form";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { BadgeCheck, CalendarCheck, Clock, Globe2, MapPin, Phone } from "lucide-react";
+import { ContactActions } from "@/components/directory/contact-actions";
 import {
-  ArrowUpRight,
-  BadgeCheck,
-  CalendarCheck,
-  Clock,
-  Globe2,
-  MapPin,
-  Phone,
-} from "lucide-react";
+  telephoneHref,
+  visibleServices,
+  visibleProjects,
+  descriptionBlocks,
+} from "@/lib/directory/presentation.mjs";
 import { PhotoGallery } from "@/components/directory/gallery";
 import { OfferBanner } from "@/components/directory/offer-card";
 import { Stars } from "@/components/directory/stars";
+import { ClaimListingPanel } from "@/components/directory/claim-listing";
 import { SiteShell } from "@/components/layout/site-shell";
-import { useCurrentUser } from "@/lib/auth/use-current-user";
 import { listingCover } from "@/lib/directory/covers";
 import { getBusiness } from "@/lib/directory/queries";
 import { serializeStructuredData } from "@/lib/directory/structured-data.mjs";
@@ -28,6 +28,9 @@ export const Route = createFileRoute("/biz/$slug")({
     meta: loaderData?.biz
       ? [
           { title: `${loaderData.biz.name} | 775Directory` },
+          ...(loaderData.biz.citySlug !== "reno"
+            ? [{ name: "robots", content: "noindex, follow" }]
+            : []),
           {
             name: "description",
             content:
@@ -62,10 +65,11 @@ function checkedLabel(value: string | null) {
 
 function BusinessPage() {
   const { biz } = Route.useLoaderData();
-  const user = useCurrentUser();
-  const isOwner = Boolean(user && biz.claimedBy === user.id);
   const showStreet = !biz.hideStreet && biz.street && biz.street !== "Service area";
   const checked = checkedLabel(biz.informationCheckedAt);
+  const phoneHref = telephoneHref(biz.phone);
+  const services = visibleServices(biz.services);
+  const projects = visibleProjects(biz.projects);
   const hero = biz.coverUrl || listingCover(biz.citySlug, biz.id);
   const jsonLd = {
     "@context": "https://schema.org",
@@ -108,23 +112,11 @@ function BusinessPage() {
 
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1.45fr)_minmax(19rem,0.65fr)] lg:items-start">
           <div className="min-w-0">
-            {biz.photos.length ? (
-              <PhotoGallery photos={biz.photos} name={biz.name} />
-            ) : (
-              <div className="relative aspect-[16/9] overflow-hidden rounded-[28px] bg-paper-2 sm:aspect-[2/1]">
-                <img src={hero} alt="" className="size-full object-cover" />
-                <div className="absolute inset-0 bg-gradient-to-t from-ink/55 via-transparent to-transparent" />
-                <span className="absolute bottom-4 left-4 rounded-full border border-white/20 bg-ink/65 px-3 py-1.5 text-xs font-medium text-paper backdrop-blur-sm">
-                  Regional image · {biz.cityName}
-                </span>
-              </div>
-            )}
-
             <div className="mt-7">
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-teal">
                 {biz.primaryCategory} · {biz.cityName}
               </p>
-              <h1 className="mt-2 font-display text-5xl font-semibold leading-[0.94] tracking-[-0.03em] sm:text-6xl">
+              <h1 className="mt-2 font-display text-4xl font-semibold leading-[1.02] tracking-[-0.03em] sm:text-6xl">
                 {biz.name}
               </h1>
               {biz.tagline ? (
@@ -160,17 +152,23 @@ function BusinessPage() {
                 <span className="rounded-full border border-line bg-card px-3 py-1 text-xs text-muted">
                   {biz.verified ? "Information checked" : "Unverified"}
                 </span>
-                {isOwner ? (
-                  <Link
-                    to="/studio/$slug"
-                    params={{ slug: biz.slug }}
-                    className="text-xs font-semibold text-teal"
-                  >
-                    Open listing studio
-                  </Link>
-                ) : null}
               </div>
             </div>
+
+            <div className="my-6">
+              <ContactActions phone={biz.phone} website={biz.website} sponsored={biz.featured} />
+            </div>
+            {biz.photos.length ? (
+              <PhotoGallery photos={biz.photos} name={biz.name} />
+            ) : (
+              <div className="relative aspect-[16/9] overflow-hidden rounded-[28px] bg-paper-2 sm:aspect-[2/1]">
+                <img src={hero} alt="" className="size-full object-cover" />
+                <div className="absolute inset-0 bg-gradient-to-t from-ink/55 via-transparent to-transparent" />
+                <span className="absolute bottom-4 left-4 rounded-full border border-white/20 bg-ink/65 px-3 py-1.5 text-xs font-medium text-paper backdrop-blur-sm">
+                  Regional image · {biz.cityName}
+                </span>
+              </div>
+            )}
 
             {biz.offer ? (
               <div className="mt-6">
@@ -182,10 +180,14 @@ function BusinessPage() {
               <h2 id="about-business" className="font-display text-3xl font-semibold">
                 About this business
               </h2>
-              <p className="mt-3 max-w-3xl text-base leading-7 text-ink-soft">
-                {biz.description ||
-                  `${biz.name} is listed for ${biz.primaryCategory.toLowerCase()} in ${biz.cityName}. Contact the business directly for current service details.`}
-              </p>
+              <div className="mt-3 max-w-prose space-y-4 text-base leading-7 text-ink-soft">
+                {descriptionBlocks(
+                  biz.description ||
+                    `${biz.name} is listed for ${biz.primaryCategory.toLowerCase()} in ${biz.cityName}. Contact the business directly for current service details.`,
+                ).map((paragraph, index) => (
+                  <p key={index}>{paragraph}</p>
+                ))}
+              </div>
               {checked ? (
                 <p className="mt-4 inline-flex items-center gap-2 text-xs text-muted">
                   <CalendarCheck className="size-4 text-teal" /> Information checked {checked}
@@ -197,7 +199,7 @@ function BusinessPage() {
               )}
             </section>
 
-            {biz.contentTier !== "basic" && biz.services.length ? (
+            {biz.contentTier !== "basic" && services.length ? (
               <section
                 className="mt-8 border-t border-line pt-8"
                 aria-labelledby="services-offered"
@@ -206,7 +208,7 @@ function BusinessPage() {
                   Services
                 </h2>
                 <ul className="mt-4 grid gap-2 sm:grid-cols-2">
-                  {biz.services.map((service) => (
+                  {services.map((service) => (
                     <li
                       key={service}
                       className="rounded-[18px] border border-line bg-card px-4 py-3 text-sm text-ink-soft"
@@ -218,7 +220,7 @@ function BusinessPage() {
               </section>
             ) : null}
 
-            {biz.contentTier === "premium" && biz.projects.length ? (
+            {biz.contentTier === "premium" && projects.length ? (
               <section
                 className="mt-8 border-t border-line pt-8"
                 aria-labelledby="projects-heading"
@@ -227,7 +229,7 @@ function BusinessPage() {
                   Projects
                 </h2>
                 <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                  {biz.projects.map((project, index) => (
+                  {projects.map((project, index) => (
                     <article
                       key={`${project.title}-${index}`}
                       className="overflow-hidden rounded-[22px] border border-line bg-card"
@@ -274,30 +276,21 @@ function BusinessPage() {
               </section>
             ) : null}
 
-            {!biz.ownerVerified ? (
-              <section
-                className="mt-8 rounded-[24px] border border-line bg-card p-6"
-                aria-labelledby="claim-heading"
-              >
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-teal">
-                  Unclaimed listing
-                </p>
-                <h2 id="claim-heading" className="mt-2 font-display text-2xl font-semibold">
-                  Own {biz.name}?
-                </h2>
-                <p className="mt-2 max-w-2xl text-sm leading-6 text-ink-soft">
-                  Claim submissions are not open yet. The future workflow will require evidence
-                  connecting the requester to the business before account control is granted.
-                </p>
-                <Link
-                  to="/claim"
-                  search={{ q: biz.name, city: biz.citySlug }}
-                  className="mt-4 inline-flex min-h-11 items-center rounded-full border border-line px-4 text-sm font-semibold text-ink hover:bg-paper-2"
-                >
-                  See Claim status
-                </Link>
-              </section>
-            ) : null}
+            {biz.citySlug === "reno" ? (
+              <ClaimListingPanel
+                listingId={biz.sourceId}
+                businessName={biz.name}
+                slug={biz.slug}
+                ownerVerified={biz.ownerVerified}
+                website={biz.website}
+                listingEmail=""
+              />
+            ) : (
+              <p className="mt-8 rounded-2xl border border-line bg-card p-5 text-sm text-muted">
+                This listing is retained for reference. The current owner-onboarding pilot is in
+                Reno.
+              </p>
+            )}
 
             {biz.reviews.length ? (
               <section className="mt-8 border-t border-line pt-8" aria-labelledby="reviews-heading">
@@ -329,19 +322,19 @@ function BusinessPage() {
               Confirm availability, pricing, and current hours directly with the business.
             </p>
             <dl className="mt-5 grid gap-4 text-sm">
-              {biz.phone ? (
+              {phoneHref ? (
                 <div className="flex items-start gap-3">
-                  <Phone className="mt-0.5 size-5 shrink-0 text-gold-2" />
+                  <Phone className="mt-0.5 size-5 shrink-0 text-teal" />
                   <div>
                     <dt className="text-xs text-muted">Phone</dt>
                     <dd className="mt-0.5 font-medium">
-                      <a href={`tel:+1${biz.phone.replace(/\D/g, "")}`}>{formatPhone(biz.phone)}</a>
+                      <a href={phoneHref ?? undefined}>{formatPhone(biz.phone)}</a>
                     </dd>
                   </div>
                 </div>
               ) : null}
               <div className="flex items-start gap-3">
-                <MapPin className="mt-0.5 size-5 shrink-0 text-gold-2" />
+                <MapPin className="mt-0.5 size-5 shrink-0 text-teal" />
                 <div>
                   <dt className="text-xs text-muted">{showStreet ? "Address" : "Service area"}</dt>
                   <dd className="mt-0.5 text-ink-soft">
@@ -351,7 +344,7 @@ function BusinessPage() {
                 </div>
               </div>
               <div className="flex items-start gap-3">
-                <Clock className="mt-0.5 size-5 shrink-0 text-gold-2" />
+                <Clock className="mt-0.5 size-5 shrink-0 text-teal" />
                 <div>
                   <dt className="text-xs text-muted">Hours</dt>
                   <dd className="mt-0.5 text-ink-soft">{biz.hours}</dd>
@@ -359,7 +352,7 @@ function BusinessPage() {
               </div>
               {biz.website ? (
                 <div className="flex items-start gap-3">
-                  <Globe2 className="mt-0.5 size-5 shrink-0 text-gold-2" />
+                  <Globe2 className="mt-0.5 size-5 shrink-0 text-teal" />
                   <div className="min-w-0">
                     <dt className="text-xs text-muted">Website</dt>
                     <dd className="mt-0.5 truncate font-medium">{safeHost(biz.website)}</dd>
@@ -367,30 +360,16 @@ function BusinessPage() {
                 </div>
               ) : null}
             </dl>
-            <div className="mt-6 grid gap-2">
-              {biz.phone ? (
-                <a
-                  href={`tel:+1${biz.phone.replace(/\D/g, "")}`}
-                  className="inline-flex min-h-12 items-center justify-center rounded-full bg-gold px-4 text-sm font-semibold text-ink hover:bg-gold-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pine"
-                >
-                  Call {formatPhone(biz.phone)}
-                </a>
-              ) : null}
-              {biz.website ? (
-                <a
-                  href={biz.website}
-                  target="_blank"
-                  rel={biz.featured ? "sponsored noopener noreferrer" : "noopener noreferrer"}
-                  className="inline-flex min-h-12 items-center justify-center gap-1.5 rounded-full border border-line px-4 text-sm font-semibold text-ink hover:bg-paper-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pine"
-                >
-                  Visit website <ArrowUpRight className="size-4" />
-                </a>
-              ) : null}
+            <div className="mt-6">
+              <ContactActions phone={biz.phone} website={biz.website} sponsored={biz.featured} />
             </div>
             <p className="mt-5 border-t border-line pt-4 text-xs leading-5 text-muted">
               Listing tier reflects available content, not ownership or endorsement. Confirm
               pricing, availability, licensing, and service details directly with the business.
             </p>
+            {biz.citySlug === "reno" ? (
+              <InquiryForm listingId={biz.sourceId} name={biz.name} />
+            ) : null}
           </aside>
         </div>
       </article>

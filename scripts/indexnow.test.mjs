@@ -9,7 +9,8 @@ import {
 } from "./submit-indexnow.mjs";
 
 test("IndexNow publishes a valid same-host key and submits only sitemap canonicals", async () => {
-  const sitemap = await readFile(new URL("../public/sitemap.xml", import.meta.url), "utf8");
+  const { renderSitemap } = await import("../src/lib/directory/sitemap.mjs");
+  const sitemap = renderSitemap([]);
   const urls = sitemapUrls(sitemap);
   const payload = indexNowPayload(urls);
   const keyFile = await readFile(new URL(`../public/${payload.key}.txt`, import.meta.url), "utf8");

@@ -7,7 +7,7 @@ import type { City } from "@/lib/directory/types";
 export function SearchBox({
   cities,
   defaultQ = "",
-  defaultCity = "",
+  defaultCity = "reno",
 }: {
   cities: City[];
   defaultQ?: string;
@@ -15,13 +15,13 @@ export function SearchBox({
 }) {
   const navigate = useNavigate();
   const [q, setQ] = useState(defaultQ);
-  const [city, setCity] = useState(defaultCity);
+  const [city, setCity] = useState(defaultCity === "reno" ? defaultCity : "reno");
 
   function go(e: React.FormEvent) {
     e.preventDefault();
     void navigate({
       to: "/search",
-      search: { q: q.trim(), city, category: "" },
+      search: { q: q.trim(), city: "reno", category: "" },
     });
   }
 
@@ -53,7 +53,6 @@ export function SearchBox({
         aria-label="Town"
         className="mt-2 w-full bg-transparent text-center text-sm text-ink-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pine"
       >
-        <option value="">All towns in the 775</option>
         {cities.map((c) => (
           <option key={c.slug} value={c.slug}>
             {c.name}
