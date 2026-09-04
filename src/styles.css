@@ -182,3 +182,9 @@
     animation-iteration-count: 1 !important;
   }
 }
+
+.action-primary:disabled,
+.action-secondary:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}

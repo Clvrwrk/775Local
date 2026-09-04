@@ -57,6 +57,7 @@ function StudioPage() {
     const form = new FormData(event.currentTarget);
     const data = {
       action: "propose",
+      baseVersion: workspace?.editable.baseVersion,
       id: business.sourceId,
       name: String(form.get("name")),
       description: String(form.get("description")),
@@ -117,6 +118,7 @@ function StudioPage() {
           <div className="mt-8 grid gap-6 lg:grid-cols-[1.2fr_1fr]">
             {workspace.canEdit ? (
               <form
+                key={workspace.editable.baseVersion}
                 onSubmit={propose}
                 className="grid gap-4 rounded-[24px] border border-line bg-card p-6"
               >
@@ -129,7 +131,7 @@ function StudioPage() {
                   Business name
                   <Input
                     name="name"
-                    defaultValue={business.name}
+                    defaultValue={workspace.editable.name}
                     required
                     minLength={2}
                     maxLength={200}
@@ -139,7 +141,7 @@ function StudioPage() {
                   About your business
                   <Textarea
                     name="description"
-                    defaultValue={business.description}
+                    defaultValue={workspace.editable.description}
                     required
                     minLength={10}
                     maxLength={5000}
@@ -152,7 +154,7 @@ function StudioPage() {
                     name="phone"
                     type="tel"
                     autoComplete="tel"
-                    defaultValue={business.phone}
+                    defaultValue={workspace.editable.phone}
                     required
                   />
                 </label>
@@ -161,7 +163,7 @@ function StudioPage() {
                   <Input
                     name="website"
                     type="url"
-                    defaultValue={business.website}
+                    defaultValue={workspace.editable.website}
                     placeholder="https://your-business.com"
                   />
                 </label>

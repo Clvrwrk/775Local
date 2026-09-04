@@ -28,6 +28,12 @@ language sql stable security definer set search_path = '' as $$
   ) end
 $$;
 
+create function app.can_propose_pilot_listing(requested_listing_id uuid) returns boolean
+language sql stable security definer set search_path='' as $$
+ select app.is_operator() or exists(select 1 from app.listing_participations lp where lp.actor_id=app.current_actor_id() and lp.listing_id=requested_listing_id and lp.role in ('business_owner','listing_manager','agency_representative') and lp.status='active' and (lp.starts_at is null or lp.starts_at<=statement_timestamp()) and (lp.expires_at is null or lp.expires_at>statement_timestamp()) and lp.authority_scope->>'listing_identity'='propose')
+$$;
+revoke all on function app.can_propose_pilot_listing(uuid) from public,anon,authenticated;
+
 create function app.pilot_account() returns jsonb
 language plpgsql stable security definer set search_path = '' as $$
 declare actor uuid := app.current_actor_id(); result jsonb;
@@ -48,8 +54,9 @@ declare role_name text := app.pilot_role(requested_listing_id);
 begin
   if role_name is null then raise exception 'listing_access_forbidden'; end if;
   return jsonb_build_object('role',role_name,
-    'canEdit',role_name in ('operator','business_owner','listing_manager','agency_representative'),
-    'proposals',coalesce((select jsonb_agg(jsonb_build_object('id',id,'status',status,'reason',reason,'createdAt',created_at,'payload',payload) order by created_at desc) from (select * from app.listing_proposals where listing_id=requested_listing_id and role_name <> 'lead_recipient' and (role_name in ('operator','business_owner','listing_manager') or actor_id=app.current_actor_id()) order by created_at desc limit 20) p),'[]'::jsonb));
+    'canEdit',app.can_propose_pilot_listing(requested_listing_id),
+    'editable',(select jsonb_build_object('name',bl.display_name,'description',coalesce((select lc.about from app.listing_content lc where lc.listing_id=bl.id and lc.content_status='approved'),bl.description,''),'phone',coalesce(bl.phone_e164,''),'website',coalesce(bl.website_url,''),'baseVersion',bl.updated_at) from app.business_listings bl where bl.id=requested_listing_id),
+    'proposals',coalesce((select jsonb_agg(jsonb_build_object('id',id,'status',status,'reason',reason,'createdAt',created_at,'payload',payload) order by created_at desc) from (select * from app.listing_proposals where listing_id=requested_listing_id and role_name <> 'lead_recipient' and (role_name='operator' or (role_name in ('business_owner','listing_manager') and app.can_propose_pilot_listing(requested_listing_id)) or actor_id=app.current_actor_id()) order by created_at desc limit 20) p),'[]'::jsonb));
 end;
 $$;
 
@@ -57,11 +64,12 @@ create function app.submit_listing_proposal(requested_listing_id uuid, requested
 language plpgsql security definer set search_path = '' as $$
 declare actor uuid := app.current_actor_id(); role_name text := app.pilot_role(requested_listing_id); existing app.listing_proposals%rowtype; proposal uuid;
 begin
-  if role_name is null or role_name not in ('operator','business_owner','listing_manager','agency_representative') then raise exception 'listing_access_forbidden'; end if;
+  if not app.can_propose_pilot_listing(requested_listing_id) then raise exception 'listing_access_forbidden'; end if;
   if not exists(select 1 from app.business_listings where id=requested_listing_id and city_slug='reno') then raise exception 'outside_pilot'; end if;
   if requested_key is null or requested_key !~ '^[A-Za-z0-9][A-Za-z0-9._:-]{7,199}$'
     or jsonb_typeof(requested_payload) is distinct from 'object'
-    or requested_payload - array['name','description','phone','website'] <> '{}'::jsonb
+    or requested_payload - array['name','description','phone','website','baseVersion'] <> '{}'::jsonb
+    or coalesce(requested_payload->>'baseVersion','') !~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}T'
     or length(coalesce(requested_payload->>'name','')) not between 2 and 200
     or length(coalesce(requested_payload->>'description','')) not between 10 and 5000
     or coalesce(requested_payload->>'phone','') !~ '^\+1[2-9][0-9]{2}[2-9][0-9]{6}$'
@@ -73,7 +81,9 @@ begin
     if existing.actor_id<>actor or existing.listing_id<>requested_listing_id or existing.payload<>requested_payload then raise exception 'idempotency_conflict'; end if;
     return jsonb_build_object('id',existing.id,'status',existing.status,'idempotent',true);
   end if;
-  insert into app.listing_proposals(listing_id,actor_id,base_updated_at,payload,idempotency_key) values(requested_listing_id,actor,(select updated_at from app.business_listings where id=requested_listing_id),requested_payload,requested_key) returning id into proposal;
+  perform 1 from app.business_listings where id=requested_listing_id and updated_at=(requested_payload->>'baseVersion')::timestamptz for share;
+  if not found then raise exception 'listing_changed_since_proposal'; end if;
+  insert into app.listing_proposals(listing_id,actor_id,base_updated_at,payload,idempotency_key) values(requested_listing_id,actor,(requested_payload->>'baseVersion')::timestamptz,requested_payload,requested_key) returning id into proposal;
   insert into app.audit_events(actor_id,actor_kind,action,target_type,target_id,request_id) values(actor,role_name,'listing.proposed','listing_proposal',proposal::text,requested_key);
   insert into app.integration_outbox(destination,event_type,aggregate_type,aggregate_id,idempotency_key,payload)
     values('gohighlevel','listing.proposed','listing_proposal',proposal::text,'listing-proposal:'||requested_key,jsonb_build_object('proposal_id',proposal,'listing_id',requested_listing_id));
@@ -89,7 +99,7 @@ begin
   select 'claim_review'=any(permissions), 'listing_review'=any(permissions) into can_claim,can_listing from app.operator_grants where actor_id=actor and status='active';
   if not coalesce(can_claim,false) and not coalesce(can_listing,false) then raise exception 'review_forbidden'; end if;
   return jsonb_build_object(
-    'claims', case when can_claim then coalesce((select jsonb_agg(jsonb_build_object('id',c.id,'name',bl.display_name,'slug',bl.current_slug,'method',c.method,'status',c.status)) from (select * from app.claims where status in ('submitted','needs_evidence') order by created_at limit 100) c join app.business_listings bl on bl.id=c.listing_id where bl.city_slug='reno'),'[]'::jsonb) else '[]'::jsonb end,
+    'claims', case when can_claim then coalesce((select jsonb_agg(jsonb_build_object('id',c.id,'name',bl.display_name,'slug',bl.current_slug,'method',c.method,'status',c.status,'claimantEmail',(select primary_email from app.actors where id=c.claimant_actor_id),'domainMatches',case when c.method='business_domain' then app.claim_email_matches_listing(c.claimant_actor_id,c.listing_id) else false end)) from (select * from app.claims where status in ('submitted','needs_evidence') order by created_at limit 100) c join app.business_listings bl on bl.id=c.listing_id where bl.city_slug='reno'),'[]'::jsonb) else '[]'::jsonb end,
     'proposals',case when can_listing then coalesce((select jsonb_agg(jsonb_build_object('id',p.id,'name',bl.display_name,'payload',p.payload)) from (select * from app.listing_proposals where status='pending_review' order by created_at limit 100) p join app.business_listings bl on bl.id=p.listing_id),'[]'::jsonb) else '[]'::jsonb end
   );
 end;
@@ -97,7 +107,7 @@ $$;
 
 create function app.decide_listing_proposal(requested_id uuid, requested_decision text, requested_reason text) returns jsonb
 language plpgsql security definer set search_path = '' as $$
-declare actor uuid := app.current_actor_id(); proposal app.listing_proposals%rowtype;
+declare actor uuid := app.current_actor_id(); proposal app.listing_proposals%rowtype; before_values jsonb; after_values jsonb;
 begin
   if not app.operator_recent_auth(900) or not exists(select 1 from app.operator_grants where actor_id=actor and status='active' and 'listing_review'=any(permissions)) then raise exception 'review_forbidden'; end if;
   if requested_decision is null or requested_decision not in ('approved','rejected') or length(coalesce(trim(requested_reason),'')) not between 3 and 500 then raise exception 'invalid_decision'; end if;
@@ -110,8 +120,11 @@ begin
   if requested_decision='approved' then
     perform 1 from app.business_listings where id=proposal.listing_id and updated_at=proposal.base_updated_at for update;
     if not found then raise exception 'listing_changed_since_proposal'; end if;
+    select jsonb_build_object('listing',to_jsonb(bl),'content',(select to_jsonb(lc) from app.listing_content lc where lc.listing_id=bl.id)) into before_values from app.business_listings bl where bl.id=proposal.listing_id;
     update app.business_listings set display_name=proposal.payload->>'name', description=proposal.payload->>'description', phone_e164=proposal.payload->>'phone', website_url=nullif(proposal.payload->>'website',''), information_checked_at=null, information_checked_by=null, updated_at=clock_timestamp() where id=proposal.listing_id;
     update app.listing_content set about=proposal.payload->>'description', updated_by=actor, updated_at=clock_timestamp() where listing_id=proposal.listing_id and content_status='approved';
+    select jsonb_build_object('listing',to_jsonb(bl),'content',(select to_jsonb(lc) from app.listing_content lc where lc.listing_id=bl.id)) into after_values from app.business_listings bl where bl.id=proposal.listing_id;
+    insert into app.listing_revisions(listing_id,revision_type,before_values,after_values,reason_codes,actor_id) values(proposal.listing_id,'approved_change',before_values,after_values,array['studio-review'],actor);
   end if;
   update app.listing_proposals set status=requested_decision,reason=trim(requested_reason),decided_by=actor,decided_at=statement_timestamp() where id=proposal.id;
   insert into app.audit_events(actor_id,actor_kind,action,target_type,target_id,reason,after_ref) values(actor,'operator','listing.proposal_'||requested_decision,'listing_proposal',proposal.id::text,trim(requested_reason),jsonb_build_object('listing_id',proposal.listing_id));

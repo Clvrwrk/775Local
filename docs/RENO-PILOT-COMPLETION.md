@@ -19,15 +19,15 @@ Design authority: supplied `Design system build guidance 2` pack. Retain 775 Dir
 
 ## Execution and acceptance
 
-- [ ] Reconcile source, decisions and existing Linear accounting.
-- [ ] Reno discovery boundary, honest non-pilot historical pages, Reno copy and onboarding.
-- [ ] Valid phone actions, early mobile contact, continuous navigation, reachable policies.
+- [x] Reconcile source, decisions and existing Linear accounting.
+- [x] Reno discovery boundary, honest non-pilot historical pages, Reno copy and existing-listing claim entry.
+- [x] Valid phone actions, early mobile contact, continuous navigation, reachable policies.
 - [ ] Complete design-system application and truthful content/error/empty states.
-- [ ] Search category aliases, pagination, eligible dynamic sitemap.
+- [x] Search category aliases, pagination, eligible dynamic sitemap.
 - [ ] Claim evidence and operator decisions; listing-scoped permissions and Studio.
 - [ ] Durable resident inquiry, verified recipient, delivery/reconciliation and outcome.
 - [ ] Privacy-preserving product signals and operations/recovery evidence.
-- [ ] Unit, TypeScript, lint, secrets, production build and relevant browser verification.
+- [x] Unit, TypeScript, lint, secrets, production build and relevant browser verification.
 - [ ] Isolated database and Preview identity/integration acceptance.
 - [ ] Concrete production acceptance packet; approved release and live verification.
 
@@ -41,8 +41,16 @@ Each material slice gets a linked code/evidence receipt and an accurate issue up
 
 Implemented locally: Reno discovery, contact normalization/placement, navigation/policies, accessible muted text, gold primary actions, actual Account/Claim/Studio/review states, protected listing proposals with replay protection and stale-edit rejection, dynamic eligible sitemap, search aliases/pagination, private verified-recipient inquiry intake with consent, idempotency, database rate limit and restricted resident PII. Inquiry UI remains disabled unless all required environment configuration and a verified active recipient exist. API receipt means received, never delivered.
 
-Local evidence currently: 165 Node tests; 19 Claim + 16 Studio + 15 inquiry pgTAP assertions, plus existing publication suites. TypeScript, lint and secret scan pass at checkpoint. Production build and browser acceptance are being refreshed. No hosted database migration, live inquiry, provider message, production deployment or paid operation has occurred.
+Local evidence currently: 165 Node tests; 22 Claim + 19 Studio + 20 inquiry pgTAP assertions, plus existing publication suites. TypeScript, lint and secret scan pass at checkpoint. Production build passes. Browser checks cover 390, 820 and 1440 px widths; 24-row pagination has no overlap; sitemap returns 121 URLs including 95 Reno business URLs and no Sparks city paths. Primary mobile call action is y=320.44 px. These are local preview observations, not live production acceptance. No hosted database migration, live inquiry, provider message, production deployment or paid operation has occurred.
 
 Still open, not acceptance-complete: private proof upload/scan/retention and operator evidence display, invitations and participant management, new-listing self-service review, assigned inquiry queue/outcome UI and delivery/reconciliation worker, authenticated Preview flows, provider provisioning, measurements/recovery drills and production security disposition. Do not label this checkpoint as completed launch scope.
 
 Inquiry dependencies: `LOCAL775_INQUIRIES_ENABLED`, `LOCAL775_PUBLIC_ORIGIN`, `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY`, `INQUIRY_ABUSE_SECRET`, Supabase service/public credentials, and separately verified active recipients. Service credentials stay server-only. Defaults fail closed. Abuse digest is keyed email, not raw network address; challenge validation plus the per-email limit is a baseline, and edge/global abuse capacity must be established before activation. Turnstile server contract: https://developers.cloudflare.com/turnstile/get-started/server-side-validation/ . Dedicated GHL location/credential reference and live end-to-end acceptance remain pending.
+
+## Review fixes
+
+Standards review: all 3 findings closed (Operator PII read bypass, missing delegation scope, missing reversible revision history). Spec review: all 4 original findings and 1 retry-key edge case closed (proof acceptance, owner-qualified inquiries, loaded edit version, seven-day fingerprint and alias-key binding). Added regression tests. Scanner-dependent proof approval and Operator protected Lead reads fail closed while their full workflows remain incomplete. Inquiry acknowledgment persists each used key to the original receipt/payload.
+
+Full database verification: 19 migrations; 143 assertions across five pgTAP suites. A syntax error introduced during the final inquiry edit was caught by the fresh-database run, rolled back, corrected and rerun successfully.
+
+GTM remains not ready. Implementing a working public discovery experience and guarded workflow foundations does not complete proof processing, participant management, new-listing onboarding, delivery/outcomes or product measurement. These remain explicit Linear work, not assumed external-only blockers.

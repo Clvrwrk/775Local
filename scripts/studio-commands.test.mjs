@@ -4,6 +4,7 @@ import { studioCommand, runStudioCommand } from "../src/lib/supabase/studio-comm
 const id = "83000000-0000-4000-8000-000000000001";
 const proposal = {
   action: "propose",
+  baseVersion: "2000-01-01T00:00:00Z",
   id,
   key: "proposal-test-1",
   name: "Reno Shop",

@@ -15,9 +15,28 @@ export type PilotAccount = {
   claims: { id: string; slug: string; name: string; status: string; reason?: string }[];
   canReview: boolean;
 };
-export type PilotWorkspace = { role: string; canEdit: boolean; proposals: Proposal[] };
+export type PilotWorkspace = {
+  editable: {
+    name: string;
+    description: string;
+    phone: string;
+    website: string;
+    baseVersion: string;
+  };
+  role: string;
+  canEdit: boolean;
+  proposals: Proposal[];
+};
 export type PilotReview = {
-  claims: { id: string; name: string; slug: string; method: string; status: string }[];
+  claims: {
+    id: string;
+    name: string;
+    slug: string;
+    method: string;
+    claimantEmail: string;
+    domainMatches: boolean;
+    status: string;
+  }[];
   proposals: Proposal[];
 };
 type Result =

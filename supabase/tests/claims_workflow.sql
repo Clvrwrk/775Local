@@ -1,7 +1,7 @@
 begin;
 
 create extension if not exists pgtap with schema extensions;
-select extensions.plan(19);
+select extensions.plan(22);
 
 insert into app.actors (id, workos_user_id, primary_email, display_name)
 values
@@ -44,7 +44,7 @@ insert into app.business_listings (
   '82000000-0000-4000-8000-000000000001',
   'claim-shop',
   'Claim Shop',
-  'https://claim-shop.example/',
+  'https://www.claim-shop.example/',
   'reno',
   '89502',
   'published',
@@ -184,5 +184,19 @@ select extensions.is(
   'Claim approval appends one participation projection event'
 );
 
+reset role;
+insert into app.business_listings(id,business_id,current_slug,display_name,city_slug,postal_code,publication_status,published_at) values('83000000-0000-4000-8000-000000000002','82000000-0000-4000-8000-000000000001','proof-shop','Proof Shop','reno','89502','published',statement_timestamp());
+insert into app.claims(id,listing_id,claimant_actor_id,method,status,submitted_at) values('85000000-0000-4000-8000-000000000001','83000000-0000-4000-8000-000000000002','81000000-0000-4000-8000-000000000001','document','needs_evidence',statement_timestamp());
+insert into private.claim_proofs(claim_id,storage_path,sha256,media_type,delete_after) values('85000000-0000-4000-8000-000000000001','private-test-proof',repeat('a',64),'application/pdf',statement_timestamp()+interval '7 days');
+set local role authenticated;
+select extensions.throws_ok($$select public.decide_listing_claim('85000000-0000-4000-8000-000000000001','approved','Reviewed private evidence','proof-decision-1')$$,'P0001','Claim Proof is required before approval','unscanned proof cannot approve ownership');
+reset role;
+update private.claim_proofs set scan_status='clean',validated_at=statement_timestamp(),delete_after=statement_timestamp()-interval '1 day' where storage_path='private-test-proof';
+set local role authenticated;
+select extensions.throws_ok($$select public.decide_listing_claim('85000000-0000-4000-8000-000000000001','approved','Reviewed private evidence','proof-decision-1')$$,'P0001','Claim Proof is required before approval','expired proof cannot approve ownership');
+reset role;
+update private.claim_proofs set delete_after=statement_timestamp()+interval '7 days' where storage_path='private-test-proof';
+set local role authenticated;
+select extensions.is(public.decide_listing_claim('85000000-0000-4000-8000-000000000001','approved','Reviewed private evidence','proof-decision-1')->>'status','approved','only validated clean unexpired proof allows review approval');
 select * from extensions.finish();
 rollback;

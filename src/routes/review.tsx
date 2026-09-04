@@ -84,7 +84,14 @@ function ReviewPage() {
                       Approval requires current domain evidence or privately reviewed proof.
                       Submission alone grants no ownership.
                     </p>
+                    <p className="mt-3 break-all text-sm">Requester: {claim.claimantEmail}</p>
+                    <p className="mt-2 text-sm text-muted">
+                      {claim.domainMatches
+                        ? "Current business-domain match confirmed. Review the listing identity before deciding."
+                        : "Domain evidence is not established. Private proof review must be completed before approval."}
+                    </p>
                     <DecisionForm
+                      allowApprove={claim.domainMatches}
                       kind="claim"
                       id={claim.id}
                       onSaved={() => setAttempt((x) => x + 1)}
@@ -137,10 +144,12 @@ function ReviewPage() {
   );
 }
 function DecisionForm({
+  allowApprove = true,
   kind,
   id,
   onSaved,
 }: {
+  allowApprove?: boolean;
   kind: "claim" | "proposal";
   id: string;
   onSaved: () => void;
@@ -180,7 +189,9 @@ function DecisionForm({
         Decision
         <select name="decision" className="h-11 rounded-xl border border-line bg-paper px-3">
           <option value="rejected">Reject</option>
-          <option value="approved">Approve</option>
+          <option value="approved" disabled={!allowApprove}>
+            Approve
+          </option>
         </select>
       </label>
       <label className="grid gap-2 text-sm font-medium">

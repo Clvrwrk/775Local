@@ -35,6 +35,10 @@ alter table app.audit_events
     'provider'
   ));
 
+alter table private.claim_proofs
+  add column scan_status text not null default 'quarantined' check(scan_status in ('quarantined','clean','rejected')),
+  add column validated_at timestamptz;
+
 drop policy if exists claims_create_self on app.claims;
 drop policy if exists claims_update_self_draft on app.claims;
 revoke insert, update on app.claims from authenticated;
@@ -389,7 +393,8 @@ begin
 
   if claim_record.status in ('approved', 'rejected') then
     if claim_record.decision_idempotency_key = requested_idempotency_key
-      and claim_record.status = requested_decision then
+      and claim_record.status = requested_decision
+      and claim_record.decision_reason = trim(requested_reason) then
       return jsonb_build_object(
         'claim_id', claim_record.id,
         'listing_id', claim_record.listing_id,
@@ -416,6 +421,8 @@ begin
       from private.claim_proofs cp
       where cp.claim_id = claim_record.id
         and cp.deleted_at is null
+        and cp.scan_status = 'clean' and cp.validated_at is not null
+        and cp.delete_after > statement_timestamp()
     ) then
     raise exception 'Claim Proof is required before approval';
   end if;

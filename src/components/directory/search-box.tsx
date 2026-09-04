@@ -27,7 +27,7 @@ export function SearchBox({
 
   return (
     <form onSubmit={go} className="w-full" role="search">
-      <div className="flex items-center gap-2 rounded-full border border-line bg-card px-3 shadow-[0_8px_30px_rgba(28,26,22,0.08)] focus-within:border-gold/70 focus-within:ring-4 focus-within:ring-gold/10">
+      <div className="flex items-center gap-2 rounded-full border border-line bg-card px-3 shadow-[0_8px_30px_rgba(28,26,22,0.08)] focus-within:border-teal focus-within:ring-2 focus-within:ring-teal">
         <BrandMark className="size-7" />
         <label className="sr-only" htmlFor="need">
           What do you need?

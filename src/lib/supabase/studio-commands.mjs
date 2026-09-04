@@ -28,6 +28,9 @@ export function studioCommand(input) {
   }
   if (
     data.action === "propose" &&
+    typeof data.baseVersion === "string" &&
+    /^\d{4}-\d{2}-\d{2}T/.test(data.baseVersion) &&
+    Number.isFinite(Date.parse(data.baseVersion)) &&
     typeof data.name === "string" &&
     data.name.trim().length >= 2 &&
     data.name.trim().length <= 200 &&
@@ -53,6 +56,7 @@ export function studioCommand(input) {
         requested_listing_id: data.id,
         requested_key: data.key,
         requested_payload: {
+          baseVersion: data.baseVersion,
           name: data.name.trim(),
           description: data.description.trim(),
           phone,
