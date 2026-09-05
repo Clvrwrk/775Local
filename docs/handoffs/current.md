@@ -1,36 +1,38 @@
-# Project handoff — Reno pilot completion
+# Project handoff — consolidated main baseline
 
-Date: September 4, 2026. Status: implementation in progress; no GTM acceptance.
-Repository: https://github.com/Clvrwrk/775Local.git
-Branch: `codex/reno-pilot-completion`; [draft PR #12](https://github.com/Clvrwrk/775Local/pull/12).
-Earlier reviewed implementation: `831ca55`. Preview data fix: `006c41c`. Current continuation corrects listing templates against the three supplied `.dc.html` screens; see `docs/LISTING-DESIGN-ACCEPTANCE.md`.
+Date: September 5, 2026. Repository: https://github.com/Clvrwrk/775Local.git
+Authoritative consolidation: [PR12](https://github.com/Clvrwrk/775Local/pull/12). Once merged, begin the next session from freshly fetched `origin/main` and create new `codex/` branches and PRs. Do not resume superseded feature branches.
 
-## Authority and scope
+## Authorization and scope
 
-User authorized Reno-only scope, audited fixes, supplied design updates and complete Linear documentation. `docs/RENO-PILOT-COMPLETION.md` records the accepted scope and exact remaining work. [CLE-101](https://linear.app/cleverwork/issue/CLE-101/spec-775-directory-production-beta-implementation-contract) is the central live progress record. Earlier release receipts remain historical, not acceptance of this PR.
+Christopher Hussey explicitly requested review and resolution of all PR comments, conflict resolution, and consolidation of all branches into main. This is source consolidation before full product/GTM acceptance. Hosted database migrations, provider sends, paid effects, and unrelated production security work were not executed by this consolidation.
 
-The canonical external checkout `/Volumes/M1 Application SSD/Projects/Local775` was left untouched. This work ran in `/Users/chussey/Documents/Codex/2026-09-04/pl/work/reno-pilot`, cloned from main `6fe4a60`. Existing main publication/content-tier fixes are preserved; recovered Claim code and ADR-0003 are included.
+Reno remains the active pilot. Basic, Standard and Premium describe free content completeness. Featured/Sponsored, ownership verification, information checking and authentication remain independent.
 
-## Implemented and verified
+## Integrated work
 
-Reno discovery, early valid phone actions, navigation/policy fixes, supplied brand refinements, truthful cards, search aliases/pagination and runtime sitemap. Real authenticated account/Claim/Studio/review foundations, scoped version-bound proposals with reversible revisions, and disabled-by-default durable inquiry intake.
+- Reno discovery and supplied Basic/Standard/Premium page structures; anonymous public-data Preview configuration; guarded Claim, Studio and disabled-by-default inquiry foundations.
+- PR13 Basic row, Standard side, Premium stack cards, valid contact actions, case-study presentation, brand-asset schema and public projections. Homepage intentionally uses uniform stack cards; search/category cards select content-tier layouts.
+- All live remote branch heads and retained historical refs are preserved as merge ancestors after source reconciliation. Private enrichment archive scripts/schema/tests, historical receipts and ADR0002 supersession were recovered; archive profile selection now uses accepted filterv10.
+- `docs/PR-CONSOLIDATION.md` records all review-thread dispositions and implementation decisions. Older route/UI versions are intentionally superseded rather than reintroduced.
 
-165 application tests, 143 pgTAP assertions in five suites, 19 migrations, TypeScript, lint, secrets and production build pass. GitHub Foundation Gate and Isolated Database Contract pass for the reviewed implementation. Local browser evidence covers 390/820/1440 px; call action y=320.44, no pagination overlap, 121 sitemap URLs including 95 Reno businesses. Two-axis review findings closed.
+## Validation
 
-## Next work — do not claim completion
+179 unit tests, TypeScript, ESLint, secret scan and production build passed. A fresh disposable local PostgreSQL database applied all22 migrations and passed195 pgTAP assertions across eight suites, including actual seed publication/replay/privacy and case-study/public media access. Independent Standards and Spec reviews closed all findings. Required GitHub checks and final merge status are recorded on PR12.
 
-Continue existing CLE issues: complete private proof processing/retention and claim lifecycle (CLE-107); participant/invitation and remaining Studio/media/new-listing modules (CLE-108); recipient provisioning, inquiry queues/outcomes, delivery receipts/replay/reconciliation (CLE-109/110); editorial cleanup (CLE-104); measurement (CLE-113); recovery/full accessibility/performance and authenticated integration acceptance (CLE-114/115/116). Full feature completion is not blocked solely by external configuration.
+Browser setup still fails its trusted-dependency initialization check. No fresh screenshot, responsive interaction, full accessibility, or authenticated end-to-end acceptance is claimed. A Ready deployment is not product acceptance.
 
-Preview data was corrected at `006c41c` and actual rendered HTTP confirmed95 Reno listings. Fresh visual acceptance remains open because the designated browser runtime fails to initialize. Preview: https://reno-local-directory-git-codex-reno-pilot-completion-cleverwork.vercel.app . User sign-in was requested. Dedicated Local775 GHL location ID and an approved secret-manager credential reference were requested and remain missing. Do not use Homeworks Advantage. No hosted migrations, production release, messages or paid operations occurred. Inquiry activation remains off until delivery/recipient/abuse gates pass. Existing CAT-145/CLE-118 production security disposition remains open.
+## Required next-session work
 
-## Accounting and evidence
+- CLE-107: complete private proof processing/retention and Claim lifecycle.
+- CLE-108: participant/invitation UI, scoped owner media management and case-study draft/review/publish commands. Case-study participant direct CRUD is intentionally denied; a schema/public display is not a finished owner workflow. Primary asset metadata preserves duplicates, original paths, approval states and existing references.
+- CLE-109/110: recipient provisioning, inquiry queues/outcomes, durable delivery/replay/reconciliation and dedicated Local775 GHL configuration. Keep inquiry activation off until acceptance. Do not use Homeworks Advantage.
+- CLE-104: editorial cleanup and bounded evidence-backed enrichment. Existing pre-manifest artifact roots require an offline receipt inventory and immutable batch-layout binding before resumption; never infer old batch ownership from a new `--batch-size` flag. No private archive/root was changed or provider called here.
+- CLE-113 through CLE-117: measurement, recovery, browser/accessibility/performance and authenticated integration/release acceptance. Apply hosted migrations only as a separate target-explicit operation.
+- CAT-145/CLE-118: existing production security work remains separate; local tests do not close that disposition.
 
-CLE-105↔CAT-78; CLE-107↔CAT-82; CLE-108↔CAT-165; CLE-109↔CAT-164. Both directions were re-fetched. CLE issues remain In Progress; trails Agent Working. Planning history preserved.
+## Accounting and workspace
 
-CODEX receipt: `/Users/chussey/Library/CloudStorage/Dropbox-AIA4/Cleverwork Main/CODEX/docs/linear/teams/CLE/2026-09-04-reno-pilot-completion.md`. User deliverables and tests: `/Users/chussey/Documents/Codex/2026-09-04/pl/outputs/775directory-audit/`.
+Scope CLE-101. Design CLE-105↔CAT-78; Claims CLE-107↔CAT-82; Studio CLE-108↔CAT-165; inquiries CLE-109↔CAT-164. Keep implementation tickets open for remaining product work even after PR consolidation.
 
-Local preview uses anonymous published-listing reads only; protected provider credentials were not imported. Local database tests used a separate network-disabled container `local775_reno_20260904`, not the existing Local775 development database.
-
-## Latest listing-design correction
-
-User rejected the generic listing template. Basic/Standard/Premium now have separate supplied-screen layouts; code and HTTP evidence do not constitute visual approval. All95 published listings lack business photos. The user was asked whether to use visibly labeled illustrative design imagery; pending that preference, styled placeholders remain. Do not claim all design updates or GTM readiness complete.
+Implementation checkout: `/Users/chussey/Documents/Codex/2026-09-04/pl/work/reno-pilot`; canonical external checkout `/Volumes/M1 Application SSD/Projects/Local775` remains untouched. GitHub/main is the source to refresh next session. Review outputs and local receipt: `/Users/chussey/Documents/Codex/2026-09-04/pl/outputs/775directory-audit/`. The previously rejected Dropbox receipt sync was not retried; local receipt and Linear contain current results.

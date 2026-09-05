@@ -2,6 +2,10 @@
 
 This log captures settled project-level decisions that guide planning but do not independently justify an architectural decision record.
 
+## 2026-09-05 — Reviewed branch consolidation
+
+Christopher Hussey explicitly authorized resolving all PR comments and conflicts and merging all branches into main before starting fresh branches/PRs next session. This authorizes source consolidation ahead of full GTM acceptance; it does not establish visual acceptance, run hosted migrations, enable external communications, or settle separate production security work. Preserve historical commits while retaining corrected Reno behavior. See `PR-CONSOLIDATION.md` and PR12 for evidence and final GitHub checks.
+
 ## 2026-09-04 — Reno pilot and design completion
 
 Christopher Hussey authorized Reno-only scope, completion of the audit fixes and supplied design updates, and full Linear documentation. Reno is the only active discovery/onboarding market; existing Sparks records remain intact and direct listing URLs remain available for reference. Historical Sparks browse URLs temporarily redirect to Reno; they are excluded from the active sitemap. Bulk expansion is outside this pilot. See `RENO-PILOT-COMPLETION.md` for the acceptance ledger. Free content tiers remain separate from paid Featured unless explicitly changed. Use ADR 0003's single GHL Listings object and labeled Contact relations. No design mock grants authority, establishes a business fact, or overrides consent.
