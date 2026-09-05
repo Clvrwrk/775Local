@@ -64,12 +64,20 @@ retired as (
   where ranked.id = m.id and ranked.rn > 1
   returning m.id, m.listing_id, m.kind
 )
--- Repoint any listing_content reference that landed on a retired row.
+-- Repoint any listing_content reference (logo or hero) that landed on a retired row.
 update app.listing_content lc
-set logo_media_id = s.survivor_id
-from retired r
-join survivors s on s.listing_id = r.listing_id and s.kind = r.kind
-where lc.listing_id = r.listing_id and lc.logo_media_id = r.id;
+set logo_media_id = coalesce(
+      (select s.survivor_id from retired r join survivors s on s.listing_id = r.listing_id and s.kind = r.kind
+       where r.id = lc.logo_media_id),
+      lc.logo_media_id),
+    hero_media_id = coalesce(
+      (select s.survivor_id from retired r join survivors s on s.listing_id = r.listing_id and s.kind = r.kind
+       where r.id = lc.hero_media_id),
+      lc.hero_media_id)
+where exists (
+  select 1 from retired r
+  where r.listing_id = lc.listing_id and (r.id = lc.logo_media_id or r.id = lc.hero_media_id)
+);
 
 -- One live asset per singleton brand slot.
 create unique index if not exists media_assets_one_per_brand_slot

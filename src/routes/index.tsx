@@ -203,7 +203,7 @@ function Home() {
         {listings.length ? (
           <div className="mt-7 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {listings.slice(0, 6).map((biz) => (
-              <BusinessCardView key={biz.id} biz={biz} layout="stack" />
+              <BusinessCardView key={biz.id} biz={biz} />
             ))}
           </div>
         ) : (
