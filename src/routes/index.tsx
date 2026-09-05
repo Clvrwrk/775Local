@@ -202,8 +202,9 @@ function Home() {
         </div>
         {listings.length ? (
           <div className="mt-7 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {/* Showcase grid: one uniform card shape here; plan-based shapes apply on result pages. */}
             {listings.slice(0, 6).map((biz) => (
-              <BusinessCardView key={biz.id} biz={biz} />
+              <BusinessCardView key={biz.id} biz={biz} layout="stack" />
             ))}
           </div>
         ) : (

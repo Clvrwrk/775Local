@@ -7,7 +7,7 @@ import { Stars } from "./stars";
 
 /**
  * Card layout by plan: compact row for Free/Basic, photo left for Standard,
- * photo above for Premium. Pass `layout` only to force one shape in a special grid.
+ * photo above for Premium. Pass `layout` to force one shape in a showcase grid (homepage).
  */
 export type CardLayout = "row" | "side" | "stack";
 
