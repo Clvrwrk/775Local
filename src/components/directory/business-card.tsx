@@ -1,66 +1,237 @@
 import { Link } from "@tanstack/react-router";
-import { MapPin } from "lucide-react";
-import type { BusinessCard } from "@/lib/directory/types";
-import { formatPhone } from "@/lib/utils";
+import { BadgeCheck, Clock, MapPin } from "lucide-react";
+import { telephoneHref, safeWebsite } from "@/lib/directory/presentation.mjs";
+import type { BusinessCard, ListingPlan } from "@/lib/directory/types";
+import { cn, formatPhone, mapsHref } from "@/lib/utils";
 import { Stars } from "./stars";
 
-export function BusinessCardView({
-  biz,
-  variant = "sheet",
-}: {
-  biz: BusinessCard;
-  variant?: "sheet" | "photo";
-}) {
-  const tierLabel = `${biz.contentTier[0].toUpperCase()}${biz.contentTier.slice(1)}`;
+/**
+ * Card layout by plan: compact row for Free/Basic, photo left for Standard,
+ * photo above for Premium. Pass `layout` only to force one shape in a special grid.
+ */
+export type CardLayout = "row" | "side" | "stack";
+
+const LAYOUT_BY_PLAN: Record<ListingPlan, CardLayout> = {
+  basic: "row",
+  standard: "side",
+  premium: "stack",
+};
+
+function cardLayout(plan: ListingPlan | undefined): CardLayout {
+  return LAYOUT_BY_PLAN[plan ?? "basic"];
+}
+
+const linkHit =
+  "relative z-10 -my-1.5 inline-flex min-h-8 items-center gap-1 py-1.5 hover:text-teal hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pine";
+
+/** Tappable street (maps) and phone (tel) — sits above the card's stretched link. */
+function ContactLinks({ biz, className }: { biz: BusinessCard; className?: string }) {
+  const phone = telephoneHref(biz.phone);
+  const showStreet = !biz.hideStreet && biz.street && biz.street !== "Service area";
   return (
-    <Link
-      to="/biz/$slug"
-      params={{ slug: biz.slug }}
-      className="group flex h-full flex-col overflow-hidden rounded-[22px] border border-line bg-card shadow-[0_8px_24px_rgba(28,26,22,0.04)] hover:border-gold"
+    <div
+      className={cn("flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-muted", className)}
     >
-      {biz.coverUrl ? (
-        <div
-          className={
-            variant === "photo" ? "aspect-[4/3] overflow-hidden" : "aspect-[16/7] overflow-hidden"
-          }
+      {showStreet ? (
+        <a
+          href={mapsHref({ street: biz.street, city: biz.cityName, zip: biz.zip })}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={linkHit}
         >
-          <img src={biz.coverUrl} alt="" loading="lazy" className="size-full object-cover" />
-        </div>
+          <MapPin className="size-3.5" />
+          {biz.street}
+        </a>
+      ) : (
+        <span className="inline-flex items-center gap-1">
+          <MapPin className="size-3.5" />
+          Serves {biz.cityName}
+        </span>
+      )}
+      {phone ? (
+        <a href={phone} className={cn(linkHit, "tabular-nums")}>
+          {formatPhone(biz.phone)}
+        </a>
       ) : null}
-      <div className="flex flex-1 flex-col p-5">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <p className="text-xs font-semibold uppercase tracking-wide text-teal">
-            {biz.primaryCategory || "Local"} · {biz.cityName}
+    </div>
+  );
+}
+
+function Eyebrow({ biz }: { biz: BusinessCard }) {
+  return (
+    <div className="flex items-center justify-between gap-2">
+      <p className="truncate text-xs font-medium uppercase tracking-wide text-muted">
+        {biz.primaryCategory || "Local"} · {biz.cityName}
+      </p>
+      {biz.ownerVerified ? (
+        <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-line bg-paper-2 px-2.5 py-0.5 text-xs font-medium text-ink-soft">
+          <BadgeCheck className="size-3 text-teal" />
+          Owner verified
+        </span>
+      ) : null}
+    </div>
+  );
+}
+
+function Rating({ biz }: { biz: BusinessCard }) {
+  if (biz.rating == null) return null;
+  return (
+    <div className="flex items-center gap-1.5 text-xs text-ink-soft">
+      <Stars rating={biz.rating} />
+      <span className="font-medium text-ink">{biz.rating.toFixed(1)}</span>
+      {biz.reviewCount != null ? <span className="text-muted">({biz.reviewCount})</span> : null}
+    </div>
+  );
+}
+
+/** The whole card is the link, via a stretched pseudo-element on the title. */
+function Title({ biz, className }: { biz: BusinessCard; className?: string }) {
+  return (
+    <h3 className={cn("font-display font-semibold leading-tight text-ink", className)}>
+      <Link
+        to="/biz/$slug"
+        params={{ slug: biz.slug }}
+        className="after:absolute after:inset-0 after:content-[''] focus-visible:outline-none group-focus-within:[&]:text-teal"
+      >
+        {biz.name}
+      </Link>
+    </h3>
+  );
+}
+
+function Sponsored({ side = false }: { side?: boolean }) {
+  return (
+    <span
+      className={cn(
+        "absolute right-3 rounded-full bg-gold px-2.5 py-1 text-[11px] font-semibold text-ink",
+        side ? "bottom-3" : "top-3",
+      )}
+    >
+      Sponsored
+    </span>
+  );
+}
+
+function TierChip({ label, floating = false }: { label: string; floating?: boolean }) {
+  return (
+    <span
+      className={cn(
+        "rounded-full px-2.5 py-1 text-[11px] font-semibold",
+        floating
+          ? "absolute left-3 top-3 border border-white/30 bg-ink/72 text-paper backdrop-blur-sm"
+          : "border border-line bg-paper-2 text-ink-soft",
+      )}
+    >
+      {label}
+    </span>
+  );
+}
+
+const cardBase =
+  "group relative overflow-hidden bg-card focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-pine";
+
+function CardPhoto({ url }: { url: string | null }) {
+  return url ? (
+    <img src={url} alt="" loading="lazy" className="size-full object-cover" />
+  ) : (
+    <div className="flex size-full min-h-20 items-center justify-center bg-paper-2 p-2 text-center text-xs text-muted">
+      Photo not supplied
+    </div>
+  );
+}
+
+export function BusinessCardView({ biz, layout }: { biz: BusinessCard; layout?: CardLayout }) {
+  const cover = safeWebsite(biz.coverUrl);
+  const kind = layout ?? cardLayout(biz.contentTier);
+  const tierLabel = `${biz.contentTier[0]!.toUpperCase()}${biz.contentTier.slice(1)}`;
+  const statusLine = `${biz.ownerVerified ? "Owner verified" : "Unclaimed"} · ${biz.verified ? "Information checked" : "Unverified"}`;
+
+  if (kind === "row") {
+    return (
+      <article
+        className={cn(cardBase, "flex items-center gap-3.5 rounded-[14px] border border-line p-3")}
+      >
+        <div className="relative size-20 shrink-0 overflow-hidden rounded-[12px]">
+          <CardPhoto url={cover} />
+        </div>
+        <div className="flex min-w-0 flex-1 flex-col gap-1">
+          <div className="flex items-center gap-2">
+            <p className="truncate text-xs font-medium uppercase tracking-wide text-muted">
+              {biz.primaryCategory || "Local"} · {biz.cityName}
+            </p>
+            <TierChip label={tierLabel} />
+            {biz.featured ? (
+              <span className="shrink-0 rounded-full bg-gold px-2 py-0.5 text-[11px] font-semibold text-ink">
+                Sponsored
+              </span>
+            ) : null}
+          </div>
+          <Title biz={biz} className="text-xl" />
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5">
+            <Rating biz={biz} />
+            <ContactLinks biz={biz} />
+          </div>
+          <p className="text-[11px] font-medium text-teal">{statusLine}</p>
+        </div>
+      </article>
+    );
+  }
+
+  if (kind === "side") {
+    return (
+      <article
+        className={cn(
+          cardBase,
+          "flex min-h-52 rounded-[14px] shadow-[0_8px_24px_rgba(28,26,22,0.06)]",
+        )}
+      >
+        <div className="relative w-[38%] min-w-32 max-w-56 shrink-0 overflow-hidden">
+          <CardPhoto url={cover} />
+          <TierChip label={tierLabel} floating />
+          {biz.featured ? <Sponsored side /> : null}
+        </div>
+        <div className="flex min-w-0 flex-1 flex-col justify-center gap-1.5 p-4">
+          <Eyebrow biz={biz} />
+          <Title biz={biz} className="text-2xl" />
+          <p className="line-clamp-1 text-sm text-muted">
+            {biz.tagline || `${biz.primaryCategory} in ${biz.cityName}`}
           </p>
-          <span className="rounded-full border border-line bg-paper px-2.5 py-1 text-[11px] font-semibold">
-            {tierLabel}
-          </span>
+          <Rating biz={biz} />
+          <ContactLinks biz={biz} className="mt-1" />
+          <p className="text-[11px] font-medium text-teal">{statusLine}</p>
         </div>
-        {biz.featured ? (
-          <span className="mt-3 self-start rounded-full bg-paper-2 px-2.5 py-1 text-xs font-semibold">
-            Sponsored
-          </span>
-        ) : null}
-        <h3 className="mt-3 font-display text-2xl font-semibold leading-tight">{biz.name}</h3>
-        {biz.tagline ? (
-          <p className="mt-2 line-clamp-2 text-sm leading-6 text-muted">{biz.tagline}</p>
-        ) : null}
-        <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-sm text-ink-soft">
-          {biz.rating != null ? <Stars rating={biz.rating} /> : null}
-          <span className="inline-flex items-center gap-1">
-            <MapPin className="size-4" strokeWidth={1.75} />
-            {biz.street || biz.cityName}
-          </span>
-          {biz.phone ? <span className="tabular-nums">{formatPhone(biz.phone)}</span> : null}
-        </div>
-        <p className="mt-4 text-xs text-muted">
-          {biz.ownerVerified ? "Owner verified" : "Unclaimed"} ·{" "}
-          {biz.verified ? "Information checked" : "Unverified"}
-        </p>
-        <p className="mt-auto pt-5 text-sm font-semibold text-teal">
-          View business details <span aria-hidden="true">→</span>
-        </p>
+      </article>
+    );
+  }
+
+  return (
+    <article
+      className={cn(
+        cardBase,
+        "flex flex-col rounded-[14px] shadow-[0_8px_24px_rgba(28,26,22,0.06)]",
+      )}
+    >
+      <div className="relative aspect-[4/3] overflow-hidden">
+        <CardPhoto url={cover} />
+        <TierChip label={tierLabel} floating />
+        {biz.featured ? <Sponsored /> : null}
       </div>
-    </Link>
+      <div className="flex flex-col gap-1.5 p-4">
+        <Eyebrow biz={biz} />
+        <Title biz={biz} className="text-2xl" />
+        <p className="line-clamp-2 text-sm text-muted">
+          {biz.tagline || `${biz.primaryCategory} in ${biz.cityName}`}
+        </p>
+        <Rating biz={biz} />
+        <ContactLinks biz={biz} className="mt-1" />
+        {biz.hours ? (
+          <p className="inline-flex items-center gap-1 text-xs text-muted">
+            <Clock className="size-3.5" />
+            {biz.hours}
+          </p>
+        ) : null}
+        <p className="text-[11px] font-medium text-teal">{statusLine}</p>
+      </div>
+    </article>
   );
 }

@@ -108,16 +108,16 @@ function PricingPage() {
             <p className="text-sm font-semibold">Nothing is for sale on this preview.</p>
             <p className="mt-1 text-sm leading-6 text-ink-soft">
               These future plans do not change today’s listings, Claims, publication review, organic
-              rank, or Featured access. Payment will never prove ownership or verification.
-              Owner-tool plans are separate from the free Basic, Standard, and Premium content
-              tiers.
+              rank, or Featured access. Payment will never prove ownership or verification. Basic,
+              Standard, and Premium are free content tiers. Featured is the only paid package shown
+              here.
             </p>
           </div>
         </div>
 
         <div className="relative mt-12">
           <div className="absolute left-[12.5%] right-[12.5%] top-4 hidden border-t border-dashed border-sage/60 lg:block" />
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-5">
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {DIRECTORY_PLANS.map((plan, index) => {
               const emphasis = plan.id === "premium" || plan.id === "featured";
               return (
@@ -162,7 +162,7 @@ function PricingPage() {
                       </li>
                     ))}
                   </ul>
-                  {plan.id === "free" ? (
+                  {plan.id !== "featured" ? (
                     <Link
                       to="/claim"
                       search={{ q: "", city: "reno" }}

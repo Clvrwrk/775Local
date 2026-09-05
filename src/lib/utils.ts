@@ -12,3 +12,15 @@ export function formatPhone(phone: string) {
     return `(${d.slice(1, 4)}) ${d.slice(4, 7)}-${d.slice(7)}`;
   return phone;
 }
+
+/** tel: link for a 10-digit or E.164 US number. */
+export function telHref(phone: string) {
+  const d = phone.replace(/\D/g, "");
+  return `tel:+${d.length === 10 ? `1${d}` : d}`;
+}
+
+/** Maps search link that opens the native maps app on phones and the web on desktop. */
+export function mapsHref(parts: { street?: string | null; city: string; zip?: string | null }) {
+  const query = [parts.street, `${parts.city}, NV`, parts.zip].filter(Boolean).join(", ");
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+}

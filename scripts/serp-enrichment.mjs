@@ -1,3 +1,4 @@
+import { ensureBatchLayout } from "./serp-batch-layout.mjs";
 import { appendFile, mkdir, readFile, readdir, rename, stat, writeFile } from "node:fs/promises";
 import { createHash } from "node:crypto";
 import { join } from "node:path";
@@ -43,6 +44,8 @@ if (!Number.isInteger(maxCrawlAttempts) || maxCrawlAttempts < 1 || maxCrawlAttem
   throw new Error("invalid max crawl attempts");
 if (queuePath !== expectedQueuePath || outputRoot !== expectedOutputRoot)
   throw new Error("queue and output must use the approved Local775 enrichment paths");
+
+await ensureBatchLayout(outputRoot, batchSize);
 
 const queueReceipt = JSON.parse(await readFile(queuePath, "utf8"));
 const progressPath = join(outputRoot, "progress.json");

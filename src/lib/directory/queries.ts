@@ -4,6 +4,7 @@ import { CATEGORIES, CITIES } from "@/data/seed";
 import {
   fetchDirectoryCategories,
   fetchDirectoryListings,
+  fetchListingCaseStudies,
 } from "@/lib/supabase/public-directory.mjs";
 import type {
   BusinessCard,
@@ -154,7 +155,12 @@ export const searchBusinesses = createServerFn({ method: "GET" })
 export const getBusiness = createServerFn({ method: "GET" })
   .validator((slug: string) => slug)
   .handler(async ({ data: slug }) => {
-    const rows = await fetchCards({ slug, limit: 1 });
+    // Case studies are optional and keyed by slug, so they load alongside the listing
+    // with a 1.5-second ceiling and an explicit unavailable state.
+    const [rows, caseStudies] = await Promise.all([
+      fetchCards({ slug, limit: 1 }),
+      fetchListingCaseStudies({ listingSlug: slug }),
+    ]);
     const card = rows[0];
     if (!card) return null;
     return {
@@ -172,6 +178,8 @@ export const getBusiness = createServerFn({ method: "GET" })
       faqs: (card as BusinessCard & { faqs?: BusinessDetail["faqs"] }).faqs ?? [],
       projects: (card as BusinessCard & { projects?: BusinessDetail["projects"] }).projects ?? [],
       offer: (card as BusinessCard & { offer?: BusinessDetail["offer"] }).offer ?? null,
+      caseStudies: caseStudies.studies,
+      caseStudiesStatus: caseStudies.status,
     } satisfies BusinessDetail;
   });
 

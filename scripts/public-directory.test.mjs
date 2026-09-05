@@ -227,3 +227,19 @@ test("configured requests use only the publishable key and reject provider error
     /Directory data is temporarily unavailable/,
   );
 });
+
+test("primary directory queries normalize transport and malformed response errors", async () => {
+  const env = { SUPABASE_URL: "https://public.example", SUPABASE_PUBLISHABLE_KEY: "public-key" };
+  for (const query of [fetchDirectoryCategories, fetchDirectoryListings]) {
+    for (const fetchImpl of [
+      async () => {
+        throw new Error("private-provider-detail");
+      },
+      async () => new Response("{"),
+    ]) {
+      await assert.rejects(query({ env, fetchImpl }), {
+        message: "Directory data is temporarily unavailable.",
+      });
+    }
+  }
+});

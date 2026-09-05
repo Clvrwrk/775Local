@@ -17,6 +17,7 @@ import { ClaimListingPanel } from "./claim-listing";
 import { InquiryForm } from "./inquiry-form";
 import { ListingGallery } from "./listing-gallery";
 import { Stars } from "./stars";
+import { CaseStudies } from "./case-studies";
 
 function Panel({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -337,6 +338,10 @@ export function ListingPage({ biz }: { biz: BusinessDetail }) {
                   <Reviews biz={biz} />
                 </>
               )}
+              {!basic ? <CaseStudies biz={biz} /> : null}
+              {!basic && biz.caseStudiesStatus === "unavailable" ? (
+                <p className="listing-note">Project stories are temporarily unavailable.</p>
+              ) : null}
             </div>
             <aside className="listing-stack" aria-label="Business information">
               {premium && biz.offer ? (
