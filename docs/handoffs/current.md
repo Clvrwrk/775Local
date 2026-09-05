@@ -16,6 +16,10 @@ Reno remains the active pilot. Basic, Standard and Premium describe free content
 - All live remote branch heads and retained historical refs are preserved as merge ancestors after source reconciliation. Private enrichment archive scripts/schema/tests, historical receipts and ADR0002 supersession were recovered; archive profile selection now uses accepted filterv10.
 - `docs/PR-CONSOLIDATION.md` records all review-thread dispositions and implementation decisions. Older route/UI versions are intentionally superseded rather than reintroduced.
 
+## Main history policy
+
+GitHub protects main with required linear history. PR12 therefore uses a squash merge of the reconciled tree. Original branch commits remain reachable through the retained consolidation branch and historical branches; they are not all ancestors of the squashed main commit. Older open PRs are closed as superseded by PR12 with explicit cross-links, not represented as individually merged. No branch protection is weakened and no branch is force-pushed or deleted.
+
 ## Validation
 
 179 unit tests, TypeScript, ESLint, secret scan and production build passed. A fresh disposable local PostgreSQL database applied all22 migrations and passed195 pgTAP assertions across eight suites, including actual seed publication/replay/privacy and case-study/public media access. Independent Standards and Spec reviews closed all findings. Required GitHub checks and final merge status are recorded on PR12.

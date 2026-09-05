@@ -4,6 +4,10 @@ User authorization: review and resolve all PR comments, resolve merge conflicts,
 
 Integration base: Reno PR12 at ef234b2; main at6fe4a60. PR13 at33c5e5d is integrated with explicit resolution of card/page conflicts. All live remote branch heads and retained historical remote-tracking heads are to be preserved as merge ancestors. Older public UI and routing are superseded by the corrected Reno implementation; history consolidation must not restore them.
 
+## Main history policy
+
+GitHub protects main with required linear history. PR12 therefore uses a squash merge of the reconciled tree. Original branch commits remain reachable through the retained consolidation branch and historical branches; they are not all ancestors of the squashed main commit. Older open PRs are closed as superseded by PR12 with explicit cross-links, not represented as individually merged. No branch protection is weakened and no branch is force-pushed or deleted.
+
 ## Preserved work
 
 - PR13 Basic row, Standard side and Premium stack cards, valid telephone/map actions and project/case-study presentation.
