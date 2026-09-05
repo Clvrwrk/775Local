@@ -54,3 +54,11 @@ Standards review: all 3 findings closed (Operator PII read bypass, missing deleg
 Full database verification: 19 migrations; 143 assertions across five pgTAP suites. A syntax error introduced during the final inquiry edit was caught by the fresh-database run, rolled back, corrected and rerun successfully.
 
 GTM remains not ready. Implementing a working public discovery experience and guarded workflow foundations does not complete proof processing, participant management, new-listing onboarding, delivery/outcomes or product measurement. These remain explicit Linear work, not assumed external-only blockers.
+
+## Preview listing configuration correction — September 4, 2026
+
+The pilot Preview branch had no environment variables: existing Preview settings belonged only to `codex/launch-foundation`; the public SUPABASE pair otherwise targeted Production only. Missing configuration previously returned an empty directory. Public listing/category reads now accept an atomic `DIRECTORY_SUPABASE_URL` / `DIRECTORY_SUPABASE_PUBLISHABLE_KEY` override and reject missing or partial configuration. The existing SUPABASE pair remains the default and the separate protected-command target.
+
+The two DIRECTORY variables were added only to Preview branch `codex/reno-pilot-completion`, using anonymous access to the already-published public projections. No hosted rows, production settings, protected credentials, or inquiry activation changed. This is a public design review environment; authenticated workflow acceptance still requires isolated Preview configuration and data.
+
+Regression coverage proves both public adapters select the read source without mixing credential pairs, protected commands retain their own target, and public-only configuration does not activate them. Deployment acceptance must prove listing links on the actual branch URL, search/category/detail pages, and the Reno sitemap count. CLE-105 and CAT-78 retain this correction with CLE-116/CLE-101.

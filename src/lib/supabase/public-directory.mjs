@@ -34,8 +34,23 @@ const PUBLIC_COLUMNS = [
 ].join(",");
 
 /** @typedef {{ city?: string, category?: string, q?: string, slug?: string, featured?: boolean, unclaimed?: boolean, limit?: number, offset?: number }} DirectoryFilters */
-/** @typedef {{ SUPABASE_URL?: string, SUPABASE_PUBLISHABLE_KEY?: string }} PublicDirectoryEnv */
+/** @typedef {{ SUPABASE_URL?: string, SUPABASE_PUBLISHABLE_KEY?: string, DIRECTORY_SUPABASE_URL?: string, DIRECTORY_SUPABASE_PUBLISHABLE_KEY?: string }} PublicDirectoryEnv */
 /** @typedef {{ cityName?: string, categoryName?: string }} DisplayNames */
+
+/** Resolve the read-only directory pair atomically, independently of command credentials.
+ * @param {PublicDirectoryEnv} env
+ */
+function directoryTarget(env) {
+  const hasDirectoryOverride =
+    env.DIRECTORY_SUPABASE_URL !== undefined ||
+    env.DIRECTORY_SUPABASE_PUBLISHABLE_KEY !== undefined;
+  const baseUrl = (hasDirectoryOverride ? env.DIRECTORY_SUPABASE_URL : env.SUPABASE_URL)?.trim();
+  const publishableKey = (
+    hasDirectoryOverride ? env.DIRECTORY_SUPABASE_PUBLISHABLE_KEY : env.SUPABASE_PUBLISHABLE_KEY
+  )?.trim();
+  if (!baseUrl || !publishableKey) throw new Error("Directory data is temporarily unavailable.");
+  return { baseUrl, publishableKey };
+}
 
 /** @param {unknown} value */
 function safeToken(value) {
@@ -171,11 +186,7 @@ export function mapDirectoryListing(row, names = {}) {
  * @param {{ env?: PublicDirectoryEnv, city?: string, fetchImpl?: typeof fetch }} [options]
  */
 export async function fetchDirectoryCategories(options = {}) {
-  const env = options.env ?? process.env;
-  const baseUrl = env.SUPABASE_URL?.trim();
-  const publishableKey = env.SUPABASE_PUBLISHABLE_KEY?.trim();
-  if (!baseUrl && !publishableKey) return [];
-  if (!baseUrl || !publishableKey) throw new Error("Directory data is temporarily unavailable.");
+  const { baseUrl, publishableKey } = directoryTarget(options.env ?? process.env);
 
   const city = safeToken(options.city);
   let url;
@@ -223,14 +234,7 @@ export async function fetchDirectoryCategories(options = {}) {
  * }} [options]
  */
 export async function fetchDirectoryListings(options = {}) {
-  const env = options.env ?? process.env;
-  const baseUrl = env.SUPABASE_URL?.trim();
-  const publishableKey = env.SUPABASE_PUBLISHABLE_KEY?.trim();
-
-  if (!baseUrl && !publishableKey) return [];
-  if (!baseUrl || !publishableKey) {
-    throw new Error("Directory data is temporarily unavailable.");
-  }
+  const { baseUrl, publishableKey } = directoryTarget(options.env ?? process.env);
 
   let url;
   try {

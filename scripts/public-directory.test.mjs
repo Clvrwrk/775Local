@@ -114,18 +114,84 @@ test("category discovery returns only non-empty database projections", async () 
   ]);
 });
 
-test("an unconfigured environment fails safe without a synthetic data fallback", async () => {
-  let called = false;
-  const listings = await fetchDirectoryListings({
-    env: {},
-    fetchImpl: async () => {
-      called = true;
-      throw new Error("must not be called");
+test("missing directory configuration is an error, never an empty result", async () => {
+  for (const fetcher of [fetchDirectoryListings, fetchDirectoryCategories]) {
+    await assert.rejects(
+      fetcher({
+        env: {},
+        fetchImpl: async () => {
+          assert.fail("missing configuration must not call a provider");
+        },
+      }),
+      /Directory data is temporarily unavailable/,
+    );
+  }
+});
+
+test("public preview reads use their own complete pair without changing command configuration", async () => {
+  const env = {
+    DIRECTORY_SUPABASE_URL: "https://published.supabase.co",
+    DIRECTORY_SUPABASE_PUBLISHABLE_KEY: "sb_publishable_directory_only",
+    SUPABASE_URL: "https://isolated-preview.supabase.co",
+    SUPABASE_PUBLISHABLE_KEY: "sb_publishable_protected_preview",
+  };
+  for (const fetcher of [fetchDirectoryListings, fetchDirectoryCategories]) {
+    let called = false;
+    await fetcher({
+      env,
+      fetchImpl: async (url, init) => {
+        called = true;
+        assert.equal(url.origin, "https://published.supabase.co");
+        assert.equal(init.headers.apikey, env.DIRECTORY_SUPABASE_PUBLISHABLE_KEY);
+        assert.equal(
+          init.headers.Authorization,
+          `Bearer ${env.DIRECTORY_SUPABASE_PUBLISHABLE_KEY}`,
+        );
+        return new Response("[]");
+      },
+    });
+    assert.equal(called, true);
+    for (const missing of ["DIRECTORY_SUPABASE_URL", "DIRECTORY_SUPABASE_PUBLISHABLE_KEY"]) {
+      await assert.rejects(
+        fetcher({
+          env: { ...env, [missing]: "" },
+          fetchImpl: async () => {
+            assert.fail("a partial public pair must not mix with the protected pair");
+          },
+        }),
+        /Directory data is temporarily unavailable/,
+      );
+    }
+  }
+  const { callClaimRpc } = await import("../src/lib/supabase/claim-commands.mjs");
+  let commandCalled = false;
+  const protectedResult = await callClaimRpc({
+    rpc: "get_my_listing_claim",
+    body: {},
+    accessToken: "test-user-token",
+    env,
+    fetchImpl: async (url, init) => {
+      commandCalled = true;
+      assert.equal(url.origin, "https://isolated-preview.supabase.co");
+      assert.equal(init.headers.apikey, env.SUPABASE_PUBLISHABLE_KEY);
+      return new Response("{}");
     },
   });
-
-  assert.deepEqual(listings, []);
-  assert.equal(called, false);
+  assert.equal(commandCalled, true);
+  assert.equal(protectedResult.ok, true);
+  const result = await callClaimRpc({
+    rpc: "get_my_listing_claim",
+    body: {},
+    accessToken: "test-user-token",
+    env: {
+      DIRECTORY_SUPABASE_URL: env.DIRECTORY_SUPABASE_URL,
+      DIRECTORY_SUPABASE_PUBLISHABLE_KEY: env.DIRECTORY_SUPABASE_PUBLISHABLE_KEY,
+    },
+    fetchImpl: async () => {
+      assert.fail("public read configuration must not activate commands");
+    },
+  });
+  assert.equal(result.code, "claim_command_not_configured");
 });
 
 test("configured requests use only the publishable key and reject provider errors", async () => {
