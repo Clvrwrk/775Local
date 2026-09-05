@@ -3,7 +3,7 @@
 Date: September 4, 2026. Status: implementation in progress; no GTM acceptance.
 Repository: https://github.com/Clvrwrk/775Local.git
 Branch: `codex/reno-pilot-completion`; [draft PR #12](https://github.com/Clvrwrk/775Local/pull/12).
-Reviewed implementation commit: `831ca55eb3f7ac99e0dceb2ba5c23b421aecd9b5`. This handoff is a documentation-only continuation.
+Earlier reviewed implementation: `831ca55`. Preview data fix: `006c41c`. Current continuation corrects listing templates against the three supplied `.dc.html` screens; see `docs/LISTING-DESIGN-ACCEPTANCE.md`.
 
 ## Authority and scope
 
@@ -21,7 +21,7 @@ Reno discovery, early valid phone actions, navigation/policy fixes, supplied bra
 
 Continue existing CLE issues: complete private proof processing/retention and claim lifecycle (CLE-107); participant/invitation and remaining Studio/media/new-listing modules (CLE-108); recipient provisioning, inquiry queues/outcomes, delivery receipts/replay/reconciliation (CLE-109/110); editorial cleanup (CLE-104); measurement (CLE-113); recovery/full accessibility/performance and authenticated integration acceptance (CLE-114/115/116). Full feature completion is not blocked solely by external configuration.
 
-Vercel Preview is built, but browser verification stopped at Vercel sign-in: https://reno-local-directory-git-codex-reno-pilot-completion-cleverwork.vercel.app . User sign-in was requested. Dedicated Local775 GHL location ID and an approved secret-manager credential reference were requested and remain missing. Do not use Homeworks Advantage. No hosted migrations, production release, messages or paid operations occurred. Inquiry activation remains off until delivery/recipient/abuse gates pass. Existing CAT-145/CLE-118 production security disposition remains open.
+Preview data was corrected at `006c41c` and actual rendered HTTP confirmed95 Reno listings. Fresh visual acceptance remains open because the designated browser runtime fails to initialize. Preview: https://reno-local-directory-git-codex-reno-pilot-completion-cleverwork.vercel.app . User sign-in was requested. Dedicated Local775 GHL location ID and an approved secret-manager credential reference were requested and remain missing. Do not use Homeworks Advantage. No hosted migrations, production release, messages or paid operations occurred. Inquiry activation remains off until delivery/recipient/abuse gates pass. Existing CAT-145/CLE-118 production security disposition remains open.
 
 ## Accounting and evidence
 
@@ -30,3 +30,7 @@ CLE-105↔CAT-78; CLE-107↔CAT-82; CLE-108↔CAT-165; CLE-109↔CAT-164. Both d
 CODEX receipt: `/Users/chussey/Library/CloudStorage/Dropbox-AIA4/Cleverwork Main/CODEX/docs/linear/teams/CLE/2026-09-04-reno-pilot-completion.md`. User deliverables and tests: `/Users/chussey/Documents/Codex/2026-09-04/pl/outputs/775directory-audit/`.
 
 Local preview uses anonymous published-listing reads only; protected provider credentials were not imported. Local database tests used a separate network-disabled container `local775_reno_20260904`, not the existing Local775 development database.
+
+## Latest listing-design correction
+
+User rejected the generic listing template. Basic/Standard/Premium now have separate supplied-screen layouts; code and HTTP evidence do not constitute visual approval. All95 published listings lack business photos. The user was asked whether to use visibly labeled illustrative design imagery; pending that preference, styled placeholders remain. Do not claim all design updates or GTM readiness complete.

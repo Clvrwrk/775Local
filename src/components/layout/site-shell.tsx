@@ -86,12 +86,20 @@ const navClass =
 export function SiteShell({
   children,
   wash = false,
+  listing = false,
 }: {
   children: React.ReactNode;
   wash?: boolean;
+  listing?: boolean;
 }) {
   return (
-    <div className={cn("min-h-dvh text-ink", wash ? "topo-wash" : "bg-paper")}>
+    <div
+      className={cn(
+        "min-h-dvh text-ink",
+        wash ? "topo-wash" : "bg-paper",
+        listing && "listing-shell",
+      )}
+    >
       <a className="skip-link" href="#main-content">
         Skip to content
       </a>
@@ -103,14 +111,18 @@ export function SiteShell({
           </Link>
           <nav className="hidden items-center gap-1 lg:flex" aria-label="Primary navigation">
             <Link to="/nv/$city" params={{ city: "reno" }} className={navClass}>
-              Explore Reno
+              {listing ? "Browse" : "Explore Reno"}
             </Link>
-            <Link to="/categories" className={navClass}>
-              Services
-            </Link>
-            <Link to="/list-your-business" className={navClass}>
-              List your business
-            </Link>
+            {!listing ? (
+              <>
+                <Link to="/categories" className={navClass}>
+                  Services
+                </Link>
+                <Link to="/list-your-business" className={navClass}>
+                  List your business
+                </Link>
+              </>
+            ) : null}
             <Link to="/claim" search={{ q: "", city: "reno" }} className={navClass}>
               Claim your listing
             </Link>
@@ -121,44 +133,58 @@ export function SiteShell({
       <main id="main-content" tabIndex={-1}>
         {children}
       </main>
-      <footer className="mt-12 border-t border-white/10 bg-pine pb-20 text-paper lg:pb-0">
-        <div className="mx-auto grid max-w-6xl gap-10 px-6 py-14 sm:grid-cols-[1.4fr_1fr_1fr]">
-          <div>
-            <BrandLogo dark className="w-52" />
-            <p className="mt-4 max-w-sm text-sm leading-6 text-paper/70">
-              A straightforward business directory for Reno. Find the next call, visit, or quote
-              without the runaround.
-            </p>
-          </div>
-          <div className="text-sm">
-            <p className="font-medium text-paper">Find</p>
-            <div className="mt-3 flex flex-col gap-2 text-paper/70">
-              <Link to="/nv/$city" params={{ city: "reno" }}>
-                Explore Reno
-              </Link>
-              <Link to="/categories">Services</Link>
-              <Link to="/nv/$city/$category" params={{ city: "reno", category: "screen-repair" }}>
-                Screen repair in Reno
-              </Link>
+      {listing ? (
+        <footer className="listing-footer">
+          <BrandMark className="size-7" />
+          <nav aria-label="Footer navigation">
+            <Link to="/nv/$city" params={{ city: "reno" }}>
+              Browse Reno
+            </Link>
+            <Link to="/privacy">Privacy</Link>
+            <Link to="/terms">Terms</Link>
+          </nav>
+          <p>© {new Date().getFullYear()} 775Directory</p>
+        </footer>
+      ) : (
+        <footer className="mt-12 border-t border-white/10 bg-pine pb-20 text-paper lg:pb-0">
+          <div className="mx-auto grid max-w-6xl gap-10 px-6 py-14 sm:grid-cols-[1.4fr_1fr_1fr]">
+            <div>
+              <BrandLogo dark className="w-52" />
+              <p className="mt-4 max-w-sm text-sm leading-6 text-paper/70">
+                A straightforward business directory for Reno. Find the next call, visit, or quote
+                without the runaround.
+              </p>
+            </div>
+            <div className="text-sm">
+              <p className="font-medium text-paper">Find</p>
+              <div className="mt-3 flex flex-col gap-2 text-paper/70">
+                <Link to="/nv/$city" params={{ city: "reno" }}>
+                  Explore Reno
+                </Link>
+                <Link to="/categories">Services</Link>
+                <Link to="/nv/$city/$category" params={{ city: "reno", category: "screen-repair" }}>
+                  Screen repair in Reno
+                </Link>
+              </div>
+            </div>
+            <div className="text-sm">
+              <p className="font-medium text-paper">Directory</p>
+              <div className="mt-3 flex flex-col gap-2 text-paper/70">
+                <Link to="/list-your-business">List your business</Link>
+                <Link to="/claim" search={{ q: "", city: "reno" }}>
+                  Claim a listing
+                </Link>
+                <Link to="/about">About</Link>
+                <Link to="/privacy">Privacy</Link>
+                <Link to="/terms">Terms</Link>
+              </div>
             </div>
           </div>
-          <div className="text-sm">
-            <p className="font-medium text-paper">Directory</p>
-            <div className="mt-3 flex flex-col gap-2 text-paper/70">
-              <Link to="/list-your-business">List your business</Link>
-              <Link to="/claim" search={{ q: "", city: "reno" }}>
-                Claim a listing
-              </Link>
-              <Link to="/about">About</Link>
-              <Link to="/privacy">Privacy</Link>
-              <Link to="/terms">Terms</Link>
-            </div>
-          </div>
-        </div>
-        <p className="border-t border-white/10 px-4 py-4 text-center text-xs text-paper/75">
-          Not a newspaper. A directory for the better half of Nevada.
-        </p>
-      </footer>
+          <p className="border-t border-white/10 px-4 py-4 text-center text-xs text-paper/75">
+            Not a newspaper. A directory for the better half of Nevada.
+          </p>
+        </footer>
+      )}
       <TabBar />
     </div>
   );

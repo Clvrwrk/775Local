@@ -6,6 +6,8 @@ import { serializeStructuredData } from "../src/lib/directory/structured-data.mj
 const files = [
   "src/routes/index.tsx",
   "src/routes/biz.$slug.tsx",
+  "src/components/directory/listing-page.tsx",
+  "src/components/directory/listing-gallery.tsx",
   "src/routes/search.tsx",
   "src/routes/about.tsx",
   "src/routes/pricing.tsx",
@@ -36,7 +38,10 @@ test("commercial placement is disclosed and external paid links are sponsored", 
 });
 
 test("Lead pipeline stays unavailable while Claim submission is truthfully review-gated", async () => {
-  const listing = await readFile(new URL("../src/routes/biz.$slug.tsx", import.meta.url), "utf8");
+  const listing = await readFile(
+    new URL("../src/components/directory/listing-page.tsx", import.meta.url),
+    "utf8",
+  );
   const claim = await readFile(new URL("../src/routes/claim.tsx", import.meta.url), "utf8");
   assert.doesNotMatch(listing, /Request a quote|submitLead|QuoteForm/);
   assert.match(claim, /Claim remains read-only/);
