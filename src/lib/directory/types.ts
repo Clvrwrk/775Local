@@ -19,6 +19,8 @@ export type Category = {
   icon: string;
 };
 
+export type ListingPlan = "free" | "basic" | "standard" | "premium";
+
 export type BusinessCard = {
   id: number;
   slug: string;
@@ -32,6 +34,7 @@ export type BusinessCard = {
   reviewCount: number | null;
   hours: string;
   featured: boolean;
+  plan: ListingPlan;
   verified: boolean;
   ownerVerified: boolean;
   citySlug: string;
@@ -65,6 +68,36 @@ export type Offer = {
   expiresOn: string | null;
   active: boolean;
 };
+export type CaseStudyMetric = { label: string; before: string; after: string; unit: string };
+
+export type CaseStudy = {
+  id: string;
+  slug: string;
+  title: string;
+  summary: string;
+  clientType: string;
+  clientLocation: string;
+  projectType: string;
+  startedOn: string | null;
+  completedOn: string | null;
+  investmentRange: string;
+  materials: string;
+  crewSize: number | null;
+  clientNeed: string;
+  approach: string;
+  results: string;
+  challenges: string;
+  timelineNote: string;
+  lessons: string;
+  futurePlans: string;
+  metrics: CaseStudyMetric[];
+  testimonial: { quote: string; author: string; role: string; rating: number | null } | null;
+  beforeUrl: string;
+  afterUrl: string;
+  featured: boolean;
+  publishedAt: string | null;
+};
+
 export type BusinessDetail = BusinessCard & {
   email: string;
   website: string;
@@ -74,6 +107,7 @@ export type BusinessDetail = BusinessCard & {
   reviews: { id: number; author: string; rating: number; body: string }[];
   photos: ListingPhoto[];
   offer: Offer | null;
+  caseStudies: CaseStudy[];
 };
 
 export type LeadRow = {

@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { CATEGORIES, CITIES } from "@/data/seed";
-import { fetchDirectoryListings } from "@/lib/supabase/public-directory.mjs";
+import { fetchDirectoryListings, fetchListingCaseStudies } from "@/lib/supabase/public-directory.mjs";
 import type {
   BusinessCard,
   BusinessDetail,
@@ -104,6 +104,9 @@ export const getBusiness = createServerFn({ method: "GET" })
     const rows = await fetchCards({ slug, limit: 1 });
     const card = rows[0];
     if (!card) return null;
+    const caseStudies = (await fetchListingCaseStudies({ listingStableId: card.id }).catch(
+      () => [],
+    )) as BusinessDetail["caseStudies"];
     return {
       ...card,
       email: "",
@@ -116,6 +119,7 @@ export const getBusiness = createServerFn({ method: "GET" })
       reviews: [] as BusinessDetail["reviews"],
       photos: [] as BusinessDetail["photos"],
       offer: (card as BusinessCard & { offer?: BusinessDetail["offer"] }).offer ?? null,
+      caseStudies,
     } satisfies BusinessDetail;
   });
 

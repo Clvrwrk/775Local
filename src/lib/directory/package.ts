@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { fetchDirectoryListings } from "@/lib/supabase/public-directory.mjs";
-import type { ListingPhoto, Offer } from "./types";
+import type { ListingPhoto, ListingPlan, Offer } from "./types";
 
 const PHOTO_CAP = { claimed: 6, featured: 12 } as const;
 
@@ -10,6 +10,13 @@ function ownerAccessUnavailable<T>(): T {
 
 export function photoCap(featured: boolean) {
   return featured ? PHOTO_CAP.featured : PHOTO_CAP.claimed;
+}
+
+/** Gallery photo caps by plan, matching the draft pricing table. */
+const PLAN_PHOTO_CAP: Record<ListingPlan, number> = { free: 3, basic: 6, standard: 12, premium: 20 };
+
+export function photoCapForPlan(plan: ListingPlan) {
+  return PLAN_PHOTO_CAP[plan];
 }
 
 export const listOwnerPhotos = createServerFn({ method: "GET" })

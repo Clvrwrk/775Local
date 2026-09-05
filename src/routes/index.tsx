@@ -123,7 +123,7 @@ function Home() {
         </div>
         {featured.length ? (
           <div className="mt-7 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {featured.slice(0, 6).map((biz) => <BusinessCardView key={biz.id} biz={biz} variant="photo" />)}
+            {featured.slice(0, 6).map((biz) => <BusinessCardView key={biz.id} biz={biz} layout="stack" />)}
           </div>
         ) : (
           <div className="mt-7 grid gap-5 rounded-[26px] border border-line bg-card p-6 sm:grid-cols-[auto_1fr] sm:items-center sm:p-8">
