@@ -143,12 +143,14 @@ export const searchBusinesses = createServerFn({ method: "GET" })
 export const getBusiness = createServerFn({ method: "GET" })
   .validator((slug: string) => slug)
   .handler(async ({ data: slug }) => {
-    const rows = await fetchCards({ slug, limit: 1 });
+    // Case studies are optional and keyed by slug, so they load alongside the listing
+    // and never hold the page: the helper swallows errors and times out early.
+    const [rows, caseStudies] = await Promise.all([
+      fetchCards({ slug, limit: 1 }),
+      fetchListingCaseStudies({ listingSlug: slug }) as Promise<BusinessDetail["caseStudies"]>,
+    ]);
     const card = rows[0];
     if (!card) return null;
-    const caseStudies = (await fetchListingCaseStudies({ listingStableId: card.id }).catch(
-      () => [],
-    )) as BusinessDetail["caseStudies"];
     return {
       ...card,
       email: "",

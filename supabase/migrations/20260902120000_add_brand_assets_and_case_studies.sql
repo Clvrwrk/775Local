@@ -181,13 +181,17 @@ begin
     raise exception 'Case study photos must belong to the same listing.' using errcode = 'check_violation';
   end if;
 
-  if new.status = 'published' then
+  -- Every publicly visible state needs consent: published, or archived-but-featured.
+  if new.status = 'published' or (new.status = 'archived' and new.is_featured) then
     if not new.client_consented then
-      raise exception 'Record the client''s permission before publishing a case study.' using errcode = 'check_violation';
+      raise exception 'The client''s permission is required while a case study is public. Unfeature or unpublish it first.' using errcode = 'check_violation';
     end if;
     if before_row.status <> 'approved' or after_row.status <> 'approved' then
-      raise exception 'Before and after photos must be approved before publishing.' using errcode = 'check_violation';
+      raise exception 'Before and after photos must be approved while a case study is public.' using errcode = 'check_violation';
     end if;
+  end if;
+
+  if new.status = 'published' then
     if not new.is_featured then
       -- Serialize concurrent publishes for one listing.
       perform 1 from app.business_listings bl where bl.id = new.listing_id for update;
@@ -220,17 +224,18 @@ for each row execute function app.set_updated_at();
 alter table app.case_studies enable row level security;
 alter table app.case_study_media enable row level security;
 
+-- Anonymous readers never touch app.can_manage_listing (anon cannot execute it).
 create policy case_studies_read_public on app.case_studies for select to anon, authenticated
 using (
-  (
-    (status = 'published' or (status = 'archived' and is_featured))
-    and exists (
-      select 1 from app.business_listings bl
-      where bl.id = case_studies.listing_id and bl.publication_status = 'published'
-    )
+  (status = 'published' or (status = 'archived' and is_featured))
+  and exists (
+    select 1 from app.business_listings bl
+    where bl.id = case_studies.listing_id and bl.publication_status = 'published'
   )
-  or app.can_manage_listing(listing_id)
 );
+
+create policy case_studies_read_managed on app.case_studies for select to authenticated
+using (app.can_manage_listing(listing_id));
 
 create policy case_studies_manage_authorized on app.case_studies for all to authenticated
 using (app.can_manage_listing(listing_id)) with check (app.can_manage_listing(listing_id));
@@ -239,16 +244,17 @@ create policy case_study_media_read_public on app.case_study_media for select to
 using (exists (
   select 1 from app.case_studies cs
   where cs.id = case_study_media.case_study_id
-    and (
-      (
-        (cs.status = 'published' or (cs.status = 'archived' and cs.is_featured))
-        and exists (
-          select 1 from app.business_listings bl
-          where bl.id = cs.listing_id and bl.publication_status = 'published'
-        )
-      )
-      or app.can_manage_listing(cs.listing_id)
+    and (cs.status = 'published' or (cs.status = 'archived' and cs.is_featured))
+    and exists (
+      select 1 from app.business_listings bl
+      where bl.id = cs.listing_id and bl.publication_status = 'published'
     )
+));
+
+create policy case_study_media_read_managed on app.case_study_media for select to authenticated
+using (exists (
+  select 1 from app.case_studies cs
+  where cs.id = case_study_media.case_study_id and app.can_manage_listing(cs.listing_id)
 ));
 
 create policy case_study_media_manage_authorized on app.case_study_media for all to authenticated

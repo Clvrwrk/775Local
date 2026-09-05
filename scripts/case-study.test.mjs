@@ -1,13 +1,23 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { buildCaseStudyUrl, mapCaseStudy, mediaUrl } from "../src/lib/supabase/public-directory.mjs";
+import { buildCaseStudyUrl, fetchListingCaseStudies, mapCaseStudy, mediaUrl } from "../src/lib/supabase/public-directory.mjs";
 
-test("buildCaseStudyUrl targets the public projection for one listing", () => {
-  const url = buildCaseStudyUrl("https://example.supabase.co", 42);
+test("buildCaseStudyUrl targets the public projection for one listing by slug", () => {
+  const url = buildCaseStudyUrl("https://example.supabase.co", "high-sierra-screens-reno");
   assert.equal(url.pathname, "/rest/v1/directory_case_studies");
-  assert.equal(url.searchParams.get("listing_stable_id"), "eq.42");
+  assert.equal(url.searchParams.get("listing_slug"), "eq.high-sierra-screens-reno");
   assert.equal(url.searchParams.get("order"), "is_featured.desc,published_at.desc");
-  assert.throws(() => buildCaseStudyUrl("https://example.supabase.co", 0));
+  assert.throws(() => buildCaseStudyUrl("https://example.supabase.co", "not a slug"));
+});
+
+test("fetchListingCaseStudies never throws and returns [] on failure", async () => {
+  const env = { SUPABASE_URL: "https://x.supabase.co", SUPABASE_PUBLISHABLE_KEY: "k" };
+  const failing = await fetchListingCaseStudies({ listingSlug: "s", env, fetchImpl: async () => { throw new Error("down"); } });
+  assert.deepEqual(failing, []);
+  const bad = await fetchListingCaseStudies({ listingSlug: "s", env, fetchImpl: async () => new Response("nope", { status: 500 }) });
+  assert.deepEqual(bad, []);
+  const ok = await fetchListingCaseStudies({ listingSlug: "s", env, fetchImpl: async () => new Response(JSON.stringify([{ id: "1", slug: "a", title: "T", client_need: "n", approach: "a", results: "r" }])) });
+  assert.equal(ok.length, 1);
 });
 
 test("mediaUrl resolves storage paths and passes absolute urls through", () => {

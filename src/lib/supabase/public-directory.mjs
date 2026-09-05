@@ -299,16 +299,16 @@ export function mediaUrl(baseUrl, path) {
 }
 
 /**
+ * Keyed by listing slug so it can run in parallel with the listing fetch.
  * @param {string} baseUrl
- * @param {number} listingStableId
+ * @param {string} listingSlug
  */
-export function buildCaseStudyUrl(baseUrl, listingStableId) {
-  if (!Number.isInteger(listingStableId) || listingStableId <= 0) {
-    throw new Error("listingStableId must be a positive integer");
-  }
+export function buildCaseStudyUrl(baseUrl, listingSlug) {
+  const slug = safeToken(listingSlug);
+  if (!slug) throw new Error("listingSlug must be a slug");
   const url = new URL("/rest/v1/directory_case_studies", baseUrl);
   url.searchParams.set("select", CASE_STUDY_COLUMNS);
-  url.searchParams.set("listing_stable_id", `eq.${listingStableId}`);
+  url.searchParams.set("listing_slug", `eq.${slug}`);
   url.searchParams.set("order", "is_featured.desc,published_at.desc");
   url.searchParams.set("limit", "4");
   return url;
@@ -368,8 +368,9 @@ export function mapCaseStudy(row, baseUrl = "") {
 
 /**
  * Public case studies for one listing: the featured one first, then newest.
- * Returns [] when directory data is not configured, like fetchDirectoryListings.
- * @param {{ listingStableId: number, env?: PublicDirectoryEnv, fetchImpl?: typeof fetch }} options
+ * Optional data: it never throws, returns [] when unconfigured or unavailable,
+ * and gives up after a short timeout so it cannot hold the listing page.
+ * @param {{ listingSlug: string, env?: PublicDirectoryEnv, fetchImpl?: typeof fetch, timeoutMs?: number }} options
  */
 export async function fetchListingCaseStudies(options) {
   const env = options.env ?? process.env;
@@ -379,19 +380,23 @@ export async function fetchListingCaseStudies(options) {
 
   let url;
   try {
-    url = buildCaseStudyUrl(baseUrl, options.listingStableId);
+    url = buildCaseStudyUrl(baseUrl, options.listingSlug);
   } catch {
     return [];
   }
   if (url.protocol !== "https:") return [];
 
-  const response = await (options.fetchImpl ?? fetch)(url, {
-    method: "GET",
-    headers: { apikey: publishableKey, Authorization: `Bearer ${publishableKey}`, Accept: "application/json" },
-    signal: AbortSignal.timeout(5_000),
-  });
-  if (!response.ok) return [];
-  const rows = await response.json();
-  if (!Array.isArray(rows)) return [];
-  return rows.map((row) => mapCaseStudy(row, baseUrl));
+  try {
+    const response = await (options.fetchImpl ?? fetch)(url, {
+      method: "GET",
+      headers: { apikey: publishableKey, Authorization: `Bearer ${publishableKey}`, Accept: "application/json" },
+      signal: AbortSignal.timeout(options.timeoutMs ?? 1_500),
+    });
+    if (!response.ok) return [];
+    const rows = await response.json();
+    if (!Array.isArray(rows)) return [];
+    return rows.map((row) => mapCaseStudy(row, baseUrl));
+  } catch {
+    return [];
+  }
 }
