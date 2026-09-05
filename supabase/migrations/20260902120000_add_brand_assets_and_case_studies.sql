@@ -34,6 +34,21 @@ alter table app.media_assets
   add column if not exists caption text,
   add column if not exists sort_order integer not null default 0;
 
+-- Before the singleton-slot index: keep the newest live row per (listing, kind)
+-- and soft-delete older duplicates so the index build cannot abort on live data.
+-- Soft-delete clears public_path to satisfy the approved <=> public_path check.
+with ranked as (
+  select id,
+         row_number() over (partition by listing_id, kind order by created_at desc, id desc) as rn
+  from app.media_assets
+  where kind in ('logo', 'logo_horizontal', 'logo_vertical', 'favicon', 'owner_headshot')
+    and status in ('uploaded', 'scanning', 'pending_review', 'approved')
+)
+update app.media_assets m
+set status = 'deleted', public_path = null
+from ranked
+where ranked.id = m.id and ranked.rn > 1;
+
 -- One live asset per singleton brand slot.
 create unique index if not exists media_assets_one_per_brand_slot
   on app.media_assets (listing_id, kind)

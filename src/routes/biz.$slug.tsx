@@ -158,9 +158,11 @@ function Reviews({ biz, strip = false }: { biz: BusinessDetail; strip?: boolean 
 }
 
 function BeforeAfter({ study, compact = false }: { study: CaseStudy; compact?: boolean }) {
+  const pairs = ([["Before", study.beforeUrl], ["After", study.afterUrl]] as const).filter(([, url]) => Boolean(url));
+  if (!pairs.length) return null;
   return (
     <div className="grid grid-cols-2 gap-2">
-      {[["Before", study.beforeUrl], ["After", study.afterUrl]].map(([label, url]) => (
+      {pairs.map(([label, url]) => (
         <figure key={label} className={cn("relative overflow-hidden rounded-[14px] bg-paper-2", compact ? "aspect-square" : "aspect-[4/3]")}>
           <img src={url} alt={`${label}: ${study.title}`} className="size-full object-cover" />
           <figcaption className="absolute left-2 top-2 rounded-full bg-ink/70 px-2 py-0.5 text-[11px] font-medium text-paper">{label}</figcaption>
