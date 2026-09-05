@@ -26,7 +26,7 @@ This section supersedes the earlier exact five-per-city publication mix and stri
 ## 2026-08-24 — Grill round 1
 
 - **First proof:** Demonstrate attributable merchant value and willingness to pay.
-- **Operational geography:** Reno and Sparks.
+- **Operational geography (historical; superseded September 4):** Reno and Sparks. The active pilot is Reno only.
 - **Category breadth:** Broad-category launch rather than a narrow service wedge.
 - **Initial release boundary:** Production authentication, trustworthy Claims, accurate Business Listings, Leads, call tracking, and manually activated Featured. Self-service checkout and real Direct Mail remain follow-on work.
 - **Commercial model:** Every Business Listing is always free. The first Featured cohort is a paid concierge pilot using manual invoicing and authorized activation. The directory also generates opportunities for the owner's consulting and marketing company.

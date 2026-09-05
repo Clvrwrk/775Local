@@ -168,3 +168,25 @@ test("photo extraction rejects widgets and retains exact source provenance", () 
     },
   ]);
 });
+
+test("archive hashes original UTF-8 bytes and rejects invalid bytes without leaking payload", async () => {
+  await withFixture(async (root) => {
+    const { createHash } = await import("node:crypto");
+    const bytes = Buffer.from('{"label":"Reno café"}\n');
+    await writeFile(join(root, "progress.json"), bytes);
+    const artifact = (await buildEnrichmentSnapshot(root)).artifacts.find(
+      (a) => a.relative_path === "progress.json",
+    );
+    assert.equal(artifact.content_sha256, createHash("sha256").update(bytes).digest("hex"));
+    assert.equal(artifact.byte_count, bytes.length);
+    assert.deepEqual(Buffer.from(artifact.raw_text), bytes);
+    await writeFile(join(root, "progress.json"), Buffer.from([0x7b, 0xff, 0x7d]));
+    await assert.rejects(buildEnrichmentSnapshot(root), {
+      message: "Artifact is not valid UTF-8: progress.json",
+    });
+    await writeFile(join(root, "progress.json"), "{private-provider-secret");
+    await assert.rejects(buildEnrichmentSnapshot(root), {
+      message: "Artifact is not valid JSON: progress.json",
+    });
+  });
+});

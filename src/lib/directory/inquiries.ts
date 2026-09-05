@@ -1,9 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
-import { inquiriesConfigured } from "./inquiry-handler.mjs";
+import { inquiriesConfigured, uuid } from "./inquiry-handler.mjs";
 export const inquiryAvailability = createServerFn({ method: "GET" })
   .validator((id: string) => id)
   .handler(async ({ data }) => {
-    if (!inquiriesConfigured(process.env) || !/^[0-9a-f-]{36}$/i.test(data))
+    if (!inquiriesConfigured(process.env) || !uuid.test(data))
       return { available: false, siteKey: "" };
     try {
       const response = await fetch(

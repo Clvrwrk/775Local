@@ -1,5 +1,17 @@
 import { callClaimRpc } from "./claim-commands.mjs";
 import { telephoneHref, safeWebsite } from "../directory/presentation.mjs";
+const STUDIO_ERRORS = new Set([
+  "authentication_required",
+  "listing_access_forbidden",
+  "outside_pilot",
+  "invalid_listing_proposal",
+  "idempotency_conflict",
+  "listing_changed_since_proposal",
+  "reauth_required",
+  "review_forbidden",
+  "invalid_decision",
+  "proposal_not_found",
+]);
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 /** @param {unknown} input */
 export function studioCommand(input) {
@@ -75,5 +87,10 @@ export async function runStudioCommand(input, options) {
   } catch {
     return { ok: false, code: "invalid_studio_command" };
   }
-  return callClaimRpc({ ...options, ...command });
+  return callClaimRpc({
+    ...options,
+    ...command,
+    failureCode: "studio_command_failed",
+    errorCode: (message, fallback) => (STUDIO_ERRORS.has(message) ? message : fallback),
+  });
 }

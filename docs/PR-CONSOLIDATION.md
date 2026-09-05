@@ -2,7 +2,7 @@
 
 User authorization: review and resolve all PR comments, resolve merge conflicts, and merge every branch into main so subsequent work starts from fresh branches/PRs. This authorizes the requested main merge and its normal Git integration. It does not run hosted database migrations or enable external communications.
 
-Integration base: Reno PR12 at ef234b2; main at6fe4a60. PR13 at33c5e5d is integrated with explicit resolution of card/page conflicts. All live remote branch heads and retained historical remote-tracking heads are to be preserved as merge ancestors. Older public UI and routing are superseded by the corrected Reno implementation; history consolidation must not restore them.
+Integration base: Reno PR12 at ef234b2; main at6fe4a60. PR13 at33c5e5d is integrated with explicit resolution of card/page conflicts. The inventoried heads are ancestors of the consolidation branch or remain on retained historical refs. Main receives the reconciled source tree by squash, not those original commit ancestors. Older public UI and routing are superseded by the corrected Reno implementation; history consolidation must not restore them.
 
 ## Main history policy
 
@@ -71,6 +71,35 @@ Every review thread across PRs1–13 was retrieved with pagination, including al
 
 ## Validation and retained work
 
-179 unit tests, typecheck, ESLint, secret scan and production build passed before final review. Final isolated database run covers22 migrations and195 pgTAP assertions; exact final receipts are recorded in the handoff. Browser runtime setup still fails its trusted-dependency check, so no fresh screenshot/interaction acceptance is claimed. GitHub CI/review and merge results are appended after completion.
+186 unit tests, typecheck, ESLint, secret scan and production build passed before final review. Final isolated database run covers 22 migrations and 200 pgTAP assertions; exact final receipts are recorded in the handoff. Browser runtime setup still fails its trusted-dependency check, so no fresh screenshot/interaction acceptance is claimed. GitHub CI/review and merge results are appended after completion.
 
 This is source consolidation, not GTM acceptance. Owner media/case-study editing and reviewed commands, full private proof lifecycle, delivery/GHL integration, measurement, recovery and browser/production acceptance remain in existing Linear workstreams. Hosted migrations are a separate explicit operation. Existing production security work CAT-145/CLE-118 remains distinct.
+
+## Final CodeRabbit review dispositions
+
+All 20 comments in [review 5120427078](https://github.com/Clvrwrk/775Local/pull/12#pullrequestreview-5120427078) were checked against the current implementation.
+
+- [Comment 3939969075](https://github.com/Clvrwrk/775Local/pull/12#discussion_r3939969075): Replaced workstation prefixes with portable named roots while preserving distinct receipt filenames and runnable test commands.
+- [Comment 3939969080](https://github.com/Clvrwrk/775Local/pull/12#discussion_r3939969080): Restored spaces and refreshed the validation counts.
+- [Comment 3939969083](https://github.com/Clvrwrk/775Local/pull/12#discussion_r3939969083): Clarified squash-to-main tree integration versus original commit ancestry retained on branches.
+- [Comment 3939969086](https://github.com/Clvrwrk/775Local/pull/12#discussion_r3939969086): Updated active SPEC stories and public-beta scope to Reno; marked the historical operational geography superseded.
+- [Comment 3939969088](https://github.com/Clvrwrk/775Local/pull/12#discussion_r3939969088): Hash and count original file bytes; reject invalid UTF-8 and identify invalid JSON by relative path without leaking contents.
+- [Comment 3939969100](https://github.com/Clvrwrk/775Local/pull/12#discussion_r3939969100): The explicit environment already isolates the query; strengthened regression tests with DIRECTORY credentials and assertions that the failing provider mock was called.
+- [Comment 3939969105](https://github.com/Clvrwrk/775Local/pull/12#discussion_r3939969105): Create a missing nested artifact root before its immutable batch-layout binding; regression covers creation and incompatible reuse.
+- [Comment 3939969109](https://github.com/Clvrwrk/775Local/pull/12#discussion_r3939969109): Distinguish sitemap fetch failures from read/validation failures and prevent IndexNow submission on either.
+- [Comment 3939969111](https://github.com/Clvrwrk/775Local/pull/12#discussion_r3939969111): Defensively normalize content tier to Basic before both layout selection and label construction.
+- [Comment 3939969114](https://github.com/Clvrwrk/775Local/pull/12#discussion_r3939969114): Render case-study definition headings only when the corresponding content is populated.
+- [Comment 3939969116](https://github.com/Clvrwrk/775Local/pull/12#discussion_r3939969116): Use stable userId effect dependencies, cancel stale requests and clear previous account data in Claim, account, review and Studio.
+- [Comment 3939969121](https://github.com/Clvrwrk/775Local/pull/12#discussion_r3939969121): Render normalized safe media destinations, including before/after case-study images.
+- [Comment 3939969124](https://github.com/Clvrwrk/775Local/pull/12#discussion_r3939969124): Replace the nonfunctional town selector with an explicit Reno indicator and remove its unused props.
+- [Comment 3939969127](https://github.com/Clvrwrk/775Local/pull/12#discussion_r3939969127): HTTP 401 maps to authentication_required; generic HTTP 403 maps to authorization_forbidden, with specific guarded workflow errors retained.
+- [Comment 3939969131](https://github.com/Clvrwrk/775Local/pull/12#discussion_r3939969131): Studio uses an exact allowlist of its own error codes, redacts unknown provider messages and supplies distinct stale-version, permission and reauthentication guidance.
+- [Comment 3939969133](https://github.com/Clvrwrk/775Local/pull/12#discussion_r3939969133): Use stable userId and explicit retry dependency; clear prior account state and cancel stale responses.
+- [Comment 3939969137](https://github.com/Clvrwrk/775Local/pull/12#discussion_r3939969137): Remove the discarded city selector and unnecessary city fetch from Claim search; display Reno explicitly.
+- [Comment 3939969140](https://github.com/Clvrwrk/775Local/pull/12#discussion_r3939969140): Bind a retry key to the normalized claim id, decision and reason; unchanged uncertain retries reuse the key and changed commands receive a new key.
+- [Comment 3939969145](https://github.com/Clvrwrk/775Local/pull/12#discussion_r3939969145): Separate success status from danger-styled error alerts; include explicit Studio reload control.
+- [Comment 3939969148](https://github.com/Clvrwrk/775Local/pull/12#discussion_r3939969148): Revoke inherited authenticated table-wide Lead SELECT; grant only prior approved columns. Actual role-based SQL tests deny all three new internal columns while retaining recipient contact access.
+
+Review-summary suggestions: JSON parse errors now identify the relative artifact; strict inquiry UUID validation is shared; the unused unvalidated telephone helper is removed. Account roles are materialized once per Reno listing, retaining the centralized authorization helper instead of duplicating its policy in a new join. The suggestion to print full archive RPC response bodies is declined because it can disclose private evidence or provider details; sanitized failure reporting is intentionally retained.
+
+Final local verification: 186 unit tests, 22 migrations, 200 pgTAP assertions, TypeScript, ESLint, secret scan and production build pass. Standards review found no new correctness/security regressions; Spec review corrected portable archival receipt identities and test commands. GitHub review and merge results remain authoritative on PR12.

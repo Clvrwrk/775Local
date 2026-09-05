@@ -7,8 +7,8 @@ This is a private-research receipt. It does not select, review, publish, or writ
 - Branch: `codex/cle-104-serp-enrichment`
 - Starting commit: `e423b5569406c0ab3e743c578b24c548081799f8`
 - Trigger: `local775-nightly-serp-enrichment`
-- Queue: `/Users/chussey/Library/CloudStorage/Dropbox-AIA4/Cleverwork Main/Local775Directory/serp-enrichment/category-queue.json`
-- Output: `/Users/chussey/Library/CloudStorage/Dropbox-AIA4/Cleverwork Main/Local775Directory/serp-enrichment`
+- Queue: `<private-enrichment-root>/category-queue.json`
+- Output: `<private-enrichment-root>`
 - Window: batch 01, priorities 1–20 only
 - Providers: DataForSEO rank, Exa and Tavily corroboration, Firecrawl same-domain evidence
 - Crawl boundary: discovery depth 3, query parameters ignored, external/subdomain traversal disabled, 25-page cap

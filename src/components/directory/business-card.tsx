@@ -142,8 +142,11 @@ function CardPhoto({ url }: { url: string | null }) {
 
 export function BusinessCardView({ biz, layout }: { biz: BusinessCard; layout?: CardLayout }) {
   const cover = safeWebsite(biz.coverUrl);
-  const kind = layout ?? cardLayout(biz.contentTier);
-  const tierLabel = `${biz.contentTier[0]!.toUpperCase()}${biz.contentTier.slice(1)}`;
+  const tier = ["basic", "standard", "premium"].includes(biz.contentTier)
+    ? biz.contentTier
+    : "basic";
+  const kind = layout ?? cardLayout(tier);
+  const tierLabel = `${tier[0]!.toUpperCase()}${tier.slice(1)}`;
   const statusLine = `${biz.ownerVerified ? "Owner verified" : "Unclaimed"} · ${biz.verified ? "Information checked" : "Unverified"}`;
 
   if (kind === "row") {

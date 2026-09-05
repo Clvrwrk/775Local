@@ -51,7 +51,7 @@ function Home() {
               call.
             </p>
             <div className="mt-7 max-w-xl rounded-[22px] bg-paper p-3 text-ink sm:p-4">
-              <SearchBox cities={cities} />
+              <SearchBox />
             </div>
             <div className="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-sm text-paper/70">
               <Link to="/categories" className="inline-flex items-center gap-1.5 hover:text-paper">

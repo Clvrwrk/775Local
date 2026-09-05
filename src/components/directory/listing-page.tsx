@@ -189,7 +189,10 @@ function Services({ biz }: { biz: BusinessDetail }) {
 }
 
 function PremiumContent({ biz }: { biz: BusinessDetail }) {
-  const projects = visibleProjects(biz.projects);
+  const projects = visibleProjects(biz.projects).map((project) => ({
+    ...project,
+    imageUrl: safeWebsite(project.imageUrl),
+  }));
   return (
     <>
       <ListingGallery photos={biz.photos} name={biz.name} variant="premium" />
@@ -212,9 +215,7 @@ function PremiumContent({ biz }: { biz: BusinessDetail }) {
           <div className="listing-projects">
             {projects.map((project, i) => (
               <article key={i}>
-                {safeWebsite(project.imageUrl) ? (
-                  <img src={project.imageUrl} alt="" loading="lazy" />
-                ) : null}
+                {project.imageUrl ? <img src={project.imageUrl} alt="" loading="lazy" /> : null}
                 <h3>{project.title}</h3>
                 {project.description ? <p>{project.description}</p> : null}
               </article>
@@ -228,6 +229,7 @@ function PremiumContent({ biz }: { biz: BusinessDetail }) {
 }
 
 export function ListingPage({ biz }: { biz: BusinessDetail }) {
+  const cover = safeWebsite(biz.coverUrl);
   const basic = biz.contentTier === "basic";
   const premium = biz.contentTier === "premium";
   const showStreet = !biz.hideStreet && biz.street && biz.street !== "Service area";
@@ -297,9 +299,7 @@ export function ListingPage({ biz }: { biz: BusinessDetail }) {
         </div>
         {premium ? (
           <header className="listing-premium-hero">
-            {biz.coverUrl && safeWebsite(biz.coverUrl) ? (
-              <img className="listing-hero-photo" src={biz.coverUrl} alt="" />
-            ) : null}
+            {cover ? <img className="listing-hero-photo" src={cover} alt="" /> : null}
             <div className="listing-container listing-hero-inner">
               {heading}
               <ContactActions phone={biz.phone} website={biz.website} sponsored={biz.featured} />

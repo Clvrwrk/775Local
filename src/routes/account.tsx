@@ -16,11 +16,16 @@ export const Route = createFileRoute("/account")({
 });
 function AccountPage() {
   const { user, isPending } = useCurrentUserState();
+  const userId = user?.id;
   const [account, setAccount] = useState<PilotAccount | null>(null);
   const [error, setError] = useState("");
   const [attempt, setAttempt] = useState(0);
   useEffect(() => {
-    if (!user) return;
+    if (!userId) {
+      setAccount(null);
+      return;
+    }
+    setAccount(null);
     let active = true;
     setError("");
     void pilotCommand({ data: { action: "account" } })
@@ -36,7 +41,7 @@ function AccountPage() {
     return () => {
       active = false;
     };
-  }, [user, attempt]);
+  }, [userId, attempt]);
   if (!isPending && !user) return <RedirectToSignIn />;
   return (
     <SiteShell wash>

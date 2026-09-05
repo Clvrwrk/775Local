@@ -18,6 +18,8 @@ grant select,insert,update on private.lead_destinations to service_role;
 alter table app.leads add column destination_id uuid references private.lead_destinations(id);
 alter table app.leads add column abuse_key text;
 alter table app.leads add column request_fingerprint text;
+revoke select on app.leads from authenticated;
+grant select (id, listing_id, idempotency_key, resident_name, resident_phone_e164, resident_email, resident_postal_code, request_text, contact_consent_at, source_path, source_context, status, duplicate_of_id, submitted_at, deleted_at, updated_at) on app.leads to authenticated;
 create index leads_duplicate_window on app.leads(request_fingerprint,submitted_at desc);
 create index leads_abuse_window on app.leads(abuse_key,submitted_at desc);
 

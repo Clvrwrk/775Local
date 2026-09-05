@@ -72,6 +72,7 @@ export async function runIndexNowSubmission({
   fetchImpl = globalThis.fetch,
   now = () => new Date(),
 } = {}) {
+  let failure = readFileImpl ? "sitemap_read_or_validation_failed" : "sitemap_fetch_failed";
   try {
     let sitemap;
     if (readFileImpl) sitemap = await readFileImpl();
@@ -83,6 +84,7 @@ export async function runIndexNowSubmission({
       if (!response.ok) throw new Error("sitemap_unavailable");
       sitemap = await response.text();
     }
+    failure = "sitemap_read_or_validation_failed";
     return await submitIndexNow(sitemapUrls(sitemap), { fetchImpl, now });
   } catch {
     return {
@@ -95,7 +97,7 @@ export async function runIndexNowSubmission({
       status: null,
       accepted: false,
       responseBody: null,
-      failure: "sitemap_read_or_validation_failed",
+      failure,
     };
   }
 }

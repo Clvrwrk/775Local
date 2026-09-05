@@ -5,6 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { RedirectToSignIn } from "@/lib/auth/gates";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { pilotCommand, type PilotReview } from "@/lib/directory/studio";
+import { retryIdentity } from "@/lib/directory/retry-key.mjs";
 import { decideListingClaim } from "@/lib/directory/claims";
 export const Route = createFileRoute("/review")({
   head: () => ({
@@ -17,11 +18,16 @@ export const Route = createFileRoute("/review")({
 });
 function ReviewPage() {
   const { user, isPending } = useCurrentUserState();
+  const userId = user?.id;
   const [queue, setQueue] = useState<PilotReview | null>(null);
   const [error, setError] = useState("");
   const [attempt, setAttempt] = useState(0);
   useEffect(() => {
-    if (!user) return;
+    if (!userId) {
+      setQueue(null);
+      return;
+    }
+    setQueue(null);
     let active = true;
     setError("");
     void pilotCommand({ data: { action: "review" } })
@@ -40,7 +46,7 @@ function ReviewPage() {
     return () => {
       active = false;
     };
-  }, [user, attempt]);
+  }, [userId, attempt]);
   if (!isPending && !user) return <RedirectToSignIn />;
   return (
     <SiteShell wash>
@@ -156,20 +162,24 @@ function DecisionForm({
 }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const key = useRef("");
+  const pending = useRef<{ fingerprint: string; key: string } | null>(null);
   async function decide(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
     const decision = String(form.get("decision"));
-    const reason = String(form.get("reason"));
+    const reason = String(form.get("reason")).trim();
     setBusy(true);
     setError("");
-    key.current ||= `review-${crypto.randomUUID()}`;
+    pending.current = retryIdentity(
+      pending.current,
+      { kind, id, decision, reason },
+      () => `review-${crypto.randomUUID()}`,
+    );
     try {
       const result =
         kind === "claim"
           ? await decideListingClaim({
-              data: { claimId: id, decision, reason, idempotencyKey: key.current },
+              data: { claimId: id, decision, reason, idempotencyKey: pending.current.key },
             })
           : await pilotCommand({ data: { action: "decide", id, decision, reason } });
       if (result.ok) onSaved();

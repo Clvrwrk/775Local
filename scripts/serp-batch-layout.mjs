@@ -1,4 +1,4 @@
-import { readFile, readdir, writeFile } from "node:fs/promises";
+import { readFile, readdir, writeFile, mkdir } from "node:fs/promises";
 import { join } from "node:path";
 
 /** Bind an artifact root to one batch size before any receipt or provider work.
@@ -8,6 +8,7 @@ import { join } from "node:path";
 export async function ensureBatchLayout(root, batchSize) {
   if (!Number.isInteger(batchSize) || batchSize < 1 || batchSize > 20)
     throw new Error("invalid batch size");
+  await mkdir(root, { recursive: true });
   const path = join(root, "batch-layout.json");
   const read = async () => JSON.parse(await readFile(path, "utf8"));
   let layout;

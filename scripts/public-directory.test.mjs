@@ -229,7 +229,10 @@ test("configured requests use only the publishable key and reject provider error
 });
 
 test("primary directory queries normalize transport and malformed response errors", async () => {
-  const env = { SUPABASE_URL: "https://public.example", SUPABASE_PUBLISHABLE_KEY: "public-key" };
+  const env = {
+    DIRECTORY_SUPABASE_URL: "https://public.example",
+    DIRECTORY_SUPABASE_PUBLISHABLE_KEY: "public-key",
+  };
   for (const query of [fetchDirectoryCategories, fetchDirectoryListings]) {
     for (const fetchImpl of [
       async () => {
@@ -237,9 +240,20 @@ test("primary directory queries normalize transport and malformed response error
       },
       async () => new Response("{"),
     ]) {
-      await assert.rejects(query({ env, fetchImpl }), {
-        message: "Directory data is temporarily unavailable.",
-      });
+      let calls = 0;
+      await assert.rejects(
+        query({
+          env,
+          fetchImpl: async (...args) => {
+            calls++;
+            return fetchImpl(...args);
+          },
+        }),
+        {
+          message: "Directory data is temporarily unavailable.",
+        },
+      );
+      assert.equal(calls, 1, "the failing provider mock was actually reached");
     }
   }
 });

@@ -70,6 +70,7 @@ export function ClaimListingPanel({
   listingEmail: string;
 }) {
   const { user } = useCurrentUserState();
+  const userId = user?.id;
   const [kind, setKind] = useState<ProofKind>("document");
   const [claim, setClaim] = useState<ClaimReceipt | null>(null);
   const [checking, setChecking] = useState(false);
@@ -87,10 +88,11 @@ export function ClaimListingPanel({
   const host = hostFromWebsite(website);
 
   useEffect(() => {
-    if (!user) {
+    if (!userId) {
       setClaim(null);
       return;
     }
+    setClaim(null);
     let active = true;
     setChecking(true);
     void getMyListingClaim({ data: { listingId } })
@@ -109,7 +111,7 @@ export function ClaimListingPanel({
     return () => {
       active = false;
     };
-  }, [listingId, user]);
+  }, [listingId, userId]);
 
   if (claim) {
     const message = claimMessage(claim);

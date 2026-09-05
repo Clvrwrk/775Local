@@ -51,7 +51,7 @@ function SearchPage() {
           {visible.length} listing{visible.length === 1 ? "" : "s"} on page {page} · Reno pilot
         </p>
         <div className="mt-7 max-w-2xl rounded-[22px] border border-line bg-card p-3 shadow-[0_10px_30px_rgba(28,26,22,0.05)]">
-          <SearchBox key={`${q}:${city}`} cities={cities} defaultQ={q} defaultCity={city} />
+          <SearchBox key={`${q}:${city}`} defaultQ={q} />
         </div>
         <div className="mt-9 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {results.length === 0 ? (

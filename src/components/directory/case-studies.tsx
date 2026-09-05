@@ -9,7 +9,9 @@ function BeforeAfter({ study, compact = false }: { study: CaseStudy; compact?: b
       ["Before", study.beforeUrl],
       ["After", study.afterUrl],
     ] as const
-  ).filter(([, url]) => Boolean(safeWebsite(url)));
+  )
+    .map(([label, url]) => [label, safeWebsite(url)] as const)
+    .filter((pair): pair is readonly ["Before" | "After", string] => Boolean(pair[1]));
   if (!pairs.length) return null;
   return (
     <div className="grid grid-cols-2 gap-2">
@@ -61,22 +63,20 @@ export function CaseStudies({ biz }: { biz: BusinessDetail }) {
           <p className="mt-2 text-sm leading-6 text-ink-soft">{lead.summary}</p>
         ) : null}
         <dl className="mt-4 grid gap-3 text-sm leading-6 text-ink-soft">
-          <div>
-            <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-teal">
-              What they needed
-            </dt>
-            <dd className="mt-1">{lead.clientNeed}</dd>
-          </div>
-          <div>
-            <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-teal">
-              What we did
-            </dt>
-            <dd className="mt-1">{lead.approach}</dd>
-          </div>
-          <div>
-            <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-teal">Results</dt>
-            <dd className="mt-1">{lead.results}</dd>
-          </div>
+          {[
+            ["What they needed", lead.clientNeed],
+            ["What we did", lead.approach],
+            ["Results", lead.results],
+          ]
+            .filter(([, value]) => value?.trim())
+            .map(([label, value]) => (
+              <div key={label}>
+                <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-teal">
+                  {label}
+                </dt>
+                <dd className="mt-1">{value}</dd>
+              </div>
+            ))}
         </dl>
         {lead.metrics.length ? (
           <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3">

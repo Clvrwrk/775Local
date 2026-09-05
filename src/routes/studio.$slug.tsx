@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { RedirectToSignIn } from "@/lib/auth/gates";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
+import { studioFeedback } from "@/lib/directory/studio-feedback.mjs";
 import { getBusiness } from "@/lib/directory/queries";
 import { pilotCommand, type PilotWorkspace } from "@/lib/directory/studio";
 
@@ -25,24 +26,27 @@ export const Route = createFileRoute("/studio/$slug")({
 function StudioPage() {
   const { business } = Route.useLoaderData();
   const { user, isPending } = useCurrentUserState();
+  const userId = user?.id;
   const [workspace, setWorkspace] = useState<PilotWorkspace | null>(null);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const [saveError, setSaveError] = useState("");
   const [saving, setSaving] = useState(false);
   const [attempt, setAttempt] = useState(0);
   const pending = useRef<{ fingerprint: string; key: string } | null>(null);
   useEffect(() => {
-    if (!user) return;
+    if (!userId) {
+      setWorkspace(null);
+      return;
+    }
+    setWorkspace(null);
     let active = true;
     setError("");
     void pilotCommand({ data: { action: "workspace", id: business.sourceId } })
       .then((result) => {
         if (active) {
           if (result.ok) setWorkspace(result.receipt);
-          else
-            setError(
-              "Studio could not be opened. Check your connection and approved listing access.",
-            );
+          else setError(studioFeedback(result.code));
         }
       })
       .catch(() => {
@@ -51,7 +55,7 @@ function StudioPage() {
     return () => {
       active = false;
     };
-  }, [user, business.sourceId, attempt]);
+  }, [userId, business.sourceId, attempt]);
   async function propose(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
@@ -69,6 +73,7 @@ function StudioPage() {
       pending.current = { fingerprint, key: `listing-${crypto.randomUUID()}` };
     setSaving(true);
     setMessage("");
+    setSaveError("");
     try {
       const result = await pilotCommand({ data: { ...data, key: pending.current.key } });
       if (result.ok) {
@@ -77,14 +82,9 @@ function StudioPage() {
         );
         pending.current = null;
         setAttempt((x) => x + 1);
-      } else
-        setMessage(
-          result.code === "invalid_studio_command"
-            ? "Check the business name, description, US phone number and HTTPS website."
-            : "Changes could not be confirmed. Retry safely; the same submission will not be duplicated.",
-        );
+      } else setSaveError(studioFeedback(result.code));
     } catch {
-      setMessage("Connection interrupted. Retry to confirm your submission.");
+      setSaveError("Connection interrupted. Retry to confirm your submission.");
     } finally {
       setSaving(false);
     }
@@ -170,6 +170,18 @@ function StudioPage() {
                 <button className="action-primary justify-self-start" disabled={saving}>
                   {saving ? "Saving…" : "Submit changes for review"}
                 </button>
+                {saveError ? (
+                  <div role="alert" className="text-sm leading-6 text-danger">
+                    <p>{saveError}</p>
+                    <button
+                      type="button"
+                      className="action-secondary mt-2"
+                      onClick={() => setAttempt((x) => x + 1)}
+                    >
+                      Reload Studio
+                    </button>
+                  </div>
+                ) : null}
                 {message ? (
                   <p role="status" className="text-sm leading-6 text-teal">
                     {message}

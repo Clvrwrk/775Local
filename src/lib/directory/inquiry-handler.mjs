@@ -1,6 +1,6 @@
 import { createHmac } from "node:crypto";
 import { telephoneHref } from "./presentation.mjs";
-const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+export const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 /** @param {unknown} input */
 export function inquiryPayload(input) {
   const d = /** @type {Record<string, unknown>} */ (input);

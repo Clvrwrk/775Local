@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select extensions.plan(20);
+select extensions.plan(25);
 insert into app.actors(id,workos_user_id,primary_email) values
 ('81000000-0000-4000-8000-000000000001','inquiry_owner','owner@example.com'),
 ('81000000-0000-4000-8000-000000000002','inquiry_recipient','recipient@example.com'),
@@ -33,6 +33,11 @@ reset role;
 select set_config('request.jwt.claims','{"sub":"inquiry_recipient"}',true);
 set local role authenticated;
 select extensions.is((select count(*)::integer from app.leads),1,'assigned recipient can read inquiry');
+select extensions.is((select resident_email from app.leads limit 1),'resident@example.com','recipient still reads permitted contact data');
+select extensions.throws_ok('select abuse_key from app.leads','42501','permission denied for table leads','recipient cannot read abuse key');
+select extensions.throws_ok('select request_fingerprint from app.leads','42501','permission denied for table leads','recipient cannot read request fingerprint');
+select extensions.throws_ok('select destination_id from app.leads','42501','permission denied for table leads','recipient cannot read private routing identity');
+select extensions.ok(not has_table_privilege('authenticated','app.leads','SELECT'),'authenticated has only column scoped SELECT');
 reset role;
 update app.listing_participations set status='revoked',revoked_at=statement_timestamp() where id='84000000-0000-4000-8000-000000000002';
 select extensions.ok(not public.reno_inquiry_available('83000000-0000-4000-8000-000000000001'),'revocation immediately disables intake');

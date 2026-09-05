@@ -192,3 +192,20 @@ test("Claim contract never equates submission with authority or Lead delivery", 
   assert.match(plan, /Listing Manager\s*\| Listing Manager\s*\|\s*3/);
   assert.match(plan, /Listing Agency\s*\| Agency Representative\s*\|\s*3/);
 });
+
+test("Claim HTTP authentication and authorization failures remain distinct", async () => {
+  for (const [status, code] of [
+    [401, "authentication_required"],
+    [403, "authorization_forbidden"],
+  ]) {
+    const result = await submitListingClaim(
+      { listingId, method: "document", idempotencyKey: "claim-http-test" },
+      {
+        accessToken: "jwt",
+        env,
+        fetchImpl: async () => new Response("private details", { status }),
+      },
+    );
+    assert.deepEqual(result, { ok: false, code });
+  }
+});

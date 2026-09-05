@@ -87,13 +87,13 @@ export function validateClaimDecision(input) {
 
 /** @param {string} message @param {string} fallback */
 function stableErrorCode(message, fallback) {
+  if (/recent Operator authentication/i.test(message)) return "reauth_required";
   if (/actor projection|authenticated/i.test(message)) return "authentication_required";
   if (/business domain evidence/i.test(message)) return "domain_evidence_not_established";
   if (/invitation/i.test(message)) return "invitation_required";
   if (/not claimable|not found/i.test(message)) return "listing_not_claimable";
   if (/Claim Proof is required/i.test(message)) return "claim_proof_required";
   if (/Business Owner limit/i.test(message)) return "business_owner_limit_reached";
-  if (/recent Operator authentication/i.test(message)) return "reauth_required";
   if (/claim_review permission/i.test(message)) return "claim_review_forbidden";
   if (/terminal decision|idempotency/i.test(message)) return "idempotency_conflict";
   if (/invalid Claim decision/i.test(message)) return "invalid_claim_decision";
@@ -103,7 +103,7 @@ function stableErrorCode(message, fallback) {
 
 /**
  * @typedef {{accessToken: string, env?: NodeJS.ProcessEnv, fetchImpl?: typeof fetch}} ClaimOptions
- * @param {{rpc: string, body: Record<string, unknown>, accessToken: string, env?: NodeJS.ProcessEnv, fetchImpl?: typeof fetch}} options
+ * @param {{rpc: string, body: Record<string, unknown>, accessToken: string, env?: NodeJS.ProcessEnv, fetchImpl?: typeof fetch, errorCode?: (message: string, fallback: string) => string, failureCode?: string}} options
  */
 export async function callClaimRpc({
   rpc,
@@ -111,6 +111,8 @@ export async function callClaimRpc({
   accessToken,
   env = process.env,
   fetchImpl = fetch,
+  errorCode = stableErrorCode,
+  failureCode = "claim_command_failed",
 }) {
   if (typeof accessToken !== "string" || !accessToken) {
     return { ok: false, code: "authentication_required" };
@@ -145,11 +147,13 @@ export async function callClaimRpc({
       } catch {
         // Provider bodies are never returned to callers.
       }
-      return { ok: false, code: stableErrorCode(message, "claim_command_failed") };
+      if (response.status === 401) return { ok: false, code: "authentication_required" };
+      const fallback = response.status === 403 ? "authorization_forbidden" : failureCode;
+      return { ok: false, code: errorCode(message, fallback) };
     }
     return { ok: true, receipt: await response.json() };
   } catch {
-    return { ok: false, code: "claim_command_failed" };
+    return { ok: false, code: failureCode };
   }
 }
 

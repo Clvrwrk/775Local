@@ -13,12 +13,6 @@ export function formatPhone(phone: string) {
   return phone;
 }
 
-/** tel: link for a 10-digit or E.164 US number. */
-export function telHref(phone: string) {
-  const d = phone.replace(/\D/g, "");
-  return `tel:+${d.length === 10 ? `1${d}` : d}`;
-}
-
 /** Maps search link that opens the native maps app on phones and the web on desktop. */
 export function mapsHref(parts: { street?: string | null; city: string; zip?: string | null }) {
   const query = [parts.street, `${parts.city}, NV`, parts.zip].filter(Boolean).join(", ");

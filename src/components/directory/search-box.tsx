@@ -2,20 +2,10 @@ import { useNavigate } from "@tanstack/react-router";
 import { Search } from "lucide-react";
 import { useState } from "react";
 import { BrandMark } from "@/components/brand/logo";
-import type { City } from "@/lib/directory/types";
 
-export function SearchBox({
-  cities,
-  defaultQ = "",
-  defaultCity = "reno",
-}: {
-  cities: City[];
-  defaultQ?: string;
-  defaultCity?: string;
-}) {
+export function SearchBox({ defaultQ = "" }: { defaultQ?: string }) {
   const navigate = useNavigate();
   const [q, setQ] = useState(defaultQ);
-  const [city, setCity] = useState(defaultCity === "reno" ? defaultCity : "reno");
 
   function go(e: React.FormEvent) {
     e.preventDefault();
@@ -47,18 +37,7 @@ export function SearchBox({
           <Search className="size-4" />
         </button>
       </div>
-      <select
-        value={city}
-        onChange={(e) => setCity(e.target.value)}
-        aria-label="Town"
-        className="mt-2 w-full bg-transparent text-center text-sm text-ink-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pine"
-      >
-        {cities.map((c) => (
-          <option key={c.slug} value={c.slug}>
-            {c.name}
-          </option>
-        ))}
-      </select>
+      <p className="mt-2 text-center text-sm text-ink-soft">Reno, Nevada</p>
     </form>
   );
 }

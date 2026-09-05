@@ -369,16 +369,29 @@ export async function buildEnrichmentSnapshot(root) {
   const artifacts = [];
   let capturedAt = 0;
   for (const path of paths) {
-    const [rawText, details] = await Promise.all([readFile(path, "utf8"), stat(path)]);
-    if (rawText.includes("\u0000")) throw new Error(`Artifact contains a NUL byte: ${path}`);
+    const [bytes, details] = await Promise.all([readFile(path), stat(path)]);
     const relativePath = relative(root, path).split(sep).join("/");
+    let rawText;
+    try {
+      rawText = new TextDecoder("utf-8", { fatal: true, ignoreBOM: true }).decode(bytes);
+    } catch {
+      throw new Error(`Artifact is not valid UTF-8: ${relativePath}`);
+    }
+    if (rawText.includes("\u0000"))
+      throw new Error(`Artifact contains a NUL byte: ${relativePath}`);
     let parsedPayload = null;
-    if (extname(path) === ".json") parsedPayload = JSON.parse(rawText);
+    if (extname(path) === ".json") {
+      try {
+        parsedPayload = JSON.parse(rawText);
+      } catch {
+        throw new Error(`Artifact is not valid JSON: ${relativePath}`);
+      }
+    }
     capturedAt = Math.max(capturedAt, details.mtimeMs);
     artifacts.push({
       relative_path: relativePath,
-      content_sha256: sha256(Buffer.from(rawText, "utf8")),
-      byte_count: Buffer.byteLength(rawText, "utf8"),
+      content_sha256: sha256(bytes),
+      byte_count: bytes.length,
       content_type: extname(path) === ".jsonl" ? "application/x-ndjson" : "application/json",
       raw_text: rawText,
       parsed_payload: parsedPayload,

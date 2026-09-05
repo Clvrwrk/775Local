@@ -70,3 +70,36 @@ test("Studio RPC preserves user JWT and idempotency; provider failures are redac
   });
   assert.equal(JSON.stringify(failed).includes("private provider"), false);
 });
+
+test("Studio preserves only allowlisted workflow errors and separates auth from permission", async () => {
+  const options = {
+    accessToken: "jwt",
+    env: {
+      SUPABASE_URL: "https://test.supabase.co",
+      SUPABASE_PUBLISHABLE_KEY: "sb_publishable_test_key_1234567890",
+    },
+  };
+  for (const [status, message, expected] of [
+    [400, "listing_changed_since_proposal", "listing_changed_since_proposal"],
+    [400, "listing_access_forbidden", "listing_access_forbidden"],
+    [400, "reauth_required", "reauth_required"],
+    [400, "review_forbidden", "review_forbidden"],
+    [400, "idempotency_conflict", "idempotency_conflict"],
+    [401, "private body", "authentication_required"],
+    [403, "private body", "authorization_forbidden"],
+    [500, "private body", "studio_command_failed"],
+  ]) {
+    const result = await runStudioCommand(proposal, {
+      ...options,
+      fetchImpl: async () => new Response(JSON.stringify({ message }), { status }),
+    });
+    assert.deepEqual(result, { ok: false, code: expected });
+  }
+  const result = await runStudioCommand(proposal, {
+    ...options,
+    fetchImpl: async () => {
+      throw Error("private transport");
+    },
+  });
+  assert.deepEqual(result, { ok: false, code: "studio_command_failed" });
+});

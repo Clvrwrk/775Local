@@ -26,3 +26,14 @@ test("legacy receipt roots cannot be silently remapped to a smaller batch size",
     await rm(root, { recursive: true });
   }
 });
+
+test("a new nested output root is created and bound before receipts", async () => {
+  const base = await mkdtemp(join(tmpdir(), "serp-layout-"));
+  try {
+    const root = join(base, "new", "output");
+    assert.equal((await ensureBatchLayout(root, 5)).batchSize, 5);
+    await assert.rejects(ensureBatchLayout(root, 20), /mismatch/);
+  } finally {
+    await rm(base, { recursive: true });
+  }
+});

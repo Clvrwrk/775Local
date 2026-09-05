@@ -4,7 +4,7 @@ import { BusinessCardView } from "@/components/directory/business-card";
 import { SiteShell } from "@/components/layout/site-shell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { listCities, searchBusinesses } from "@/lib/directory/queries";
+import { searchBusinesses } from "@/lib/directory/queries";
 
 type Search = { q: string; city: string };
 
@@ -15,11 +15,8 @@ export const Route = createFileRoute("/claim")({
   }),
   loaderDeps: ({ search }) => search,
   loader: async ({ deps }) => {
-    const [cities, results] = await Promise.all([
-      listCities(),
-      searchBusinesses({ data: { q: deps.q, city: deps.city, unclaimed: true } }),
-    ]);
-    return { cities, results };
+    const results = await searchBusinesses({ data: { q: deps.q, city: "reno", unclaimed: true } });
+    return { results };
   },
   head: () => ({
     meta: [
@@ -31,8 +28,8 @@ export const Route = createFileRoute("/claim")({
 });
 
 function ClaimPage() {
-  const { q, city } = Route.useSearch();
-  const { cities, results } = Route.useLoaderData();
+  const { q } = Route.useSearch();
+  const { results } = Route.useLoaderData();
   const navigate = useNavigate();
 
   function onSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -42,7 +39,7 @@ function ClaimPage() {
       to: "/claim",
       search: {
         q: String(form.get("q") ?? "").trim(),
-        city: String(form.get("city") ?? ""),
+        city: "reno",
       },
     });
   }
@@ -76,18 +73,7 @@ function ClaimPage() {
             defaultValue={q}
             placeholder="Business name or service"
           />
-          <select
-            name="city"
-            defaultValue={city}
-            aria-label="City"
-            className="h-11 rounded-[12px] border border-line bg-paper px-3 text-sm"
-          >
-            {cities.map((option) => (
-              <option key={option.slug} value={option.slug}>
-                {option.name}
-              </option>
-            ))}
-          </select>
+          <p className="flex h-11 items-center px-3 text-sm text-muted">Reno, Nevada</p>
           <Button type="submit">Find listing</Button>
         </form>
 

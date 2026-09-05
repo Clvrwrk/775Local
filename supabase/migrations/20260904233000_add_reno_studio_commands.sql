@@ -40,7 +40,7 @@ declare actor uuid := app.current_actor_id(); result jsonb;
 begin
   if actor is null then raise exception 'authentication_required'; end if;
   select jsonb_build_object(
-    'listings', coalesce((select jsonb_agg(jsonb_build_object('id',bl.id,'slug',bl.current_slug,'name',bl.display_name,'city','Reno','role',app.pilot_role(bl.id))) from app.business_listings bl where bl.city_slug='reno' and app.pilot_role(bl.id) is not null),'[]'::jsonb),
+    'listings', coalesce((with roles as materialized (select bl.id, bl.current_slug, bl.display_name, app.pilot_role(bl.id) as role_name from app.business_listings bl where bl.city_slug='reno') select jsonb_agg(jsonb_build_object('id',id,'slug',current_slug,'name',display_name,'city','Reno','role',role_name)) from roles where role_name is not null),'[]'::jsonb),
     'claims',coalesce((select jsonb_agg(jsonb_build_object('id',c.id,'slug',bl.current_slug,'name',bl.display_name,'status',c.status,'reason',c.decision_reason) order by c.created_at desc) from app.claims c join app.business_listings bl on bl.id=c.listing_id where c.claimant_actor_id=actor),'[]'::jsonb),
     'canReview', app.operator_recent_auth(900) and exists(select 1 from app.operator_grants where actor_id=actor and status='active' and permissions && array['claim_review','listing_review'])
   ) into result;
