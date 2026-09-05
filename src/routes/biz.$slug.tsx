@@ -37,9 +37,7 @@ export const Route = createFileRoute("/biz/$slug")({
 type PageLayout = "basic" | "standard" | "premium";
 
 function pageLayout(biz: BusinessDetail): PageLayout {
-  if (biz.plan === "premium") return "premium";
-  if (biz.plan === "standard") return "standard";
-  return "basic";
+  return biz.contentTier;
 }
 
 function safeHost(value: string) {
@@ -244,7 +242,7 @@ function BusinessPage() {
   const user = useCurrentUser();
   const isOwner = Boolean(user && biz.claimedBy === user.id);
   const layout = pageLayout(biz);
-  const cap = photoCapForPlan(biz.plan);
+  const cap = photoCapForPlan(biz.contentTier);
   const showStreet = Boolean(!biz.hideStreet && biz.street && biz.street !== "Service area");
   const checked = checkedLabel(biz.informationCheckedAt);
   const offerLed = layout === "standard" && biz.offer;
@@ -300,6 +298,9 @@ function BusinessPage() {
                 ) : !biz.ownerVerified ? (
                   <span className="rounded-full border border-line bg-card px-3 py-1 text-xs text-muted">Unclaimed</span>
                 ) : null}
+                <span className="rounded-full border border-line bg-card px-3 py-1 text-xs text-muted">
+                  {biz.verified ? "Information checked" : "Unverified"}
+                </span>
                 {isOwner ? <Link to="/studio/$slug" params={{ slug: biz.slug }} className="text-xs font-semibold text-teal">Open listing studio</Link> : null}
               </div>
             </div>
@@ -314,7 +315,17 @@ function BusinessPage() {
               {checked ? <p className="mt-4 inline-flex items-center gap-2 text-xs text-muted"><CalendarCheck className="size-4 text-teal" /> Information checked {checked}</p> : null}
             </section>
 
-            {biz.categories.length ? (
+            {biz.contentTier !== "basic" && biz.services.length ? (
+              <section className="mt-8 border-t border-line pt-8" aria-labelledby="services-offered">
+                <h2 id="services-offered" className="font-display text-3xl font-semibold">Services</h2>
+                <ul className="mt-4 grid gap-2 sm:grid-cols-2">
+                  {biz.services.map((service) => (
+                    <li key={service} className="rounded-[18px] border border-line bg-card px-4 py-3 text-sm text-ink-soft">{service}</li>
+                  ))}
+                </ul>
+                <p className="mt-3 inline-flex items-center gap-1.5 text-[13px] text-muted"><MapPin className="size-3.5" /> Serving {biz.cityName}</p>
+              </section>
+            ) : biz.categories.length ? (
               <section className="mt-8" aria-labelledby="services-heading">
                 <h2 id="services-heading" className="font-display text-3xl font-semibold">Services</h2>
                 <div className="mt-4 flex flex-wrap gap-2">
@@ -328,7 +339,38 @@ function BusinessPage() {
 
             <PhotoGrid biz={biz} cap={cap} strip={layout === "basic"} />
 
-            {layout !== "basic" ? <Projects biz={biz} /> : null}
+            {layout !== "basic" && biz.caseStudies.length ? (
+              <Projects biz={biz} />
+            ) : layout === "premium" && biz.projects.length ? (
+              <section className="mt-8 border-t border-line pt-8" aria-labelledby="projects-heading">
+                <h2 id="projects-heading" className="font-display text-3xl font-semibold">Projects</h2>
+                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                  {biz.projects.map((project, index) => (
+                    <article key={`${project.title}-${index}`} className="overflow-hidden rounded-[22px] border border-line bg-card">
+                      {project.imageUrl ? <img src={project.imageUrl} alt="" className="aspect-[4/3] w-full object-cover" /> : null}
+                      <div className="p-5">
+                        <h3 className="font-display text-xl font-semibold">{project.title}</h3>
+                        {project.description ? <p className="mt-2 text-sm leading-6 text-ink-soft">{project.description}</p> : null}
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              </section>
+            ) : null}
+
+            {layout === "premium" && biz.faqs.length ? (
+              <section className="mt-8 border-t border-line pt-8" aria-labelledby="faq-heading">
+                <h2 id="faq-heading" className="font-display text-3xl font-semibold">Frequently asked questions</h2>
+                <div className="mt-4 grid gap-3">
+                  {biz.faqs.map((faq, index) => (
+                    <details key={`${faq.question}-${index}`} className="rounded-[20px] border border-line bg-card p-5">
+                      <summary className="cursor-pointer font-semibold text-ink">{faq.question}</summary>
+                      <p className="mt-3 text-sm leading-6 text-ink-soft">{faq.answer}</p>
+                    </details>
+                  ))}
+                </div>
+              </section>
+            ) : null}
 
             {layout === "basic" && biz.hours ? (
               <div className="mt-6 flex items-start gap-3 rounded-[16px] border border-line bg-card p-3.5">

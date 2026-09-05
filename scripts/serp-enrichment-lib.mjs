@@ -283,6 +283,13 @@ export function summarizeCurrentSearchReceipts(search, receipts, options = {}) {
   const failureCount = currentReceipts.filter(
     (receipt) => receipt?.reviewStatus === "crawl_failed",
   ).length;
+  const maxCrawlAttempts = Number(options.maxCrawlAttempts ?? 3);
+  const exhaustedFailureCount = currentReceipts.filter(
+    (receipt) =>
+      receipt?.reviewStatus === "crawl_failed" &&
+      Number(receipt?.crawl?.attemptCount ?? 1) >= maxCrawlAttempts,
+  ).length;
+  const retryableFailureCount = failureCount - exhaustedFailureCount;
   const missingReceiptCount = currentReceipts.filter((receipt) => receipt === null).length;
   const invalidReceiptCount = currentReceipts.filter(
     (receipt) =>
@@ -290,15 +297,31 @@ export function summarizeCurrentSearchReceipts(search, receipts, options = {}) {
       receipt.reviewStatus !== "crawl_failed" &&
       !isEvidenceCompleteReceipt(receipt),
   ).length;
-  const shortfall = Math.max(0, Number(search?.shortfall ?? 20 - results.length));
+  const inferredTarget = results.length + Number(search?.shortfall ?? 0);
+  const targetResultCount = Math.min(
+    20,
+    Math.max(1, Number(search?.targetResultCount ?? (inferredTarget || 20))),
+  );
+  const shortfall = Math.max(0, Number(search?.shortfall ?? targetResultCount - results.length));
   const filterVersion = search?.filterVersion ?? null;
   const filterVersionAccepted =
     !options.expectedFilterVersion || filterVersion === options.expectedFilterVersion;
 
+  const settled =
+    results.length > 0 &&
+    evidenceCompleteCount + exhaustedFailureCount === results.length &&
+    missingReceiptCount === 0 &&
+    invalidReceiptCount === 0;
+  const complete = filterVersionAccepted && settled;
+  const partial = complete && (shortfall > 0 || exhaustedFailureCount > 0);
+
   return {
+    targetResultCount,
     resultCount: results.length,
     evidenceCompleteCount,
     failureCount,
+    exhaustedFailureCount,
+    retryableFailureCount,
     missingReceiptCount,
     invalidReceiptCount,
     staleReceiptCount: (receipts ?? []).filter(
@@ -307,14 +330,10 @@ export function summarizeCurrentSearchReceipts(search, receipts, options = {}) {
     shortfall,
     filterVersion,
     filterVersionAccepted,
-    complete: filterVersionAccepted && results.length === 20 && evidenceCompleteCount === 20,
-    blocked:
-      filterVersionAccepted &&
-      shortfall > 0 &&
-      evidenceCompleteCount === results.length &&
-      failureCount === 0 &&
-      missingReceiptCount === 0 &&
-      invalidReceiptCount === 0,
+    completionStatus: complete ? (partial ? "complete_with_partial_data" : "complete") : "pending",
+    complete,
+    partial,
+    blocked: filterVersionAccepted && results.length === 0,
   };
 }
 

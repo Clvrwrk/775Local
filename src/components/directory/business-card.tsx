@@ -12,7 +12,6 @@ import { Stars } from "./stars";
 export type CardLayout = "row" | "side" | "stack";
 
 const LAYOUT_BY_PLAN: Record<ListingPlan, CardLayout> = {
-  free: "row",
   basic: "row",
   standard: "side",
   premium: "stack",
@@ -104,6 +103,21 @@ function Sponsored() {
   );
 }
 
+function TierChip({ label, floating = false }: { label: string; floating?: boolean }) {
+  return (
+    <span
+      className={cn(
+        "rounded-full px-2.5 py-1 text-[11px] font-semibold",
+        floating
+          ? "absolute left-3 top-3 border border-white/30 bg-ink/72 text-paper backdrop-blur-sm"
+          : "border border-line bg-paper-2 text-ink-soft",
+      )}
+    >
+      {label}
+    </span>
+  );
+}
+
 const cardBase =
   "group relative overflow-hidden bg-card focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-pine";
 
@@ -115,7 +129,9 @@ export function BusinessCardView({
   layout?: CardLayout;
 }) {
   const cover = biz.coverUrl || listingCover(biz.citySlug, biz.id);
-  const kind = layout ?? cardLayout(biz.plan);
+  const kind = layout ?? cardLayout(biz.contentTier);
+  const tierLabel = `${biz.contentTier[0]!.toUpperCase()}${biz.contentTier.slice(1)}`;
+  const statusLine = `${biz.ownerVerified ? "Owner verified" : "Unclaimed"} · ${biz.verified ? "Information checked" : "Unverified"}`;
 
   if (kind === "row") {
     return (
@@ -128,6 +144,7 @@ export function BusinessCardView({
             <p className="truncate text-xs font-medium uppercase tracking-wide text-muted">
               {biz.primaryCategory || "Local"} · {biz.cityName}
             </p>
+            <TierChip label={tierLabel} />
             {biz.featured ? (
               <span className="shrink-0 rounded-full bg-gold px-2 py-0.5 text-[11px] font-semibold text-ink">Sponsored</span>
             ) : null}
@@ -137,6 +154,7 @@ export function BusinessCardView({
             <Rating biz={biz} />
             <ContactLinks biz={biz} />
           </div>
+          <p className="text-[11px] font-medium text-teal">{statusLine}</p>
         </div>
       </article>
     );
@@ -151,6 +169,7 @@ export function BusinessCardView({
             alt=""
             className="size-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
           />
+          <TierChip label={tierLabel} floating />
           {biz.featured ? <Sponsored /> : null}
         </div>
         <div className="flex min-w-0 flex-1 flex-col justify-center gap-1.5 p-4">
@@ -161,6 +180,7 @@ export function BusinessCardView({
           </p>
           <Rating biz={biz} />
           <ContactLinks biz={biz} className="mt-1" />
+          <p className="text-[11px] font-medium text-teal">{statusLine}</p>
         </div>
       </article>
     );
@@ -174,6 +194,7 @@ export function BusinessCardView({
           alt=""
           className="size-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
         />
+        <TierChip label={tierLabel} floating />
         {biz.featured ? <Sponsored /> : null}
       </div>
       <div className="flex flex-col gap-1.5 p-4">
@@ -190,6 +211,7 @@ export function BusinessCardView({
             {biz.hours}
           </p>
         ) : null}
+        <p className="text-[11px] font-medium text-teal">{statusLine}</p>
       </div>
     </article>
   );

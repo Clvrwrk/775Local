@@ -17,9 +17,10 @@ export type Category = {
   description: string;
   synonyms: string;
   icon: string;
+  listingCount?: number;
 };
 
-export type ListingPlan = "free" | "basic" | "standard" | "premium";
+export type ListingPlan = "basic" | "standard" | "premium";
 
 export type BusinessCard = {
   id: number;
@@ -34,7 +35,7 @@ export type BusinessCard = {
   reviewCount: number | null;
   hours: string;
   featured: boolean;
-  plan: ListingPlan;
+  contentTier: ListingPlan;
   verified: boolean;
   ownerVerified: boolean;
   citySlug: string;
@@ -106,6 +107,9 @@ export type BusinessDetail = BusinessCard & {
   categories: { slug: string; name: string }[];
   reviews: { id: number; author: string; rating: number; body: string }[];
   photos: ListingPhoto[];
+  services: string[];
+  faqs: { question: string; answer: string }[];
+  projects: { title: string; description?: string; imageUrl?: string }[];
   offer: Offer | null;
   caseStudies: CaseStudy[];
 };

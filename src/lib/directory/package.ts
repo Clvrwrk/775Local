@@ -13,7 +13,7 @@ export function photoCap(featured: boolean) {
 }
 
 /** Gallery photo caps by plan, matching the draft pricing table. */
-const PLAN_PHOTO_CAP: Record<ListingPlan, number> = { free: 3, basic: 6, standard: 12, premium: 20 };
+const PLAN_PHOTO_CAP: Record<ListingPlan, number> = { basic: 6, standard: 12, premium: 20 };
 
 export function photoCapForPlan(plan: ListingPlan) {
   return PLAN_PHOTO_CAP[plan];

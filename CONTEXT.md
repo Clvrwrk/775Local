@@ -82,6 +82,14 @@ _Avoid_: Verified, Owner verified
 A public trust label meaning an approved Claim established a person's authority over the Business Listing. It is distinct from the accuracy or freshness of Listing data.
 _Avoid_: Information checked, Claimed when the public trust meaning is intended
 
+**Unverified**:
+A public trust label meaning Local775 has not yet checked the Listing's current information. It does not remove the Listing from view and says nothing about whether a Claim exists.
+_Avoid_: Hidden, rejected, closed
+
+**Content Tier**:
+The free public-content completeness level assigned to a Business Listing: Basic, Standard, or Premium. Seed enrichment considers approved descriptions, services, hours, FAQs, projects, and rights-cleared media. Content Tier is independent of Claim, Information checked, organic rank, and Featured payment.
+_Avoid_: Price plan, ownership level, endorsement
+
 **Service-area Business**:
 A Business that serves an approved geographic area without publishing a storefront address. Local775 retains reviewed evidence privately and never substitutes or exposes a residential address.
 _Avoid_: Virtual Business, Home address
@@ -114,7 +122,7 @@ _Avoid_: Implied consent, Participation
 
 **Featured**:
 The scarce enhanced package for a claimed Business Listing, with preferential discovery and additional owner capabilities.
-_Avoid_: Premium, sponsored, promoted
+_Avoid_: Premium Content Tier, undisclosed promotion
 
 **Featured Customer**:
 The Business Owner or explicitly authorized agency that purchases Featured for a Business Listing. Payment alone does not grant authority over the Business Listing.

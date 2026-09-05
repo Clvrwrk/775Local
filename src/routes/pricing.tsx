@@ -30,10 +30,12 @@ function PlanPrice({
   monthlyPriceCents,
   annualPriceCents,
   annualFreeMonths,
+  onboardingPriceCents,
 }: {
   monthlyPriceCents: number | null;
   annualPriceCents: number | null;
   annualFreeMonths: number;
+  onboardingPriceCents?: number;
 }) {
   if (monthlyPriceCents === null) {
     return (
@@ -64,8 +66,15 @@ function PlanPrice({
         <p className="pb-1.5 text-sm text-muted">/ month</p>
       </div>
       <p className="mt-2 text-sm text-ink-soft">
-        {annualPriceCents === null ? "Annual rate coming soon" : `${dollars(annualPriceCents)} billed yearly`}
+        {annualPriceCents === null
+          ? "Annual rate coming soon"
+          : `${dollars(annualPriceCents)} billed yearly`}
       </p>
+      {onboardingPriceCents ? (
+        <p className="mt-1 text-xs font-semibold uppercase tracking-[0.14em] text-gold-2">
+          Plus {dollars(onboardingPriceCents)} one-time onboarding
+        </p>
+      ) : null}
       {annualFreeMonths ? (
         <p className="mt-1 text-xs font-semibold uppercase tracking-[0.14em] text-gold-2">
           {annualFreeMonths} months free annually
@@ -98,23 +107,25 @@ function PricingPage() {
           <div>
             <p className="text-sm font-semibold">Nothing is for sale on this preview.</p>
             <p className="mt-1 text-sm leading-6 text-ink-soft">
-              These future plans do not change today’s listings, Claims, publication review,
-              organic rank, or Featured access. Payment will never prove ownership or verification.
+              These future plans do not change today’s listings, Claims, publication review, organic
+              rank, or Featured access. Payment will never prove ownership or verification.
+              Owner-tool plans are separate from the free Basic, Standard, and Premium content
+              tiers.
             </p>
           </div>
         </div>
 
         <div className="relative mt-12">
           <div className="absolute left-[12.5%] right-[12.5%] top-4 hidden border-t border-dashed border-sage/60 lg:block" />
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-5">
             {DIRECTORY_PLANS.map((plan, index) => {
-              const premium = plan.id === "premium";
+              const emphasis = plan.id === "premium" || plan.id === "featured";
               return (
                 <article
                   key={plan.id}
                   className={cn(
                     "relative flex min-h-full flex-col rounded-[26px] border bg-card p-5 shadow-[0_14px_38px_rgba(28,26,22,0.07)]",
-                    premium ? "border-gold/70" : "border-line",
+                    emphasis ? "border-gold/70" : "border-line",
                   )}
                 >
                   <div className="absolute -top-2 left-1/2 z-10 hidden size-5 -translate-x-1/2 rounded-full border-4 border-paper bg-sage lg:block" />
@@ -122,17 +133,25 @@ function PricingPage() {
                     <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gold-2">
                       {plan.eyebrow}
                     </p>
-                    <span className="font-display text-lg font-semibold text-muted" aria-label={`Plan ${index + 1} of 4`}>
-                      {index + 1}/4
+                    <span
+                      className="font-display text-lg font-semibold text-muted"
+                      aria-label={`Plan ${index + 1} of ${DIRECTORY_PLANS.length}`}
+                    >
+                      {index + 1}/{DIRECTORY_PLANS.length}
                     </span>
                   </div>
-                  <h2 className="mt-3 font-display text-3xl font-semibold tracking-tight">{plan.name}</h2>
+                  <h2 className="mt-3 font-display text-3xl font-semibold tracking-tight">
+                    {plan.name}
+                  </h2>
                   <p className="mt-2 min-h-20 text-sm leading-6 text-ink-soft">{plan.summary}</p>
                   <div className="my-5 border-t border-line pt-5">
                     <PlanPrice
                       monthlyPriceCents={plan.monthlyPriceCents}
                       annualPriceCents={plan.annualPriceCents}
                       annualFreeMonths={plan.annualFreeMonths}
+                      onboardingPriceCents={
+                        "onboardingPriceCents" in plan ? plan.onboardingPriceCents : undefined
+                      }
                     />
                   </div>
                   <ul className="flex-1 space-y-3">
@@ -173,13 +192,16 @@ function PricingPage() {
             </div>
             <p className="mt-3 text-sm leading-6 text-ink-soft">
               A paid plan can add richer presentation, response tools, and clearly disclosed
-              sponsored opportunities. Any Sponsored placement remains separate from organic results.
+              sponsored opportunities. Any Sponsored placement remains separate from organic
+              results.
             </p>
           </section>
           <section className="rounded-[24px] border border-line bg-card p-6">
             <div className="flex items-center gap-2 text-teal">
               <ShieldCheck className="size-5" aria-hidden="true" />
-              <h2 className="font-display text-2xl font-semibold text-ink">What paying never does</h2>
+              <h2 className="font-display text-2xl font-semibold text-ink">
+                What paying never does
+              </h2>
             </div>
             <p className="mt-3 text-sm leading-6 text-ink-soft">
               Payment never grants control of a listing, proves a business claim, purchases a
@@ -189,9 +211,10 @@ function PricingPage() {
         </div>
 
         <p className="mx-auto mt-8 max-w-2xl text-center text-xs leading-5 text-muted">
-          Draft plan names and features are prepared for future review and may change before paid
-          plans launch. Premium’s monthly rate is intentionally unset; its annual price will equal
-          ten monthly payments.
+          Owner-tool plan names and features remain a future preview. Premium’s monthly rate is
+          intentionally unset; its annual price will equal ten monthly payments. The Featured
+          founder package is a separate, approved concierge offer with disclosed Sponsored
+          placement.
         </p>
       </section>
     </SiteShell>
