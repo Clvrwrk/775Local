@@ -1,10 +1,14 @@
-import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { createFileRoute, redirect, Link, notFound } from "@tanstack/react-router";
 import { BusinessCardView } from "@/components/directory/business-card";
 import { SiteShell } from "@/components/layout/site-shell";
 import { getCategory, getCity, searchBusinesses } from "@/lib/directory/queries";
 import { robotsForListingCount } from "@/lib/directory/indexability.mjs";
 
 export const Route = createFileRoute("/nv_/$city/$category")({
+  beforeLoad: ({ params }) => {
+    if (params.city === "sparks")
+      throw redirect({ to: "/nv/$city", params: { city: "reno" }, statusCode: 307 });
+  },
   loader: async ({ params }) => {
     const [city, category, results] = await Promise.all([
       getCity({ data: params.city }),

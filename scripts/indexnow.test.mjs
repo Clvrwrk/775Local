@@ -9,7 +9,8 @@ import {
 } from "./submit-indexnow.mjs";
 
 test("IndexNow publishes a valid same-host key and submits only sitemap canonicals", async () => {
-  const sitemap = await readFile(new URL("../public/sitemap.xml", import.meta.url), "utf8");
+  const { renderSitemap } = await import("../src/lib/directory/sitemap.mjs");
+  const sitemap = renderSitemap([]);
   const urls = sitemapUrls(sitemap);
   const payload = indexNowPayload(urls);
   const keyFile = await readFile(new URL(`../public/${payload.key}.txt`, import.meta.url), "utf8");
@@ -81,4 +82,25 @@ test("IndexNow preserves a failure receipt when the sitemap is empty", async () 
     responseBody: null,
     failure: "sitemap_read_or_validation_failed",
   });
+});
+
+test("sitemap fetch failures retain their stage and never submit to IndexNow", async () => {
+  for (const response of [null, new Response("unavailable", { status: 503 })]) {
+    let calls = 0;
+    const receipt = await runIndexNowSubmission({
+      fetchImpl: async (url) => {
+        calls++;
+        assert.equal(url, "https://775directory.com/sitemap.xml");
+        if (!response) throw new Error("private transport details");
+        return response;
+      },
+    });
+    assert.equal(calls, 1);
+    assert.equal(receipt.failure, "sitemap_fetch_failed");
+    assert.equal(receipt.accepted, false);
+  }
+  const receipt = await runIndexNowSubmission({
+    fetchImpl: async () => new Response("<urlset></urlset>"),
+  });
+  assert.equal(receipt.failure, "sitemap_read_or_validation_failed");
 });

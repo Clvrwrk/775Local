@@ -68,3 +68,11 @@ test("seed publication stays exact, unclaimed, unverified, and idempotent", asyn
     /grant execute on function private\.publish_serp_seed\(jsonb\) to service_role/,
   );
 });
+
+test("seed tier assignment rejects short or oversized input before assigning a mix", () => {
+  for (const length of [99, 101])
+    assert.throws(
+      () => assignMaterializedTiers(Array.from({ length }, (_, i) => row(i))),
+      /exactly 100/,
+    );
+});

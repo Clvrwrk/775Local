@@ -25,7 +25,8 @@
     "typecheck": "tsc --noEmit",
     "test": "node --test 'scripts/**/*.test.mjs'",
     "lint": "eslint .",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "sync:enrichment": "node scripts/sync-enrichment-archive.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.7.0",

@@ -183,6 +183,7 @@ function quality(row) {
 }
 
 export function assignMaterializedTiers(rows) {
+  if (rows.length !== 100) throw new Error("Seed requires exactly 100 listings.");
   const ranked = rows
     .map((row) => ({ ...row, tierEvidence: quality(row) }))
     .sort((a, b) => b.tierEvidence.score - a.tierEvidence.score || a.slug.localeCompare(b.slug));
@@ -217,6 +218,8 @@ export async function buildSerpSeed(root) {
     0,
     10,
   );
+  if (queue.length !== 10 || new Set(queue.map((entry) => entry.slug)).size !== 10)
+    throw new Error("Seed requires ten distinct categories.");
   const used = new Set();
   const usedSlugs = new Set();
   const rows = [];

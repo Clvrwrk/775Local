@@ -2,6 +2,14 @@
 
 This log captures settled project-level decisions that guide planning but do not independently justify an architectural decision record.
 
+## 2026-09-05 — Reviewed branch consolidation
+
+Christopher Hussey explicitly authorized resolving all PR comments and conflicts and merging all branches into main before starting fresh branches/PRs next session. This authorizes source consolidation ahead of full GTM acceptance; it does not establish visual acceptance, run hosted migrations, enable external communications, or settle separate production security work. Preserve historical commits while retaining corrected Reno behavior. See `PR-CONSOLIDATION.md` and PR12 for evidence and final GitHub checks.
+
+## 2026-09-04 — Reno pilot and design completion
+
+Christopher Hussey authorized Reno-only scope, completion of the audit fixes and supplied design updates, and full Linear documentation. Reno is the only active discovery/onboarding market; existing Sparks records remain intact and direct listing URLs remain available for reference. Historical Sparks browse URLs temporarily redirect to Reno; they are excluded from the active sitemap. Bulk expansion is outside this pilot. See `RENO-PILOT-COMPLETION.md` for the acceptance ledger. Free content tiers remain separate from paid Featured unless explicitly changed. Use ADR 0003's single GHL Listings object and labeled Contact relations. No design mock grants authority, establishes a business fact, or overrides consent.
+
 ## 2026-08-30 — Seed tiers and cumulative directory rollout
 
 - **Visibility:** A valid Business Listing remains public whether claimed or unclaimed. Unclaimed Listings are labeled `Unclaimed`; Listings whose information has not been checked are independently labeled `Unverified`. Claim, information status, content tier, and Featured placement are separate states.
@@ -18,7 +26,7 @@ This section supersedes the earlier exact five-per-city publication mix and stri
 ## 2026-08-24 — Grill round 1
 
 - **First proof:** Demonstrate attributable merchant value and willingness to pay.
-- **Operational geography:** Reno and Sparks.
+- **Operational geography (historical; superseded September 4):** Reno and Sparks. The active pilot is Reno only.
 - **Category breadth:** Broad-category launch rather than a narrow service wedge.
 - **Initial release boundary:** Production authentication, trustworthy Claims, accurate Business Listings, Leads, call tracking, and manually activated Featured. Self-service checkout and real Direct Mail remain follow-on work.
 - **Commercial model:** Every Business Listing is always free. The first Featured cohort is a paid concierge pilot using manual invoicing and authorized activation. The directory also generates opportunities for the owner's consulting and marketing company.

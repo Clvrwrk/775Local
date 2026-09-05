@@ -71,12 +71,12 @@ function PlanPrice({
           : `${dollars(annualPriceCents)} billed yearly`}
       </p>
       {onboardingPriceCents ? (
-        <p className="mt-1 text-xs font-semibold uppercase tracking-[0.14em] text-gold-2">
+        <p className="mt-1 text-xs font-semibold uppercase tracking-[0.14em] text-teal">
           Plus {dollars(onboardingPriceCents)} one-time onboarding
         </p>
       ) : null}
       {annualFreeMonths ? (
-        <p className="mt-1 text-xs font-semibold uppercase tracking-[0.14em] text-gold-2">
+        <p className="mt-1 text-xs font-semibold uppercase tracking-[0.14em] text-teal">
           {annualFreeMonths} months free annually
         </p>
       ) : null}
@@ -89,7 +89,7 @@ function PricingPage() {
     <SiteShell wash>
       <section className="app-page px-4 pb-10 pt-10 sm:pt-16">
         <div className="mx-auto max-w-3xl text-center">
-          <div className="inline-flex items-center gap-2 rounded-full border border-gold/35 bg-card px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.15em] text-gold-2 shadow-sm">
+          <div className="inline-flex items-center gap-2 rounded-full border border-gold/35 bg-card px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.15em] text-teal shadow-sm">
             <Sparkles className="size-3.5" aria-hidden="true" />
             Future pricing preview
           </div>
@@ -108,16 +108,16 @@ function PricingPage() {
             <p className="text-sm font-semibold">Nothing is for sale on this preview.</p>
             <p className="mt-1 text-sm leading-6 text-ink-soft">
               These future plans do not change today’s listings, Claims, publication review, organic
-              rank, or Featured access. Payment will never prove ownership or verification.
-              Owner-tool plans are separate from the free Basic, Standard, and Premium content
-              tiers.
+              rank, or Featured access. Payment will never prove ownership or verification. Basic,
+              Standard, and Premium are free content tiers. Featured is the only paid package shown
+              here.
             </p>
           </div>
         </div>
 
         <div className="relative mt-12">
           <div className="absolute left-[12.5%] right-[12.5%] top-4 hidden border-t border-dashed border-sage/60 lg:block" />
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-5">
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {DIRECTORY_PLANS.map((plan, index) => {
               const emphasis = plan.id === "premium" || plan.id === "featured";
               return (
@@ -130,7 +130,7 @@ function PricingPage() {
                 >
                   <div className="absolute -top-2 left-1/2 z-10 hidden size-5 -translate-x-1/2 rounded-full border-4 border-paper bg-sage lg:block" />
                   <div className="flex items-center justify-between gap-3">
-                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gold-2">
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-teal">
                       {plan.eyebrow}
                     </p>
                     <span
@@ -162,11 +162,11 @@ function PricingPage() {
                       </li>
                     ))}
                   </ul>
-                  {plan.id === "free" ? (
+                  {plan.id !== "featured" ? (
                     <Link
                       to="/claim"
-                      search={{ q: "", city: "" }}
-                      className="mt-6 inline-flex h-11 items-center justify-center rounded-full bg-pine px-4 text-sm font-semibold text-paper hover:bg-teal focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pine"
+                      search={{ q: "", city: "reno" }}
+                      className="action-primary mt-6"
                     >
                       Claim a free listing
                     </Link>

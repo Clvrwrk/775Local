@@ -1,8 +1,10 @@
 import { createServerFn } from "@tanstack/react-start";
+import { pilotFilters, categoryForQuery } from "@/lib/directory/pilot.mjs";
 import { CATEGORIES, CITIES } from "@/data/seed";
 import {
   fetchDirectoryCategories,
   fetchDirectoryListings,
+  fetchListingCaseStudies,
 } from "@/lib/supabase/public-directory.mjs";
 import type {
   BusinessCard,
@@ -22,9 +24,10 @@ type DirectoryFilters = {
   featured?: boolean;
   unclaimed?: boolean;
   limit?: number;
+  offset?: number;
 };
 
-const LAUNCH_CITIES = new Set(["reno", "sparks"]);
+const LAUNCH_CITIES = new Set(["reno"]);
 const LAUNCH_CATEGORIES = new Set([
   "screen-repair",
   "hvac",
@@ -45,7 +48,7 @@ const cities: City[] = CITIES.filter((city) => LAUNCH_CITIES.has(city.slug)).map
 const categories: Category[] = CATEGORIES.filter((category) =>
   LAUNCH_CATEGORIES.has(category.slug),
 ).map((category, index) => ({ ...category, id: index + 1 }));
-const cityNames = new Map(cities.map((city) => [city.slug, city.name]));
+const cityNames = new Map(CITIES.map((city) => [city.slug, city.name]));
 const categoryNames = new Map(categories.map((category) => [category.slug, category.name]));
 
 function enrichCard(raw: Record<string, unknown>): BusinessCard {
@@ -63,7 +66,7 @@ function enrichCard(raw: Record<string, unknown>): BusinessCard {
 }
 
 async function fetchCards(filters: DirectoryFilters = {}): Promise<BusinessCard[]> {
-  const rows = await fetchDirectoryListings({ filters });
+  const rows = await fetchDirectoryListings({ filters: pilotFilters(filters) });
   return rows.map((row) => enrichCard(row));
 }
 
@@ -77,8 +80,8 @@ export const listCategories = createServerFn({ method: "GET" }).handler(async ()
 
 export const listPublishedCategories = createServerFn({ method: "GET" })
   .validator((input?: { city?: string }) => ({ city: (input?.city ?? "").trim() }))
-  .handler(async ({ data }) => {
-    const rows = await fetchDirectoryCategories({ city: data.city });
+  .handler(async () => {
+    const rows = await fetchDirectoryCategories({ city: "reno" });
     return rows.map((row, index) => {
       const known = categories.find((category) => category.slug === row.slug);
       return {
@@ -95,12 +98,17 @@ export const listPublishedCategories = createServerFn({ method: "GET" })
 
 export const getCity = createServerFn({ method: "GET" })
   .validator((slug: string) => slug)
-  .handler(async ({ data: slug }) => cities.find((city) => city.slug === slug) ?? null);
+  .handler(
+    async ({ data: slug }) =>
+      CITIES.filter((city) => ["reno", "sparks"].includes(city.slug))
+        .map((city, index) => ({ ...city, id: index + 1 }))
+        .find((city) => city.slug === slug) ?? null,
+  );
 
 export const getCategory = createServerFn({ method: "GET" })
   .validator((slug: string) => slug)
   .handler(async ({ data: slug }) => {
-    const visible = await fetchDirectoryCategories();
+    const visible = await fetchDirectoryCategories({ city: "reno" });
     const row = visible.find((category) => category.slug === slug);
     if (!row) return null;
     const known = categories.find((category) => category.slug === slug);
@@ -116,6 +124,7 @@ export const getCategory = createServerFn({ method: "GET" })
   });
 
 export type SearchInput = {
+  page?: number;
   q?: string;
   city?: string;
   category?: string;
@@ -128,21 +137,30 @@ export const searchBusinesses = createServerFn({ method: "GET" })
     city: (input.city ?? "").trim(),
     category: (input.category ?? "").trim(),
     unclaimed: Boolean(input.unclaimed),
+    page: Number.isInteger(input.page)
+      ? Math.max(1, Math.min(1000, Number(input.page)))
+      : undefined,
   }))
   .handler(async ({ data }) => {
     return fetchCards({
-      q: data.q,
-      city: data.city,
-      category: data.category,
+      q: categoryForQuery(data.q) ? "" : data.q,
+      city: "reno",
+      category: data.category || categoryForQuery(data.q) || "",
       unclaimed: data.unclaimed,
-      limit: 100,
+      limit: data.page ? 25 : 100,
+      offset: data.page ? (data.page - 1) * 24 : 0,
     });
   });
 
 export const getBusiness = createServerFn({ method: "GET" })
   .validator((slug: string) => slug)
   .handler(async ({ data: slug }) => {
-    const rows = await fetchCards({ slug, limit: 1 });
+    // Case studies are optional and keyed by slug, so they load alongside the listing
+    // with a 1.5-second ceiling and an explicit unavailable state.
+    const [rows, caseStudies] = await Promise.all([
+      fetchCards({ slug, limit: 1 }),
+      fetchListingCaseStudies({ listingSlug: slug }),
+    ]);
     const card = rows[0];
     if (!card) return null;
     return {
@@ -160,6 +178,8 @@ export const getBusiness = createServerFn({ method: "GET" })
       faqs: (card as BusinessCard & { faqs?: BusinessDetail["faqs"] }).faqs ?? [],
       projects: (card as BusinessCard & { projects?: BusinessDetail["projects"] }).projects ?? [],
       offer: (card as BusinessCard & { offer?: BusinessDetail["offer"] }).offer ?? null,
+      caseStudies: caseStudies.studies,
+      caseStudiesStatus: caseStudies.status,
     } satisfies BusinessDetail;
   });
 
@@ -197,22 +217,6 @@ export const createListing = createServerFn({ method: "POST" })
     }) => input,
   )
   .handler(async () => ownerAccessUnavailable<{ slug: string }>());
-
-export const claimListing = createServerFn({ method: "POST" })
-  .validator(
-    (input: {
-      businessId: number;
-      method: "domain" | "card" | "storefront" | "vehicle";
-      filename: string;
-    }) => input,
-  )
-  .handler(async () =>
-    ownerAccessUnavailable<{
-      slug: string;
-      already: boolean;
-      method: "domain" | "card" | "storefront" | "vehicle";
-    }>(),
-  );
 
 export const myListings = createServerFn({ method: "GET" }).handler(
   async () => [] as BusinessCard[],

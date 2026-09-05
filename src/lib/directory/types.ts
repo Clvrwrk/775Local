@@ -20,8 +20,11 @@ export type Category = {
   listingCount?: number;
 };
 
+export type ListingPlan = "basic" | "standard" | "premium";
+
 export type BusinessCard = {
   id: number;
+  sourceId: string;
   slug: string;
   name: string;
   tagline: string;
@@ -33,7 +36,7 @@ export type BusinessCard = {
   reviewCount: number | null;
   hours: string;
   featured: boolean;
-  contentTier: "basic" | "standard" | "premium";
+  contentTier: ListingPlan;
   verified: boolean;
   ownerVerified: boolean;
   citySlug: string;
@@ -41,7 +44,8 @@ export type BusinessCard = {
   primaryCategory: string;
   primaryCategorySlug: string;
   categorySlugs: string[];
-  claimedBy: string | null;
+  /** Public projection never identifies an owner Actor. */
+  claimedBy: null;
   website: string;
   publicEmail: boolean;
   hideStreet: boolean;
@@ -67,6 +71,36 @@ export type Offer = {
   expiresOn: string | null;
   active: boolean;
 };
+export type CaseStudyMetric = { label: string; before: string; after: string; unit: string };
+
+export type CaseStudy = {
+  id: string;
+  slug: string;
+  title: string;
+  summary: string;
+  clientType: string;
+  clientLocation: string;
+  projectType: string;
+  startedOn: string | null;
+  completedOn: string | null;
+  investmentRange: string;
+  materials: string;
+  crewSize: number | null;
+  clientNeed: string;
+  approach: string;
+  results: string;
+  challenges: string;
+  timelineNote: string;
+  lessons: string;
+  futurePlans: string;
+  metrics: CaseStudyMetric[];
+  testimonial: { quote: string; author: string; role: string; rating: number | null } | null;
+  beforeUrl: string;
+  afterUrl: string;
+  featured: boolean;
+  publishedAt: string | null;
+};
+
 export type BusinessDetail = BusinessCard & {
   email: string;
   website: string;
@@ -79,6 +113,8 @@ export type BusinessDetail = BusinessCard & {
   faqs: { question: string; answer: string }[];
   projects: { title: string; description?: string; imageUrl?: string }[];
   offer: Offer | null;
+  caseStudies: CaseStudy[];
+  caseStudiesStatus: "available" | "unavailable";
 };
 
 export type LeadRow = {

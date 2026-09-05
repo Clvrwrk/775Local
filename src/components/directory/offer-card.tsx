@@ -1,16 +1,10 @@
 import { Link } from "@tanstack/react-router";
 import type { Offer } from "@/lib/directory/types";
 
-export function OfferBanner({
-  offer,
-  featured,
-}: {
-  offer: Offer;
-  featured?: boolean;
-}) {
+export function OfferBanner({ offer, featured }: { offer: Offer; featured?: boolean }) {
   return (
     <aside className="rounded-[16px] bg-gold/20 p-3.5">
-      <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-gold-2">
+      <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-teal">
         {featured ? "Featured offer" : "Listing offer"}
       </p>
       <p className="mt-1 font-display text-2xl font-semibold leading-tight">{offer.title}</p>
@@ -53,14 +47,16 @@ export function OfferTile({
       className="block rounded-[20px] border border-line bg-card p-4 hover:border-gold/50"
     >
       {featured ? (
-        <span className="rounded-full bg-gold px-2 py-0.5 text-[11px] font-medium text-ink">Featured</span>
+        <span className="rounded-full bg-gold px-2 py-0.5 text-[11px] font-medium text-ink">
+          Featured
+        </span>
       ) : (
         <span className="text-[11px] uppercase tracking-wide text-muted">{cityName}</span>
       )}
       <p className="mt-2 font-display text-xl font-semibold leading-tight">{title}</p>
       <p className="mt-1 text-sm text-muted">{businessName}</p>
       {details ? <p className="mt-1 line-clamp-2 text-sm text-ink-soft">{details}</p> : null}
-      {code ? <p className="mt-2 text-sm font-medium text-gold-2">Code {code}</p> : null}
+      {code ? <p className="mt-2 text-sm font-medium text-teal">Code {code}</p> : null}
     </Link>
   );
 }

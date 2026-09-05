@@ -1,9 +1,4 @@
-import {
-  createRootRoute,
-  HeadContent,
-  Outlet,
-  Scripts,
-} from "@tanstack/react-router";
+import { createRootRoute, HeadContent, Outlet, Scripts } from "@tanstack/react-router";
 import { SiteShell } from "@/components/layout/site-shell";
 import { Link } from "@tanstack/react-router";
 import { AuthKitProvider, getAuthAction } from "@workos/authkit-tanstack-react-start/client";
@@ -21,7 +16,7 @@ const SITE_STRUCTURED_DATA = {
       name: APP_NAME,
       url: `${SITE_URL}/`,
       logo: `${SITE_URL}/brand/mark.svg`,
-      areaServed: ["Reno, Nevada", "Sparks, Nevada"],
+      areaServed: ["Reno, Nevada"],
     },
     {
       "@type": "WebSite",
@@ -49,8 +44,7 @@ export const Route = createRootRoute({
       { title: APP_NAME },
       {
         name: "description",
-        content:
-          "Find reviewed local business listings in Reno and Sparks, Nevada.",
+        content: "Find reviewed local business listings in Reno, Nevada.",
       },
       { name: "theme-color", content: "#1C3B34" },
     ],

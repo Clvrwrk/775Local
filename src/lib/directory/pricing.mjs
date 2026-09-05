@@ -20,69 +20,20 @@ export function annualPriceWithFreeMonths(monthlyPriceCents, freeMonths) {
 }
 
 export const DIRECTORY_PLANS = Object.freeze([
-  {
-    id: "free",
-    name: "Free Listing",
-    eyebrow: "Be findable",
-    summary: "A useful local listing with the essentials neighbors need to reach you.",
+  ...["Basic", "Standard", "Premium"].map((name) => ({
+    id: name.toLowerCase(),
+    name: `${name} listing`,
+    eyebrow: "Always free",
+    summary: "Content completeness reflects approved information, not payment or ownership.",
     monthlyPriceCents: 0,
     annualPriceCents: 0,
     annualFreeMonths: 0,
     features: [
-      "Accurate business name, contact details, and service area",
-      "Description, hours, logo, and up to 3 photos",
-      "Claim access and owner-submitted corrections",
-      "Email delivery of listing inquiries",
+      "Reviewed business information",
+      "Contact and discovery",
+      "Claim access is independent of content tier",
     ],
-  },
-  {
-    id: "basic",
-    name: "Owner tools — Basic",
-    eyebrow: "Tell the full story",
-    summary: "More room to explain what you do and show the work behind the name.",
-    monthlyPriceCents: 1_000,
-    annualPriceCents: 12_000,
-    annualFreeMonths: 0,
-    features: [
-      "Everything in Free",
-      "Expanded services and service-area highlights",
-      "Up to 6 gallery photos",
-      "Richer business highlights and calls to action",
-    ],
-  },
-  {
-    id: "standard",
-    name: "Owner tools — Standard",
-    eyebrow: "Turn visits into inquiries",
-    summary: "A fuller storefront for businesses ready to generate and measure interest.",
-    monthlyPriceCents: 1_500,
-    annualPriceCents: 18_000,
-    annualFreeMonths: 0,
-    features: [
-      "Everything in Owner tools — Basic",
-      "Up to 12 gallery photos",
-      "One active offer",
-      "Enhanced inquiry and listing-performance reporting",
-    ],
-  },
-  {
-    id: "premium",
-    name: "Owner tools — Premium",
-    eyebrow: "Make the most of Local775",
-    summary: "The complete future package, with the annual rate equal to ten monthly payments.",
-    monthlyPriceCents: PREMIUM_MONTHLY_PRICE_CENTS,
-    annualPriceCents:
-      PREMIUM_MONTHLY_PRICE_CENTS === null
-        ? null
-        : annualPriceWithFreeMonths(PREMIUM_MONTHLY_PRICE_CENTS, 2),
-    annualFreeMonths: 2,
-    features: [
-      "Everything in Owner tools — Standard",
-      "Up to 20 gallery photos",
-      "A dedicated 775 tracking number and fuller reporting",
-      "Additional owner tools defined before this future plan opens",
-    ],
-  },
+  })),
   {
     id: "featured",
     name: "Featured founder package",

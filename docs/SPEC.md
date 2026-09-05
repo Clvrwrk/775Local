@@ -6,13 +6,17 @@ Project lead: Codex
 Target public beta: 2026-08-26  
 Canonical product: `775Directory.com` — “Who actually shows up.”
 
+## Current implementation scope — September 4, 2026
+
+The user authorized a Reno-only pilot and completion of all audit/design fixes. `RENO-PILOT-COMPLETION.md` supersedes the historical Reno/Sparks launch geography and bulk-expansion deadline below. Existing records are preserved. Free content tiers, explicit authority, consent and release gates remain binding. ADR 0003 supersedes the older two-object GHL projection.
+
 ## Problem Statement
 
-Residents in Reno and Sparks need a fast, trustworthy way to find a local Business that is active, reachable, and likely to respond. Existing directories often contain stale records, confusing ads, duplicate practitioners, national chains crowding out local operators, or unverifiable claims of ownership. A pageview or a large scraped corpus does not prove that the directory helps a resident or creates value for a merchant.
+Residents in Reno need a fast, trustworthy way to find a local Business that is active, reachable, and likely to respond. Existing directories often contain stale records, confusing ads, duplicate practitioners, national chains crowding out local operators, or unverifiable claims of ownership. A pageview or a large scraped corpus does not prove that the directory helps a resident or creates value for a merchant.
 
 Local Businesses need an always-free, accurate Business Listing and a safe way for an authorized Business Owner or Agency Representative to Claim it, maintain approved content, receive qualified Leads, and optionally buy a scarce Featured placement. Payment must never create authority over a Listing, and sponsored placement must never corrupt organic ranking.
 
-Local775 needs one operational system that can launch a credible 100-Listing Reno/Sparks seed, preserve data provenance, visibly demonstrate Basic, Standard, and Premium content tiers, prove Lead delivery and merchant response, and test willingness to pay for the separate $497 onboarding plus $297/month Featured founder offer. The product must integrate WorkOS, Supabase, GoHighLevel, Stripe, Vercel, Sentry, Linear, Google Maps Platform, and Cloudflare without creating conflicting systems of record or uncontrolled external effects.
+Local775 needs one operational system that can launch a credible 100-Listing Reno pilot seed, preserve data provenance, visibly demonstrate Basic, Standard, and Premium content tiers, prove Lead delivery and merchant response, and test willingness to pay for the separate $497 onboarding plus $297/month Featured founder offer. The product must integrate WorkOS, Supabase, GoHighLevel, Stripe, Vercel, Sentry, Linear, Google Maps Platform, and Cloudflare without creating conflicting systems of record or uncontrolled external effects.
 
 ## Solution
 
@@ -34,7 +38,7 @@ The principal proof is not traffic. It is qualified Leads delivered reliably, ac
 ## User Stories
 
 1. As a Resident, I want the directory to load quickly on my phone, so that I can find help while I am away from a desktop.
-2. As a Resident, I want to browse Reno or Sparks, so that results are relevant to where I need service.
+2. As a Resident, I want to browse Reno, so that results are relevant to where I need service.
 3. As a Resident, I want to browse the ten curated launch categories, so that I do not need to understand the source taxonomy.
 4. As a Resident, I want to search the complete mapped leaf taxonomy, so that specific service terms can still find an appropriate Business.
 5. As a Resident, I want search synonyms to match common local language, so that vocabulary differences do not hide useful Businesses.
@@ -92,6 +96,9 @@ The principal proof is not traffic. It is qualified Leads delivered reliably, ac
 57. As an Agency Representative, I want a Business Owner to delegate specific Listings and permissions, so that I can help without becoming the owner.
 58. As an Agency Representative, I want delegation to be optionally expiring and revocable, so that temporary engagements do not create permanent access.
 59. As a privileged user, I want an email change to suspend Operator and Lead Recipient privileges until reapproval, so that inbox verification does not transfer authority automatically.
+    59a. As a Business Owner, I want to delegate a Listing Manager with less authority than an Owner, so that staff can operate the Listing without gaining ownership or delegation rights.
+    59b. As a Business Owner, I want each Business Listing limited to two active Business Owners, three Listing Managers, and three Agency Representatives, so that authority remains bounded and reviewable.
+    59c. As a Listing Participant, I want Studio capabilities derived from my server-authorized role and scope, so that hidden interface controls never substitute for authorization.
 60. As a Local775 Operator, I want access limited to one exact initial email allowlist, so that a company domain does not create broad administrative eligibility.
 61. As a Local775 Operator, I want MFA required through the Local775 Operations authentication policy, so that privileged access uses a second factor.
 62. As a Local775 Operator, I want a manual Operator Grant recorded separately from authentication, so that login never equals authorization.
@@ -128,7 +135,7 @@ The principal proof is not traffic. It is qualified Leads delivered reliably, ac
 
 ### Product boundary and domain model
 
-- The public beta covers Reno and Sparks only. Spanish Springs, Lockwood, McCarran, and all other 775 places remain staged until separately accepted.
+- The active public beta covers Reno only. Existing Sparks records and direct Listing URLs are retained for reference; Sparks discovery and onboarding are outside the current pilot. Spanish Springs, Lockwood, McCarran, and all other 775 places remain staged until separately accepted.
 - Launch publishes up to 100 valid Business Listings across the ten accepted categories using the top-ten SERP contract and no result padding. National corporate branches and unbranded individual practitioners are excluded from the initial cohort. Independent Businesses and locally operated franchises are eligible.
 - Basic, Standard, and Premium are free content-completeness tiers. Featured remains a separate paid and visibly Sponsored entitlement. Claim and information verification do not change content tier.
 - An otherwise valid Listing is not hidden because it is unclaimed or only partially enriched. It appears as Basic/Unverified after the minimum identity, relevance, closure, duplicate, rights, and safety gates pass.
@@ -137,6 +144,8 @@ The principal proof is not traffic. It is qualified Leads delivered reliably, ac
 - Listing lifecycle is `draft → pending_review → published`, with reversible `suspended` and `archived` states. Publication is an explicit reviewed transition.
 - Claim lifecycle records submission, evidence, review, decision, revocation, and audit receipt. An approved Claim may create or update Listing Participation; a rejected Claim never changes public ownership.
 - Listing Participation records person, Listing, role, scope, authority basis, status, consent source, start, optional expiry, revocation, and external identifiers. Payment never creates Listing Participation.
+- Each Business Listing permits at most two active Business Owners, three Listing Managers, and three Agency Representatives. Local775 Operators are separately granted and are not counted as Listing Participants.
+- The Studio may display Local775 Operator as “Listing Admin,” but the canonical authorization role remains Local775 Operator. Capability decreases from Operator to Business Owner to Listing Manager to Agency Representative, and every command remains default-deny at the server and Row Level Security layers.
 - Lead lifecycle is `submitted → queued → delivered → viewed → accepted → contacted → won | lost | spam`. Transitions are append-audited and idempotent.
 - Featured entitlement is derived from immutable billing events and accepted commercial rules. It is not a mutable CRM boolean.
 - Trust labels are independent: Information checked describes Local775 data review; Owner verified describes Claim authority.
@@ -252,7 +261,7 @@ The principal proof is not traffic. It is qualified Leads delivered reliably, ac
 - GoHighLevel transcription, Voice AI, or automated call-content analysis.
 - Business Owner access to recorded call audio.
 - National corporate branches in the launch 100.
-- Public fringe-geography Listings outside Reno and Sparks.
+- Public discovery or onboarding outside Reno.
 - Paid Sentry upgrade, Sentry Session Replay, Vercel Speed Insights, Supabase PITR, or unapproved provider overages.
 - Automatic production deployment, DNS mutation, real provider messaging/calls/charges, or external campaign sends without their retained approval gates.
 

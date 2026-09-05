@@ -21,9 +21,12 @@ import { Route as OffersRouteImport } from './routes/offers'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as RegisterRouteImport } from './routes/register'
+import { Route as ReviewRouteImport } from './routes/review'
 import { Route as SearchRouteImport } from './routes/search'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SpecRouteImport } from './routes/spec'
 import { Route as TermsRouteImport } from './routes/terms'
+import { Route as ApiInquiriesRouteImport } from './routes/api/inquiries'
 import { Route as BizSlugRouteImport } from './routes/biz.$slug'
 import { Route as CategoriesSlugRouteImport } from './routes/categories_.$slug'
 import { Route as NvCityRouteImport } from './routes/nv.$city'
@@ -92,9 +95,19 @@ const RegisterRoute = RegisterRouteImport.update({
   path: '/register',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ReviewRoute = ReviewRouteImport.update({
+  id: '/review',
+  path: '/review',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SearchRoute = SearchRouteImport.update({
   id: '/search',
   path: '/search',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SpecRoute = SpecRouteImport.update({
@@ -105,6 +118,11 @@ const SpecRoute = SpecRouteImport.update({
 const TermsRoute = TermsRouteImport.update({
   id: '/terms',
   path: '/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiInquiriesRoute = ApiInquiriesRouteImport.update({
+  id: '/api/inquiries',
+  path: '/api/inquiries',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BizSlugRoute = BizSlugRouteImport.update({
@@ -156,9 +174,12 @@ export interface FileRoutesByFullPath {
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/register': typeof RegisterRoute
+  '/review': typeof ReviewRoute
   '/search': typeof SearchRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/spec': typeof SpecRoute
   '/terms': typeof TermsRoute
+  '/api/inquiries': typeof ApiInquiriesRoute
   '/biz/$slug': typeof BizSlugRoute
   '/categories/$slug': typeof CategoriesSlugRoute
   '/nv/$city': typeof NvCityRoute
@@ -180,9 +201,12 @@ export interface FileRoutesByTo {
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/register': typeof RegisterRoute
+  '/review': typeof ReviewRoute
   '/search': typeof SearchRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/spec': typeof SpecRoute
   '/terms': typeof TermsRoute
+  '/api/inquiries': typeof ApiInquiriesRoute
   '/biz/$slug': typeof BizSlugRoute
   '/categories/$slug': typeof CategoriesSlugRoute
   '/nv/$city': typeof NvCityRoute
@@ -205,9 +229,12 @@ export interface FileRoutesById {
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/register': typeof RegisterRoute
+  '/review': typeof ReviewRoute
   '/search': typeof SearchRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/spec': typeof SpecRoute
   '/terms': typeof TermsRoute
+  '/api/inquiries': typeof ApiInquiriesRoute
   '/biz/$slug': typeof BizSlugRoute
   '/categories_/$slug': typeof CategoriesSlugRoute
   '/nv/$city': typeof NvCityRoute
@@ -231,9 +258,12 @@ export interface FileRouteTypes {
     | '/pricing'
     | '/privacy'
     | '/register'
+    | '/review'
     | '/search'
+    | '/sitemap.xml'
     | '/spec'
     | '/terms'
+    | '/api/inquiries'
     | '/biz/$slug'
     | '/categories/$slug'
     | '/nv/$city'
@@ -255,9 +285,12 @@ export interface FileRouteTypes {
     | '/pricing'
     | '/privacy'
     | '/register'
+    | '/review'
     | '/search'
+    | '/sitemap.xml'
     | '/spec'
     | '/terms'
+    | '/api/inquiries'
     | '/biz/$slug'
     | '/categories/$slug'
     | '/nv/$city'
@@ -279,9 +312,12 @@ export interface FileRouteTypes {
     | '/pricing'
     | '/privacy'
     | '/register'
+    | '/review'
     | '/search'
+    | '/sitemap.xml'
     | '/spec'
     | '/terms'
+    | '/api/inquiries'
     | '/biz/$slug'
     | '/categories_/$slug'
     | '/nv/$city'
@@ -304,9 +340,12 @@ export interface RootRouteChildren {
   PricingRoute: typeof PricingRoute
   PrivacyRoute: typeof PrivacyRoute
   RegisterRoute: typeof RegisterRoute
+  ReviewRoute: typeof ReviewRoute
   SearchRoute: typeof SearchRoute
+  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   SpecRoute: typeof SpecRoute
   TermsRoute: typeof TermsRoute
+  ApiInquiriesRoute: typeof ApiInquiriesRoute
   BizSlugRoute: typeof BizSlugRoute
   CategoriesSlugRoute: typeof CategoriesSlugRoute
   NvCityRoute: typeof NvCityRoute
@@ -402,11 +441,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RegisterRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/review': {
+      id: '/review'
+      path: '/review'
+      fullPath: '/review'
+      preLoaderRoute: typeof ReviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/search': {
       id: '/search'
       path: '/search'
       fullPath: '/search'
       preLoaderRoute: typeof SearchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/spec': {
@@ -421,6 +474,13 @@ declare module '@tanstack/react-router' {
       path: '/terms'
       fullPath: '/terms'
       preLoaderRoute: typeof TermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/inquiries': {
+      id: '/api/inquiries'
+      path: '/api/inquiries'
+      fullPath: '/api/inquiries'
+      preLoaderRoute: typeof ApiInquiriesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/biz/$slug': {
@@ -488,9 +548,12 @@ const rootRouteChildren: RootRouteChildren = {
   PricingRoute: PricingRoute,
   PrivacyRoute: PrivacyRoute,
   RegisterRoute: RegisterRoute,
+  ReviewRoute: ReviewRoute,
   SearchRoute: SearchRoute,
+  SitemapDotxmlRoute: SitemapDotxmlRoute,
   SpecRoute: SpecRoute,
   TermsRoute: TermsRoute,
+  ApiInquiriesRoute: ApiInquiriesRoute,
   BizSlugRoute: BizSlugRoute,
   CategoriesSlugRoute: CategoriesSlugRoute,
   NvCityRoute: NvCityRoute,

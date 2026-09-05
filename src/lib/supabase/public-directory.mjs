@@ -33,9 +33,24 @@ const PUBLIC_COLUMNS = [
   "photo_urls",
 ].join(",");
 
-/** @typedef {{ city?: string, category?: string, q?: string, slug?: string, featured?: boolean, unclaimed?: boolean, limit?: number }} DirectoryFilters */
-/** @typedef {{ SUPABASE_URL?: string, SUPABASE_PUBLISHABLE_KEY?: string }} PublicDirectoryEnv */
+/** @typedef {{ city?: string, category?: string, q?: string, slug?: string, featured?: boolean, unclaimed?: boolean, limit?: number, offset?: number }} DirectoryFilters */
+/** @typedef {{ SUPABASE_URL?: string, SUPABASE_PUBLISHABLE_KEY?: string, DIRECTORY_SUPABASE_URL?: string, DIRECTORY_SUPABASE_PUBLISHABLE_KEY?: string }} PublicDirectoryEnv */
 /** @typedef {{ cityName?: string, categoryName?: string }} DisplayNames */
+
+/** Resolve the read-only directory pair atomically, independently of command credentials.
+ * @param {PublicDirectoryEnv} env
+ */
+function directoryTarget(env) {
+  const hasDirectoryOverride =
+    env.DIRECTORY_SUPABASE_URL !== undefined ||
+    env.DIRECTORY_SUPABASE_PUBLISHABLE_KEY !== undefined;
+  const baseUrl = (hasDirectoryOverride ? env.DIRECTORY_SUPABASE_URL : env.SUPABASE_URL)?.trim();
+  const publishableKey = (
+    hasDirectoryOverride ? env.DIRECTORY_SUPABASE_PUBLISHABLE_KEY : env.SUPABASE_PUBLISHABLE_KEY
+  )?.trim();
+  if (!baseUrl || !publishableKey) throw new Error("Directory data is temporarily unavailable.");
+  return { baseUrl, publishableKey };
+}
 
 /** @param {unknown} value */
 function safeToken(value) {
@@ -80,7 +95,9 @@ export function buildDirectoryUrl(baseUrl, filters = {}) {
 
   const requestedLimit = Number.isFinite(filters.limit) ? Number(filters.limit) : 100;
   url.searchParams.set("limit", String(Math.min(100, Math.max(1, Math.trunc(requestedLimit)))));
-  url.searchParams.set("order", "is_featured.desc,display_name.asc");
+  if (Number.isInteger(filters.offset) && Number(filters.offset) >= 0)
+    url.searchParams.set("offset", String(filters.offset));
+  url.searchParams.set("order", "display_name.asc,stable_id.asc");
   return url;
 }
 
@@ -169,11 +186,7 @@ export function mapDirectoryListing(row, names = {}) {
  * @param {{ env?: PublicDirectoryEnv, city?: string, fetchImpl?: typeof fetch }} [options]
  */
 export async function fetchDirectoryCategories(options = {}) {
-  const env = options.env ?? process.env;
-  const baseUrl = env.SUPABASE_URL?.trim();
-  const publishableKey = env.SUPABASE_PUBLISHABLE_KEY?.trim();
-  if (!baseUrl && !publishableKey) return [];
-  if (!baseUrl || !publishableKey) throw new Error("Directory data is temporarily unavailable.");
+  const { baseUrl, publishableKey } = directoryTarget(options.env ?? process.env);
 
   const city = safeToken(options.city);
   let url;
@@ -194,23 +207,27 @@ export async function fetchDirectoryCategories(options = {}) {
   url.searchParams.set("order", "listing_count.desc,name.asc");
   url.searchParams.set("limit", "2000");
 
-  const response = await (options.fetchImpl ?? fetch)(url, {
-    headers: {
-      apikey: publishableKey,
-      Authorization: `Bearer ${publishableKey}`,
-      Accept: "application/json",
-    },
-    signal: AbortSignal.timeout(5_000),
-  });
-  if (!response.ok) throw new Error("Directory data is temporarily unavailable.");
-  const rows = await response.json();
-  if (!Array.isArray(rows)) throw new Error("Directory data is temporarily unavailable.");
-  return rows.map((row) => ({
-    slug: String(row.slug),
-    name: String(row.name),
-    description: String(row.description ?? "Local businesses serving Northern Nevada."),
-    listingCount: Number(row.listing_count ?? 0),
-  }));
+  try {
+    const response = await (options.fetchImpl ?? fetch)(url, {
+      headers: {
+        apikey: publishableKey,
+        Authorization: `Bearer ${publishableKey}`,
+        Accept: "application/json",
+      },
+      signal: AbortSignal.timeout(5_000),
+    });
+    if (!response.ok) throw new Error("Directory data is temporarily unavailable.");
+    const rows = await response.json();
+    if (!Array.isArray(rows)) throw new Error("Directory data is temporarily unavailable.");
+    return rows.map((row) => ({
+      slug: String(row.slug),
+      name: String(row.name),
+      description: String(row.description ?? "Local businesses serving Northern Nevada."),
+      listingCount: Number(row.listing_count ?? 0),
+    }));
+  } catch {
+    throw new Error("Directory data is temporarily unavailable.");
+  }
 }
 
 /**
@@ -221,14 +238,7 @@ export async function fetchDirectoryCategories(options = {}) {
  * }} [options]
  */
 export async function fetchDirectoryListings(options = {}) {
-  const env = options.env ?? process.env;
-  const baseUrl = env.SUPABASE_URL?.trim();
-  const publishableKey = env.SUPABASE_PUBLISHABLE_KEY?.trim();
-
-  if (!baseUrl && !publishableKey) return [];
-  if (!baseUrl || !publishableKey) {
-    throw new Error("Directory data is temporarily unavailable.");
-  }
+  const { baseUrl, publishableKey } = directoryTarget(options.env ?? process.env);
 
   let url;
   try {
@@ -238,18 +248,167 @@ export async function fetchDirectoryListings(options = {}) {
   }
   if (url.protocol !== "https:") throw new Error("Directory data is temporarily unavailable.");
 
-  const response = await (options.fetchImpl ?? fetch)(url, {
-    method: "GET",
-    headers: {
-      apikey: publishableKey,
-      Authorization: `Bearer ${publishableKey}`,
-      Accept: "application/json",
-    },
-    signal: AbortSignal.timeout(5_000),
-  });
-  if (!response.ok) throw new Error("Directory data is temporarily unavailable.");
+  try {
+    const response = await (options.fetchImpl ?? fetch)(url, {
+      method: "GET",
+      headers: {
+        apikey: publishableKey,
+        Authorization: `Bearer ${publishableKey}`,
+        Accept: "application/json",
+      },
+      signal: AbortSignal.timeout(5_000),
+    });
+    if (!response.ok) throw new Error("Directory data is temporarily unavailable.");
 
-  const rows = await response.json();
-  if (!Array.isArray(rows)) throw new Error("Directory data is temporarily unavailable.");
-  return rows.map((row) => mapDirectoryListing(row));
+    const rows = await response.json();
+    if (!Array.isArray(rows)) throw new Error("Directory data is temporarily unavailable.");
+    return rows.map((row) => mapDirectoryListing(row));
+  } catch {
+    throw new Error("Directory data is temporarily unavailable.");
+  }
+}
+
+const CASE_STUDY_COLUMNS = [
+  "id",
+  "listing_stable_id",
+  "listing_slug",
+  "slug",
+  "title",
+  "summary",
+  "client_type",
+  "client_location",
+  "project_type",
+  "started_on",
+  "completed_on",
+  "investment_range",
+  "materials",
+  "crew_size",
+  "client_need",
+  "approach",
+  "results",
+  "challenges",
+  "timeline_note",
+  "lessons",
+  "future_plans",
+  "metrics",
+  "testimonial_quote",
+  "testimonial_author",
+  "testimonial_role",
+  "testimonial_rating",
+  "before_path",
+  "after_path",
+  "is_featured",
+  "published_at",
+].join(",");
+
+/**
+ * Storage paths become public object URLs; absolute URLs pass through.
+ * @param {string} baseUrl
+ * @param {unknown} path
+ */
+export function mediaUrl(baseUrl, path) {
+  if (typeof path !== "string" || !path) return "";
+  if (/^https?:\/\//.test(path)) return path;
+  return `${baseUrl.replace(/\/$/, "")}/storage/v1/object/public/${path.replace(/^\//, "")}`;
+}
+
+/**
+ * Keyed by listing slug so it can run in parallel with the listing fetch.
+ * @param {string} baseUrl
+ * @param {string} listingSlug
+ */
+export function buildCaseStudyUrl(baseUrl, listingSlug) {
+  const slug = safeToken(listingSlug);
+  if (!slug) throw new Error("listingSlug must be a slug");
+  const url = new URL("/rest/v1/directory_case_studies", baseUrl);
+  url.searchParams.set("select", CASE_STUDY_COLUMNS);
+  url.searchParams.set("listing_slug", `eq.${slug}`);
+  url.searchParams.set("order", "is_featured.desc,published_at.desc");
+  url.searchParams.set("limit", "4");
+  return url;
+}
+
+/** @param {unknown} value */
+const text = (value) => (value == null ? "" : String(value));
+
+/**
+ * Translate a public.directory_case_studies row to the UI shape.
+ * @param {Record<string, any>} row
+ * @param {string} [baseUrl]
+ */
+export function mapCaseStudy(row, baseUrl = "") {
+  const metrics = Array.isArray(row.metrics)
+    ? row.metrics
+        .filter((m) => m && typeof m === "object")
+        .map((m) => ({
+          label: text(m.label),
+          before: text(m.before),
+          after: text(m.after),
+          unit: text(m.unit),
+        }))
+        .filter((m) => m.label)
+    : [];
+  const quote = text(row.testimonial_quote);
+  return {
+    id: String(row.id),
+    slug: String(row.slug),
+    title: String(row.title),
+    summary: text(row.summary),
+    clientType: text(row.client_type),
+    clientLocation: text(row.client_location),
+    projectType: text(row.project_type),
+    startedOn: row.started_on ? String(row.started_on) : null,
+    completedOn: row.completed_on ? String(row.completed_on) : null,
+    investmentRange: text(row.investment_range),
+    materials: text(row.materials),
+    crewSize: row.crew_size == null ? null : Number(row.crew_size),
+    clientNeed: text(row.client_need),
+    approach: text(row.approach),
+    results: text(row.results),
+    challenges: text(row.challenges),
+    timelineNote: text(row.timeline_note),
+    lessons: text(row.lessons),
+    futurePlans: text(row.future_plans),
+    metrics,
+    testimonial: quote
+      ? {
+          quote,
+          author: text(row.testimonial_author),
+          role: text(row.testimonial_role),
+          rating: row.testimonial_rating == null ? null : Number(row.testimonial_rating),
+        }
+      : null,
+    beforeUrl: mediaUrl(baseUrl, row.before_path),
+    afterUrl: mediaUrl(baseUrl, row.after_path),
+    featured: row.is_featured === true,
+    publishedAt: row.published_at ? String(row.published_at) : null,
+  };
+}
+
+/** Optional project content uses the same anonymous source and a bounded timeout.
+ * @param {{ listingSlug: string, env?: PublicDirectoryEnv, fetchImpl?: typeof fetch, timeoutMs?: number }} options
+ * @returns {Promise<{status: "available" | "unavailable", studies: ReturnType<typeof mapCaseStudy>[]}>}
+ */
+export async function fetchListingCaseStudies(options) {
+  try {
+    const { baseUrl, publishableKey } = directoryTarget(options.env ?? process.env);
+    const url = buildCaseStudyUrl(baseUrl, options.listingSlug);
+    if (url.protocol !== "https:") throw new Error("Invalid directory source");
+    const response = await (options.fetchImpl ?? fetch)(url, {
+      method: "GET",
+      headers: {
+        apikey: publishableKey,
+        Authorization: `Bearer ${publishableKey}`,
+        Accept: "application/json",
+      },
+      signal: AbortSignal.timeout(options.timeoutMs ?? 1_500),
+    });
+    if (!response.ok) throw new Error("Unavailable");
+    const rows = await response.json();
+    if (!Array.isArray(rows)) throw new Error("Invalid response");
+    return { status: "available", studies: rows.map((row) => mapCaseStudy(row, baseUrl)) };
+  } catch {
+    // Do not leak provider messages, response bodies, credentials or listing identifiers.
+    return { status: "unavailable", studies: [] };
+  }
 }

@@ -1,280 +1,232 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { SiteShell } from "@/components/layout/site-shell";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { RedirectToSignIn } from "@/lib/auth/gates";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
-import {
-  addListingPhoto,
-  deleteListingPhoto,
-  getOwnerOffer,
-  listOwnerPhotos,
-  photoCap,
-  saveOffer,
-  setFeaturedPackage,
-} from "@/lib/directory/package";
+import { studioFeedback } from "@/lib/directory/studio-feedback.mjs";
 import { getBusiness } from "@/lib/directory/queries";
-import type { ListingPhoto, Offer } from "@/lib/directory/types";
+import { pilotCommand, type PilotWorkspace } from "@/lib/directory/studio";
 
 export const Route = createFileRoute("/studio/$slug")({
-  head: () => ({ meta: [{ title: "Listing studio | 775Directory" }, { name: "robots", content: "noindex, nofollow" }] }),
+  head: () => ({
+    meta: [
+      { title: "Listing Studio | 775Directory" },
+      { name: "robots", content: "noindex, nofollow" },
+    ],
+  }),
   loader: async ({ params }) => {
-    const biz = await getBusiness({ data: params.slug });
-    if (!biz) throw notFound();
-    return { biz };
+    const business = await getBusiness({ data: params.slug });
+    if (!business) throw notFound();
+    return { business };
   },
   component: StudioPage,
 });
-
 function StudioPage() {
-  const { biz } = Route.useLoaderData();
+  const { business } = Route.useLoaderData();
   const { user, isPending } = useCurrentUserState();
-
-  if (isPending) {
-    return (
-      <SiteShell>
-        <div className="mx-auto max-w-3xl px-4 py-16">
-          <div className="h-10 w-48 animate-pulse rounded bg-paper-2" />
-        </div>
-      </SiteShell>
-    );
+  const userId = user?.id;
+  const [workspace, setWorkspace] = useState<PilotWorkspace | null>(null);
+  const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
+  const [saveError, setSaveError] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [attempt, setAttempt] = useState(0);
+  const pending = useRef<{ fingerprint: string; key: string } | null>(null);
+  useEffect(() => {
+    if (!userId) {
+      setWorkspace(null);
+      return;
+    }
+    setWorkspace(null);
+    let active = true;
+    setError("");
+    void pilotCommand({ data: { action: "workspace", id: business.sourceId } })
+      .then((result) => {
+        if (active) {
+          if (result.ok) setWorkspace(result.receipt);
+          else setError(studioFeedback(result.code));
+        }
+      })
+      .catch(() => {
+        if (active) setError("Connection interrupted. Please retry.");
+      });
+    return () => {
+      active = false;
+    };
+  }, [userId, business.sourceId, attempt]);
+  async function propose(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    const data = {
+      action: "propose",
+      baseVersion: workspace?.editable.baseVersion,
+      id: business.sourceId,
+      name: String(form.get("name")),
+      description: String(form.get("description")),
+      phone: String(form.get("phone")),
+      website: String(form.get("website")),
+    };
+    const fingerprint = JSON.stringify(data);
+    if (pending.current?.fingerprint !== fingerprint)
+      pending.current = { fingerprint, key: `listing-${crypto.randomUUID()}` };
+    setSaving(true);
+    setMessage("");
+    setSaveError("");
+    try {
+      const result = await pilotCommand({ data: { ...data, key: pending.current.key } });
+      if (result.ok) {
+        setMessage(
+          "Changes saved for review. Your public listing remains unchanged until approval.",
+        );
+        pending.current = null;
+        setAttempt((x) => x + 1);
+      } else setSaveError(studioFeedback(result.code));
+    } catch {
+      setSaveError("Connection interrupted. Retry to confirm your submission.");
+    } finally {
+      setSaving(false);
+    }
   }
-  if (!user) return <RedirectToSignIn />;
-  if (biz.claimedBy !== user.id) {
-    return (
-      <SiteShell>
-        <div className="mx-auto max-w-lg px-4 py-16 text-center">
-          <h1 className="font-display text-3xl font-semibold">Not your listing</h1>
-          <p className="mt-2 text-sm text-muted">Claim it first, then the studio opens.</p>
-          <Link to="/biz/$slug" params={{ slug: biz.slug }} className="mt-4 inline-block text-teal">
-            View listing
-          </Link>
-        </div>
-      </SiteShell>
-    );
-  }
-
+  if (!isPending && !user) return <RedirectToSignIn />;
   return (
     <SiteShell wash>
-      <section className="mx-auto max-w-3xl px-4 pb-16 pt-6">
-        <p className="text-xs font-medium uppercase tracking-[0.16em] text-gold-2">Owner studio</p>
-        <h1 className="mt-1 font-display text-4xl font-semibold">{biz.name}</h1>
-        <p className="mt-1 text-sm text-muted">
-          {biz.cityName} · {biz.primaryCategory}
+      <section className="app-page px-4 py-10 sm:px-6">
+        <Link to="/account" className="text-sm font-semibold text-teal">
+          ← Your account
+        </Link>
+        <p className="mt-6 text-xs font-semibold uppercase tracking-[0.16em] text-teal">
+          Listing Studio{workspace ? ` · ${workspace.role.replaceAll("_", " ")}` : ""}
         </p>
-        <div className="mt-8 grid gap-8">
-          <FeaturedPanel businessId={biz.id} initial={biz.featured} />
-          <GalleryPanel businessId={biz.id} featured={biz.featured} />
-          <OfferPanel businessId={biz.id} featured={biz.featured} />
-        </div>
-        <p className="mt-8 text-sm">
-          <Link to="/biz/$slug" params={{ slug: biz.slug }} className="text-teal hover:underline">
-            View public listing
-          </Link>
-        </p>
+        <h1 className="mt-2 font-display text-4xl font-semibold">{business.name}</h1>
+        <Link to="/biz/$slug" params={{ slug: business.slug }} className="action-secondary mt-4">
+          View public listing
+        </Link>
+        {error ? (
+          <div role="alert" className="mt-6 rounded-2xl border border-line bg-card p-5">
+            <p>{error}</p>
+            <button className="action-secondary mt-3" onClick={() => setAttempt((x) => x + 1)}>
+              Retry studio
+            </button>
+          </div>
+        ) : !workspace ? (
+          <p role="status" className="mt-6">
+            Checking listing access…
+          </p>
+        ) : (
+          <div className="mt-8 grid gap-6 lg:grid-cols-[1.2fr_1fr]">
+            {workspace.canEdit ? (
+              <form
+                key={workspace.editable.baseVersion}
+                onSubmit={propose}
+                className="grid gap-4 rounded-[24px] border border-line bg-card p-6"
+              >
+                <h2 className="font-display text-2xl font-semibold">Update business details</h2>
+                <p className="text-sm leading-6 text-muted">
+                  Submit accurate details for review. Ownership and contact verification remain
+                  separate from this edit.
+                </p>
+                <label className="grid gap-2 text-sm font-medium">
+                  Business name
+                  <Input
+                    name="name"
+                    defaultValue={workspace.editable.name}
+                    required
+                    minLength={2}
+                    maxLength={200}
+                  />
+                </label>
+                <label className="grid gap-2 text-sm font-medium">
+                  About your business
+                  <Textarea
+                    name="description"
+                    defaultValue={workspace.editable.description}
+                    required
+                    minLength={10}
+                    maxLength={5000}
+                    className="min-h-48"
+                  />
+                </label>
+                <label className="grid gap-2 text-sm font-medium">
+                  Business phone
+                  <Input
+                    name="phone"
+                    type="tel"
+                    autoComplete="tel"
+                    defaultValue={workspace.editable.phone}
+                    required
+                  />
+                </label>
+                <label className="grid gap-2 text-sm font-medium">
+                  Website (HTTPS)
+                  <Input
+                    name="website"
+                    type="url"
+                    defaultValue={workspace.editable.website}
+                    placeholder="https://your-business.com"
+                  />
+                </label>
+                <button className="action-primary justify-self-start" disabled={saving}>
+                  {saving ? "Saving…" : "Submit changes for review"}
+                </button>
+                {saveError ? (
+                  <div role="alert" className="text-sm leading-6 text-danger">
+                    <p>{saveError}</p>
+                    <button
+                      type="button"
+                      className="action-secondary mt-2"
+                      onClick={() => setAttempt((x) => x + 1)}
+                    >
+                      Reload Studio
+                    </button>
+                  </div>
+                ) : null}
+                {message ? (
+                  <p role="status" className="text-sm leading-6 text-teal">
+                    {message}
+                  </p>
+                ) : null}
+              </form>
+            ) : (
+              <section className="rounded-[24px] border border-line bg-card p-6">
+                <h2 className="font-display text-2xl font-semibold">Recipient access</h2>
+                <p className="mt-3 text-muted">
+                  Your recipient role does not include editing this listing.
+                </p>
+              </section>
+            )}
+            <section>
+              <h2 className="font-display text-2xl font-semibold">Recent submissions</h2>
+              <div className="mt-4 grid gap-3">
+                {workspace.proposals.length ? (
+                  workspace.proposals.map((proposal) => (
+                    <article
+                      key={proposal.id}
+                      className="rounded-2xl border border-line bg-card p-5"
+                    >
+                      <p className="font-semibold capitalize">
+                        {proposal.status.replaceAll("_", " ")}
+                      </p>
+                      <p className="mt-2 text-sm">{proposal.payload.name}</p>
+                      <p className="mt-1 text-xs text-muted">
+                        {proposal.createdAt
+                          ? new Date(proposal.createdAt).toLocaleDateString()
+                          : ""}
+                      </p>
+                      {proposal.reason ? (
+                        <p className="mt-3 text-sm text-muted">{proposal.reason}</p>
+                      ) : null}
+                    </article>
+                  ))
+                ) : (
+                  <p className="text-sm text-muted">No listing changes submitted yet.</p>
+                )}
+              </div>
+            </section>
+          </div>
+        )}
       </section>
     </SiteShell>
   );
-}
-
-function FeaturedPanel({ businessId, initial }: { businessId: number; initial: boolean }) {
-  const [featured, setFeatured] = useState(initial);
-  const [status, setStatus] = useState("");
-  const [error, setError] = useState("");
-  const [saving, setSaving] = useState(false);
-
-  async function toggle() {
-    setSaving(true);
-    setError("");
-    setStatus("");
-    try {
-      const res = await setFeaturedPackage({ data: { businessId, featured: !featured } });
-      setFeatured(res.featured);
-      setStatus(res.featured ? "Featured package is on." : "Back to a claimed listing.");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not update Featured.");
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  return (
-    <div className="rounded-[24px] border border-line bg-card p-5">
-      <p className="text-xs font-medium uppercase tracking-[0.16em] text-gold-2">Featured package</p>
-      <h2 className="mt-1 font-display text-2xl font-semibold">
-        {featured ? "You’re Featured" : "Claimed listing"}
-      </h2>
-      <ul className="mt-3 grid gap-1.5 text-sm text-ink-soft">
-        <li>Rank first on this town × service page</li>
-        <li>{featured ? "12" : "6"} photos on the listing{featured ? "" : " (12 when Featured)"}</li>
-        <li>One coupon on the listing{featured ? " + ZIP mail insert" : ". Mail insert is Featured-only"}</li>
-        <li>Homepage Featured row</li>
-      </ul>
-      <p className="mt-3 text-xs text-muted">
-        One Featured shop per category per town (two in Reno and Sparks).
-      </p>
-      {error ? <p className="mt-2 text-sm text-danger">{error}</p> : null}
-      {status ? <p className="mt-2 text-sm text-teal">{status}</p> : null}
-      <Button className="mt-4" type="button" onClick={() => void toggle()} disabled={saving}>
-        {saving ? "Saving…" : featured ? "Turn Featured off" : "Activate Featured"}
-      </Button>
-    </div>
-  );
-}
-
-function GalleryPanel({ businessId, featured }: { businessId: number; featured: boolean }) {
-  const [photos, setPhotos] = useState<ListingPhoto[]>([]);
-  const [cap, setCap] = useState(photoCap(featured));
-  const [error, setError] = useState("");
-  const [busy, setBusy] = useState(false);
-
-  useEffect(() => {
-    void listOwnerPhotos({ data: businessId }).then((r) => {
-      setPhotos(r.photos);
-      setCap(r.cap);
-    });
-  }, [businessId]);
-
-  async function onFile(file: File | null) {
-    if (!file) return;
-    setBusy(true);
-    setError("");
-    try {
-      const dataUrl = await readDataUrl(file);
-      const photo = await addListingPhoto({
-        data: { businessId, dataUrl, caption: file.name.replace(/\.[^.]+$/, "").slice(0, 80) },
-      });
-      setPhotos((p) => [...p, photo]);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not add photo.");
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function remove(id: number) {
-    await deleteListingPhoto({ data: { businessId, photoId: id } });
-    setPhotos((p) => p.filter((x) => x.id !== id));
-  }
-
-  return (
-    <div className="rounded-[24px] border border-line bg-card p-5">
-      <h2 className="font-display text-2xl font-semibold">Photos</h2>
-      <p className="mt-1 text-sm text-muted">
-        Real jobs, trucks, storefronts. {photos.length} of {cap}. First photo is the cover.
-      </p>
-      <div className="mt-4 grid grid-cols-3 gap-2 sm:grid-cols-4">
-        {photos.map((p) => (
-          <figure key={p.id} className="relative overflow-hidden rounded-[14px]">
-            <img src={p.url} alt={p.caption} className="aspect-square w-full object-cover" />
-            <button
-              type="button"
-              onClick={() => void remove(p.id)}
-              className="absolute right-1.5 top-1.5 rounded-full bg-ink/80 px-2 py-0.5 text-[11px] text-paper"
-            >
-              Remove
-            </button>
-          </figure>
-        ))}
-      </div>
-      <label className="mt-4 inline-flex h-11 cursor-pointer items-center rounded-full bg-gold px-4 text-sm font-medium text-ink">
-        {busy ? "Adding…" : "Add photo"}
-        <input
-          type="file"
-          accept="image/jpeg,image/png,image/webp"
-          className="sr-only"
-          disabled={busy || photos.length >= cap}
-          onChange={(e) => void onFile(e.target.files?.[0] ?? null)}
-        />
-      </label>
-      {error ? <p className="mt-2 text-sm text-danger">{error}</p> : null}
-    </div>
-  );
-}
-
-function OfferPanel({ businessId, featured }: { businessId: number; featured: boolean }) {
-  const [offer, setOffer] = useState<Offer | null>(null);
-  const [title, setTitle] = useState("");
-  const [details, setDetails] = useState("");
-  const [code, setCode] = useState("");
-  const [expiresOn, setExpiresOn] = useState("");
-  const [active, setActive] = useState(true);
-  const [error, setError] = useState("");
-  const [status, setStatus] = useState("");
-  const [saving, setSaving] = useState(false);
-
-  useEffect(() => {
-    void getOwnerOffer({ data: businessId }).then((r) => {
-      if (!r.offer) return;
-      setOffer(r.offer);
-      setTitle(r.offer.title);
-      setDetails(r.offer.details);
-      setCode(r.offer.code);
-      setExpiresOn((r.offer.expiresOn ?? "").slice(0, 10));
-      setActive(r.offer.active);
-    });
-  }, [businessId]);
-
-  async function onSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setSaving(true);
-    setError("");
-    setStatus("");
-    try {
-      await saveOffer({ data: { businessId, title, details, code, expiresOn, active } });
-      setStatus("Offer saved.");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not save offer.");
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  return (
-    <form onSubmit={onSubmit} className="grid gap-3 rounded-[24px] border border-line bg-card p-5">
-      <h2 className="font-display text-2xl font-semibold">Coupon / offer</h2>
-      <p className="text-sm text-muted">
-        One active offer per shop. {featured ? "Featured drops this into ZIP mail." : "On the listing now. Featured adds the mail insert."}
-      </p>
-      <div className="grid gap-1.5">
-        <Label htmlFor="title">Title</Label>
-        <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="$25 off pet-mesh recut" required />
-      </div>
-      <div className="grid gap-1.5">
-        <Label htmlFor="details">Details</Label>
-        <Textarea id="details" value={details} onChange={(e) => setDetails(e.target.value)} />
-      </div>
-      <div className="grid gap-3 sm:grid-cols-2">
-        <div className="grid gap-1.5">
-          <Label htmlFor="code">Code</Label>
-          <Input id="code" value={code} onChange={(e) => setCode(e.target.value)} placeholder="CAT775" />
-        </div>
-        <div className="grid gap-1.5">
-          <Label htmlFor="expires">Expires</Label>
-          <Input id="expires" type="date" value={expiresOn} onChange={(e) => setExpiresOn(e.target.value)} />
-        </div>
-      </div>
-      <label className="flex items-center gap-2 text-sm">
-        <input type="checkbox" checked={active} onChange={(e) => setActive(e.target.checked)} />
-        Active on the listing
-      </label>
-      {error ? <p className="text-sm text-danger">{error}</p> : null}
-      {status ? <p className="text-sm text-teal">{status}</p> : null}
-      <Button type="submit" disabled={saving}>
-        {saving ? "Saving…" : offer ? "Update offer" : "Publish offer"}
-      </Button>
-    </form>
-  );
-}
-
-function readDataUrl(file: File) {
-  return new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result ?? ""));
-    reader.onerror = () => reject(new Error("Could not read that file."));
-    reader.readAsDataURL(file);
-  });
 }

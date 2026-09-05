@@ -6,19 +6,27 @@ import { serializeStructuredData } from "../src/lib/directory/structured-data.mj
 const files = [
   "src/routes/index.tsx",
   "src/routes/biz.$slug.tsx",
+  "src/components/directory/listing-page.tsx",
+  "src/components/directory/listing-gallery.tsx",
   "src/routes/search.tsx",
   "src/routes/about.tsx",
   "src/routes/pricing.tsx",
   "src/components/directory/business-card.tsx",
+  "src/components/directory/contact-actions.tsx",
 ];
 
 async function sources() {
-  return (await Promise.all(files.map((file) => readFile(new URL(`../${file}`, import.meta.url), "utf8")))).join("\n");
+  return (
+    await Promise.all(files.map((file) => readFile(new URL(`../${file}`, import.meta.url), "utf8")))
+  ).join("\n");
 }
 
 test("public design surfaces reject unsupported mock-directory claims", async () => {
   const source = await sources();
-  assert.doesNotMatch(source, /4,200\+|every listing verified|#1 rated|182 reviews|response time: under/i);
+  assert.doesNotMatch(
+    source,
+    /4,200\+|every listing verified|#1 rated|182 reviews|response time: under/i,
+  );
   assert.match(source, /No placeholder businesses are shown/);
 });
 
@@ -26,14 +34,19 @@ test("commercial placement is disclosed and external paid links are sponsored", 
   const source = await sources();
   assert.match(source, />\s*Sponsored\s*</);
   assert.match(source, /sponsored noopener noreferrer/);
-  assert.doesNotMatch(source, />Featured</);
+  assert.doesNotMatch(source, />\s*Featured\s*</);
 });
 
-test("unavailable lead and claim pipelines are not presented as working forms", async () => {
-  const listing = await readFile(new URL("../src/routes/biz.$slug.tsx", import.meta.url), "utf8");
+test("Lead pipeline stays unavailable while Claim submission is truthfully review-gated", async () => {
+  const listing = await readFile(
+    new URL("../src/components/directory/listing-page.tsx", import.meta.url),
+    "utf8",
+  );
   const claim = await readFile(new URL("../src/routes/claim.tsx", import.meta.url), "utf8");
   assert.doesNotMatch(listing, /Request a quote|submitLead|QuoteForm/);
-  assert.match(claim, /not accepting submissions yet/i);
+  assert.match(claim, /Claim remains read-only/);
+  assert.match(claim, /payment and authentication never grant authority/);
+  assert.doesNotMatch(claim, /Leads now come to you|take it over/);
 });
 
 test("official design-system assets are used for the brand shell", async () => {
@@ -42,16 +55,12 @@ test("official design-system assets are used for the brand shell", async () => {
   assert.match(logo, /brand\/mark\.svg/);
 });
 
-test("SEO launch files expose noindex pages to crawlers and exclude empty discovery leaves", async () => {
-  const [robots, sitemap] = await Promise.all([
-    readFile(new URL("../public/robots.txt", import.meta.url), "utf8"),
-    readFile(new URL("../public/sitemap.xml", import.meta.url), "utf8"),
-  ]);
+test("SEO allows public crawling while the runtime sitemap excludes private routes", async () => {
+  const robots = await readFile(new URL("../public/robots.txt", import.meta.url), "utf8");
+  const { renderSitemap } = await import("../src/lib/directory/sitemap.mjs");
   assert.doesNotMatch(robots, /Disallow: \/(?:claim|list-your-business|login|pricing|search|spec)/);
   assert.match(robots, /Disallow: \/studio\//);
-  assert.match(sitemap, /https:\/\/775directory\.com\/about/);
-  assert.match(sitemap, /https:\/\/775directory\.com\/privacy/);
-  assert.doesNotMatch(sitemap, /\/nv\/|\/business\/|\/biz\/|pricing|claim|search|studio/);
+  assert.doesNotMatch(renderSitemap([]), /pricing|claim|search|studio/);
 });
 
 test("listing JSON-LD cannot break out of its script element", () => {

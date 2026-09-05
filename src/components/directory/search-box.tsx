@@ -2,32 +2,22 @@ import { useNavigate } from "@tanstack/react-router";
 import { Search } from "lucide-react";
 import { useState } from "react";
 import { BrandMark } from "@/components/brand/logo";
-import type { City } from "@/lib/directory/types";
 
-export function SearchBox({
-  cities,
-  defaultQ = "",
-  defaultCity = "",
-}: {
-  cities: City[];
-  defaultQ?: string;
-  defaultCity?: string;
-}) {
+export function SearchBox({ defaultQ = "" }: { defaultQ?: string }) {
   const navigate = useNavigate();
   const [q, setQ] = useState(defaultQ);
-  const [city, setCity] = useState(defaultCity);
 
   function go(e: React.FormEvent) {
     e.preventDefault();
     void navigate({
       to: "/search",
-      search: { q: q.trim(), city, category: "" },
+      search: { q: q.trim(), city: "reno", category: "" },
     });
   }
 
   return (
     <form onSubmit={go} className="w-full" role="search">
-      <div className="flex items-center gap-2 rounded-full border border-line bg-card px-3 shadow-[0_8px_30px_rgba(28,26,22,0.08)] focus-within:border-gold/70 focus-within:ring-4 focus-within:ring-gold/10">
+      <div className="flex items-center gap-2 rounded-full border border-line bg-card px-3 shadow-[0_8px_30px_rgba(28,26,22,0.08)] focus-within:border-teal focus-within:ring-2 focus-within:ring-teal">
         <BrandMark className="size-7" />
         <label className="sr-only" htmlFor="need">
           What do you need?
@@ -47,19 +37,7 @@ export function SearchBox({
           <Search className="size-4" />
         </button>
       </div>
-      <select
-        value={city}
-        onChange={(e) => setCity(e.target.value)}
-        aria-label="Town"
-        className="mt-2 w-full bg-transparent text-center text-sm text-ink-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pine"
-      >
-        <option value="">All towns in the 775</option>
-        {cities.map((c) => (
-          <option key={c.slug} value={c.slug}>
-            {c.name}
-          </option>
-        ))}
-      </select>
+      <p className="mt-2 text-center text-sm text-ink-soft">Reno, Nevada</p>
     </form>
   );
 }

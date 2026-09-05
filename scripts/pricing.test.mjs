@@ -11,25 +11,14 @@ test("directory pricing remains a future preview", () => {
   assert.equal(DIRECTORY_PRICING_STATUS, "future-preview");
 });
 
-test("approved owner-tool prices remain exact after separating content tier names", () => {
-  const basic = DIRECTORY_PLANS.find((plan) => plan.id === "basic");
-  const standard = DIRECTORY_PLANS.find((plan) => plan.id === "standard");
-
-  assert.deepEqual([basic.monthlyPriceCents, basic.annualPriceCents], [1_000, 12_000]);
-  assert.deepEqual([standard.monthlyPriceCents, standard.annualPriceCents], [1_500, 18_000]);
-  assert.equal(basic.name, "Owner tools — Basic");
-  assert.equal(standard.name, "Owner tools — Standard");
-});
-
-test("owner-tools Premium stays unset until approved and annual billing gives two months free", () => {
-  const premium = DIRECTORY_PLANS.find((plan) => plan.id === "premium");
-
+test("all content tiers are free and only Featured carries a paid rate", () => {
+  for (const id of ["basic", "standard", "premium"]) {
+    const plan = DIRECTORY_PLANS.find((plan) => plan.id === id);
+    assert.equal(plan.monthlyPriceCents, 0);
+    assert.equal(plan.annualPriceCents, 0);
+  }
   assert.equal(PREMIUM_MONTHLY_PRICE_CENTS, null);
-  assert.equal(premium.monthlyPriceCents, null);
-  assert.equal(premium.annualPriceCents, null);
-  assert.equal(premium.annualFreeMonths, 2);
-  assert.equal(premium.name, "Owner tools — Premium");
-  assert.equal(annualPriceWithFreeMonths(2_000, 2), 20_000);
+  assert.equal(DIRECTORY_PLANS.filter((plan) => plan.monthlyPriceCents > 0).length, 1);
 });
 
 test("Featured founder pricing is separate and exact", () => {

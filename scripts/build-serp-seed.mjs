@@ -3,11 +3,18 @@ import { writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { buildSerpSeed } from "./seed-materialization-lib.mjs";
 
-const root = resolve(process.argv[2] ?? "");
-if (!process.argv[2])
+const args = process.argv.slice(2);
+if (
+  !args[0] ||
+  args[0].startsWith("--") ||
+  args.length > 2 ||
+  (args[1] !== undefined && !/^--out=.+/.test(args[1]))
+) {
   throw new Error("Usage: node scripts/build-serp-seed.mjs <serp-enrichment-root> [--out=<path>]");
+}
+const root = resolve(args[0]);
+const out = args[1]?.slice(6);
 const result = await buildSerpSeed(root);
-const out = process.argv.find((argument) => argument.startsWith("--out="))?.slice(6);
 const counts = Object.groupBy(result.listings, (listing) => listing.contentTier);
 const summary = {
   receiptSha256: result.receiptSha256,

@@ -10,7 +10,8 @@ _Avoid_: 775 Local, Local775, 775 news
 
 **The 775**:
 The product's geographic community, spanning Nevada's 775 area from the California border to West Wendover.
-_Avoid_: Northern Nevada when used as product chrome, Reno-only
+Current pilot: Reno only, approved September 4, 2026. Broader geography is future scope.
+_Avoid_: implying the current pilot serves all of Northern Nevada
 
 **Resident**:
 A person in the 775 who finds businesses or registers their town, ZIP, and interests for neighborhood mail.
@@ -30,7 +31,7 @@ _Avoid_: Business Owner, Featured Customer
 
 **Local775 Operator**:
 A person authorized to review, support, or administer directory operations without acquiring ownership of a Business Listing.
-_Avoid_: Business Owner, Directory User, Admin
+_Avoid_: Business Owner, Directory User, Listing Admin when naming the canonical role
 
 **Operator Allowlist**:
 The explicit set of approved email identities eligible for Local775 Operator access. Membership is necessary but not sufficient: mandatory multi-factor authentication and application authorization still apply.
@@ -65,6 +66,10 @@ _Avoid_: Upload, attachment
 **Listing Participation**:
 The explicit, scoped, evidenced, revocable, and optionally expiring relationship between a person and one or more Business Listings, including the person's role, authority, and participation status. Payment never creates Listing Participation.
 _Avoid_: Directory User, Ownership when the participant is not a Business Owner
+
+**Listing Manager**:
+A person delegated by a Business Owner to operate specified parts of a Business Listing without gaining ownership or the right to delegate Listing authority.
+_Avoid_: Business Owner, Agency Representative, Local775 Operator
 
 **Lead Recipient**:
 An active Listing Participant explicitly designated to receive a Business Listing's Leads at verified delivery destinations. Authority, Featured payment, and Lead Recipient status are independent permissions.
