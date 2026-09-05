@@ -71,7 +71,7 @@ Every review thread across PRs1–13 was retrieved with pagination, including al
 
 ## Validation and retained work
 
-186 unit tests, typecheck, ESLint, secret scan and production build passed before final review. Final isolated database run covers 22 migrations and 200 pgTAP assertions; exact final receipts are recorded in the handoff. Browser runtime setup still fails its trusted-dependency check, so no fresh screenshot/interaction acceptance is claimed. GitHub CI/review and merge results are appended after completion.
+187 unit tests, typecheck, ESLint, secret scan and production build passed before final review. Final isolated database run covers 22 migrations and 200 pgTAP assertions; exact final receipts are recorded in the handoff. Browser runtime setup still fails its trusted-dependency check, so no fresh screenshot/interaction acceptance is claimed. GitHub CI/review and merge results are appended after completion.
 
 This is source consolidation, not GTM acceptance. Owner media/case-study editing and reviewed commands, full private proof lifecycle, delivery/GHL integration, measurement, recovery and browser/production acceptance remain in existing Linear workstreams. Hosted migrations are a separate explicit operation. Existing production security work CAT-145/CLE-118 remains distinct.
 
@@ -102,4 +102,12 @@ All 20 comments in [review 5120427078](https://github.com/Clvrwrk/775Local/pull/
 
 Review-summary suggestions: JSON parse errors now identify the relative artifact; strict inquiry UUID validation is shared; the unused unvalidated telephone helper is removed. Account roles are materialized once per Reno listing, retaining the centralized authorization helper instead of duplicating its policy in a new join. The suggestion to print full archive RPC response bodies is declined because it can disclose private evidence or provider details; sanitized failure reporting is intentionally retained.
 
-Final local verification: 186 unit tests, 22 migrations, 200 pgTAP assertions, TypeScript, ESLint, secret scan and production build pass. Standards review found no new correctness/security regressions; Spec review corrected portable archival receipt identities and test commands. GitHub review and merge results remain authoritative on PR12.
+Final local verification: 187 unit tests, 22 migrations, 200 pgTAP assertions, TypeScript, ESLint, secret scan and production build pass. Standards review found no new correctness/security regressions; Spec review corrected portable archival receipt identities and test commands. GitHub review and merge results remain authoritative on PR12.
+
+## Follow-up review closure
+
+- Comment 3940027359: distinct `<implementation-checkout>` and `<canonical-external-checkout>` placeholders preserve the handoff boundary.
+- Comment 3940027360: new enrichment roots and intermediate directories use mode `0700`; the nested-root test checks both. Existing roots are not chmodded.
+- Comment 3940027366: inquiry configuration requires a nonblank publishable key; a regression verifies missing/blank keys return unavailable before any provider call.
+
+Follow-up verification: 187 unit tests, typecheck, lint, secrets and build pass. The unchanged database tree retains the 22-migration / 200-assertion passing receipt.

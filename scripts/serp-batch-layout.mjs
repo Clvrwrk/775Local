@@ -8,7 +8,7 @@ import { join } from "node:path";
 export async function ensureBatchLayout(root, batchSize) {
   if (!Number.isInteger(batchSize) || batchSize < 1 || batchSize > 20)
     throw new Error("invalid batch size");
-  await mkdir(root, { recursive: true });
+  await mkdir(root, { recursive: true, mode: 0o700 });
   const path = join(root, "batch-layout.json");
   const read = async () => JSON.parse(await readFile(path, "utf8"));
   let layout;

@@ -55,6 +55,7 @@ export function inquiriesConfigured(env) {
       env.TURNSTILE_SITE_KEY &&
       env.INQUIRY_ABUSE_SECRET &&
       env.SUPABASE_SERVICE_ROLE_KEY &&
+      env.SUPABASE_PUBLISHABLE_KEY?.trim() &&
       /^https:\/\/[a-z0-9]+\.supabase\.co$/.test(env.SUPABASE_URL ?? "") &&
       /^https:\/\/[a-z0-9.-]+$/.test(env.LOCAL775_PUBLIC_ORIGIN ?? ""),
     )

@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { mkdtemp, mkdir, readFile, rm } from "node:fs/promises";
+import { mkdtemp, mkdir, readFile, rm, stat } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { ensureBatchLayout } from "./serp-batch-layout.mjs";
@@ -32,6 +32,8 @@ test("a new nested output root is created and bound before receipts", async () =
   try {
     const root = join(base, "new", "output");
     assert.equal((await ensureBatchLayout(root, 5)).batchSize, 5);
+    assert.equal((await stat(root)).mode & 0o777, 0o700);
+    assert.equal((await stat(join(base, "new"))).mode & 0o777, 0o700);
     await assert.rejects(ensureBatchLayout(root, 20), /mismatch/);
   } finally {
     await rm(base, { recursive: true });

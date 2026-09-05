@@ -22,7 +22,7 @@ GitHub protects main with required linear history. PR12 therefore uses a squash 
 
 ## Validation
 
-186 unit tests, TypeScript, ESLint, secret scan and production build passed. A fresh disposable local PostgreSQL database applied all 22 migrations and passed 200 pgTAP assertions across eight suites, including actual seed publication/replay/privacy and case-study/public media access. Independent Standards and Spec reviews closed all findings. Required GitHub checks and final merge status are recorded on PR12.
+187 unit tests, TypeScript, ESLint, secret scan and production build passed. A fresh disposable local PostgreSQL database applied all 22 migrations and passed 200 pgTAP assertions across eight suites, including actual seed publication/replay/privacy and case-study/public media access. Independent Standards and Spec reviews closed all findings. Required GitHub checks and final merge status are recorded on PR12.
 
 Browser setup still fails its trusted-dependency initialization check. No fresh screenshot, responsive interaction, full accessibility, or authenticated end-to-end acceptance is claimed. A Ready deployment is not product acceptance.
 
@@ -39,4 +39,4 @@ Browser setup still fails its trusted-dependency initialization check. No fresh 
 
 Scope CLE-101. Design CLE-105↔CAT-78; Claims CLE-107↔CAT-82; Studio CLE-108↔CAT-165; inquiries CLE-109↔CAT-164. Keep implementation tickets open for remaining product work even after PR consolidation.
 
-Implementation checkout: `<local-checkout>`; canonical external checkout `<local-checkout>` remains untouched. GitHub/main is the source to refresh next session. Review outputs and local receipt: `<local-evidence-root>`. The previously rejected Dropbox receipt sync was not retried; local receipt and Linear contain current results.
+Implementation checkout: `<implementation-checkout>`; canonical external checkout `<canonical-external-checkout>` remains untouched. GitHub/main is the source to refresh next session. Review outputs and local receipt: `<local-evidence-root>`. The previously rejected Dropbox receipt sync was not retried; local receipt and Linear contain current results.

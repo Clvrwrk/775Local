@@ -8,6 +8,7 @@ const env = {
   TURNSTILE_SITE_KEY: "test-public",
   INQUIRY_ABUSE_SECRET: "test-only-hash-key",
   SUPABASE_SERVICE_ROLE_KEY: "test-only-not-a-real-key",
+  SUPABASE_PUBLISHABLE_KEY: "test-public-key",
   SUPABASE_URL: "https://test.supabase.co",
   LOCAL775_PUBLIC_ORIGIN: "https://775directory.com",
 };
@@ -106,4 +107,19 @@ test("database rejection never becomes a success or exposes provider details", a
   });
   assert.equal(response.status, 503);
   assert.equal((await response.text()).includes("private destination"), false);
+});
+
+test("missing or blank inquiry publishable key fails closed before provider calls", async () => {
+  for (const key of [undefined, "", "  "]) {
+    let calls = 0;
+    const response = await handleInquiry(request(), {
+      env: { ...env, SUPABASE_PUBLISHABLE_KEY: key },
+      fetchImpl: async () => {
+        calls++;
+        throw new Error("must not fetch");
+      },
+    });
+    assert.equal(response.status, 503);
+    assert.equal(calls, 0);
+  }
 });
