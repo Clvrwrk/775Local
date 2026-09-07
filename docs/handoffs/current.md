@@ -3,6 +3,12 @@
 Date: September 5, 2026. Repository: https://github.com/Clvrwrk/775Local.git
 Authoritative consolidation: [PR12](https://github.com/Clvrwrk/775Local/pull/12). Once merged, begin the next session from freshly fetched `origin/main` and create new `codex/` branches and PRs. Do not resume superseded feature branches.
 
+## September 7 Listing Intelligence continuation
+
+Branch `codex/cle-104-listing-intelligence` adds a Listing-linked, private Supabase evidence ledger for whole-accessible-site Firecrawl captures, page-level raw artifacts, extracted private facts, DataForSEO OnPage audits, and review-only top-service content candidates. The exact contract and completeness definition are in `docs/LISTING-INTELLIGENCE-LEDGER.md`.
+
+The clean local migration replay passes all 23 migrations, 231 pgTAP assertions, and schema lint. The Node 24 suite passes 193 tests; typecheck, ESLint, secret scan, formatting, and the production build pass. No hosted migration, Firecrawl request, DataForSEO task, generated public content, or publication occurred. Production still requires its retained exact migration approval. Live provider execution additionally requires an explicit Firecrawl-credit and DataForSEO-dollar envelope after the plan-only inventory estimate.
+
 ## Authorization and scope
 
 Christopher Hussey explicitly requested review and resolution of all PR comments, conflict resolution, and consolidation of all branches into main. This is source consolidation before full product/GTM acceptance. Hosted database migrations, provider sends, paid effects, and unrelated production security work were not executed by this consolidation.
