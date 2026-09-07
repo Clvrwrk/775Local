@@ -10,26 +10,38 @@ function hostnameFor(value) {
   return url.hostname.toLowerCase().replace(/^www\./, "");
 }
 
-export function classifyListingSource(value) {
+export function classifyListingSource(value, { owned = false } = {}) {
   const hostname = hostnameFor(value);
   for (const [domain, kind] of DIRECTORY_HOSTS) {
     if (hostname === domain || hostname.endsWith(`.${domain}`)) return kind;
   }
-  return "website";
+  return owned ? "website" : "directory_landing_page";
 }
 
 export function normalizeListingSources(listing) {
-  const candidates = [listing.website_url, ...(listing.source_urls ?? [])].filter(Boolean);
+  const candidates = [
+    ...(listing.website_url
+      ? [{ url: listing.website_url, kind: null, isPrimary: true, owned: true }]
+      : []),
+    ...(listing.source_urls ?? []).map((source) =>
+      typeof source === "string"
+        ? { url: source, kind: null, isPrimary: false, owned: false }
+        : { ...source, isPrimary: false, owned: source.kind === "website" },
+    ),
+  ];
   const sources = new Map();
-  for (const [index, candidate] of candidates.entries()) {
-    const url = new URL(candidate);
+  for (const candidate of candidates) {
+    const url = new URL(candidate.url);
     url.hash = "";
     const normalized = url.href;
     const prior = sources.get(normalized);
     sources.set(normalized, {
       url: normalized,
-      kind: classifyListingSource(normalized),
-      isPrimary: prior?.isPrimary === true || index === 0,
+      kind:
+        prior?.kind === "website"
+          ? "website"
+          : (candidate.kind ?? classifyListingSource(normalized, { owned: candidate.owned })),
+      isPrimary: prior?.isPrimary === true || candidate.isPrimary,
     });
   }
   return [...sources.values()].sort(

@@ -57,9 +57,11 @@ create table private.listing_source_captures (
     terminal_status <> 'complete'
     or (
       expected_page_count > 0
+      and discovered_page_count = expected_page_count
       and failed_page_count = 0
       and not hit_page_limit
       and pagination_drained
+      and robots_respected
       and jsonb_array_length(completeness_blockers) = 0
     )
   )
@@ -290,6 +292,43 @@ begin
       else 'pending'
     end,
     updated_at = statement_timestamp();
+
+    update private.listing_intelligence_accounts account set
+      seo_audit_status = case
+        when exists (
+          select 1 from jsonb_array_elements(account.source_inventory) source
+          where source->>'kind' = 'website'
+        ) then case
+          when account.seo_audit_status = 'not_applicable' then 'pending'
+          else account.seo_audit_status
+        end
+        else 'not_applicable'
+      end,
+      updated_at = statement_timestamp()
+    where listing_id = new.id;
+  elsif tg_op = 'UPDATE' and old.website_url is not null then
+    update private.listing_intelligence_accounts account set
+      source_inventory = remaining.sources,
+      capture_status = 'pending',
+      fact_status = 'pending',
+      seo_audit_status = case
+        when exists (
+          select 1 from jsonb_array_elements(remaining.sources) source
+          where source->>'kind' = 'website'
+        ) then 'pending'
+        else 'not_applicable'
+      end,
+      updated_at = statement_timestamp()
+    from (
+      select coalesce(jsonb_agg(source), '[]'::jsonb) as sources
+      from jsonb_array_elements((
+        select source_inventory
+        from private.listing_intelligence_accounts
+        where listing_id = new.id
+      )) source
+      where coalesce((source->>'isPrimary')::boolean, false) = false
+    ) remaining
+    where account.listing_id = new.id;
   end if;
   return new;
 end;
@@ -299,7 +338,9 @@ create trigger business_listing_intelligence_account
 after insert or update of website_url on app.business_listings
 for each row execute function private.ensure_listing_intelligence_account();
 
-insert into private.listing_intelligence_accounts (listing_id, source_inventory)
+insert into private.listing_intelligence_accounts (
+  listing_id, source_inventory, seo_audit_status
+)
 select id, jsonb_build_array(jsonb_build_object(
   'url', website_url,
   'kind', case
@@ -309,7 +350,10 @@ select id, jsonb_build_array(jsonb_build_object(
     else 'website'
   end,
   'isPrimary', true
-))
+)), case
+  when website_url ~* '^https://([^/]+\.)?(facebook|yelp|houzz)\.com/' then 'not_applicable'
+  else 'pending'
+end
 from app.business_listings
 where website_url is not null
 on conflict (listing_id) do nothing;
@@ -371,11 +415,25 @@ begin
         else 'pending'
       end,
       seo_audit_status = case
+        when not exists (
+          select 1 from jsonb_array_elements(excluded.source_inventory) source
+          where source->>'kind' = 'website'
+        ) then 'not_applicable'
         when private.listing_intelligence_accounts.source_inventory = excluded.source_inventory
           then private.listing_intelligence_accounts.seo_audit_status
         else 'pending'
       end,
       updated_at = statement_timestamp();
+
+  update private.listing_intelligence_accounts account set
+    seo_audit_status = case
+      when exists (
+        select 1 from jsonb_array_elements(account.source_inventory) source
+        where source->>'kind' = 'website'
+      ) then account.seo_audit_status
+      else 'not_applicable'
+    end
+  where listing_id = requested_listing_id;
 
   return stored_sources;
 end;
@@ -395,6 +453,7 @@ create function public.begin_listing_source_capture(
   requested_page_limit integer,
   requested_hit_page_limit boolean,
   requested_pagination_drained boolean,
+  requested_robots_respected boolean,
   requested_manifest_sha256 text,
   requested_crawl_config jsonb,
   requested_completeness_blockers jsonb,
@@ -423,14 +482,16 @@ begin
   insert into private.listing_source_captures (
     listing_id, idempotency_key, source_url, source_kind, provider_job_id,
     terminal_status, completeness_basis, expected_page_count, discovered_page_count,
-    failed_page_count, page_limit, hit_page_limit, pagination_drained, manifest_sha256,
+    failed_page_count, page_limit, hit_page_limit, pagination_drained, robots_respected,
+    manifest_sha256,
     crawl_config, completeness_blockers, credits_used, started_at, finished_at
   ) values (
     requested_listing_id, requested_idempotency_key, requested_source_url,
     requested_source_kind, nullif(trim(requested_provider_job_id), ''),
     requested_terminal_status, requested_completeness_basis, requested_expected_page_count,
     requested_discovered_page_count, requested_failed_page_count, requested_page_limit,
-    requested_hit_page_limit, requested_pagination_drained, requested_manifest_sha256,
+    requested_hit_page_limit, requested_pagination_drained, requested_robots_respected,
+    requested_manifest_sha256,
     requested_crawl_config, requested_completeness_blockers, requested_credits_used,
     requested_started_at, requested_finished_at
   )
@@ -444,7 +505,8 @@ begin
      or capture.source_url <> requested_source_url
      or capture.expected_page_count <> requested_expected_page_count
      or capture.terminal_status <> requested_terminal_status
-     or capture.completeness_basis <> requested_completeness_basis then
+     or capture.completeness_basis <> requested_completeness_basis
+     or capture.robots_respected <> requested_robots_respected then
     raise exception 'existing capture metadata does not match';
   end if;
   return capture.id;
@@ -741,6 +803,17 @@ begin
      or jsonb_array_length(requested_artifacts) > 25 then
     raise exception 'audit artifacts must contain 1 to 25 records';
   end if;
+  if requested_terminal_status = 'complete' and exists (
+    select required.kind
+    from unnest(array['task_post', 'task_status', 'summary', 'pages']) required(kind)
+    where not exists (
+      select 1
+      from jsonb_to_recordset(requested_artifacts) artifact(artifact_kind text)
+      where artifact.artifact_kind = required.kind
+    )
+  ) then
+    raise exception 'complete SEO audit requires task_post, task_status, summary, and pages artifacts';
+  end if;
   if exists (
     select 1
     from jsonb_to_recordset(requested_artifacts) as artifact(
@@ -883,7 +956,7 @@ revoke all on function public.register_listing_intelligence_sources(uuid, jsonb)
   from public, anon, authenticated;
 revoke all on function public.begin_listing_source_capture(
   uuid, text, text, text, text, text, text, integer, integer, integer,
-  integer, boolean, boolean, text, jsonb, jsonb, numeric, timestamptz, timestamptz
+  integer, boolean, boolean, boolean, text, jsonb, jsonb, numeric, timestamptz, timestamptz
 ) from public, anon, authenticated;
 revoke all on function public.ingest_listing_source_capture_pages(bigint, jsonb)
   from public, anon, authenticated;
@@ -900,7 +973,7 @@ revoke all on function public.record_listing_content_intelligence_candidate(
 grant execute on function public.register_listing_intelligence_sources(uuid, jsonb) to service_role;
 grant execute on function public.begin_listing_source_capture(
   uuid, text, text, text, text, text, text, integer, integer, integer,
-  integer, boolean, boolean, text, jsonb, jsonb, numeric, timestamptz, timestamptz
+  integer, boolean, boolean, boolean, text, jsonb, jsonb, numeric, timestamptz, timestamptz
 ) to service_role;
 grant execute on function public.ingest_listing_source_capture_pages(bigint, jsonb) to service_role;
 grant execute on function public.finalize_listing_source_capture(bigint, text, jsonb) to service_role;

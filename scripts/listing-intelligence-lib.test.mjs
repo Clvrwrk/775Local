@@ -11,10 +11,22 @@ import {
 } from "./listing-intelligence-lib.mjs";
 
 test("sources distinguish owned sites from known landing-page platforms", () => {
-  assert.equal(classifyListingSource("https://example.com/services"), "website");
+  assert.equal(classifyListingSource("https://example.com/services"), "directory_landing_page");
+  assert.equal(classifyListingSource("https://example.com/services", { owned: true }), "website");
   assert.equal(classifyListingSource("https://www.facebook.com/example"), "facebook");
   assert.equal(classifyListingSource("https://www.yelp.com/biz/example"), "yelp");
   assert.equal(classifyListingSource("https://www.houzz.com/pro/example"), "houzz");
+});
+
+test("unrecognized secondary platforms fail closed to one-page capture", () => {
+  const sources = normalizeListingSources({
+    website_url: "https://example.com/",
+    source_urls: ["https://www.bbb.org/us/nv/reno/profile/example"],
+  });
+  assert.equal(sources[0].kind, "website");
+  assert.equal(sources[1].kind, "directory_landing_page");
+  assert.equal(buildFirecrawlOperation(sources[1]).endpoint, "/v2/scrape");
+  assert.equal(buildDataForSeoOnPageTask(sources[1]), null);
 });
 
 test("source inventories deduplicate and preserve the primary source", () => {

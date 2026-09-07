@@ -111,6 +111,7 @@ select extensions.ok(
     500,
     false,
     true,
+    true,
     repeat('a', 64),
     '{"crawlEntireDomain":true,"ignoreQueryParameters":true,"allowSubdomains":false}'::jsonb,
     '[]'::jsonb,
@@ -193,12 +194,30 @@ select extensions.throws_ok(
   $$select public.begin_listing_source_capture(
     '20000000-0000-0000-0000-000000000001', 'bad-complete-capture',
     'https://example.com/', 'website', null, 'complete', 'entire_accessible_site',
-    1, 2, 0, 1, true, false, repeat('b', 64), '{}'::jsonb,
+    1, 2, 0, 500, false, true, true, repeat('b', 64), '{}'::jsonb,
     '["page_limit_reached"]'::jsonb, 1, now(), now()
   )$$,
   '23514',
   null,
   'a page-limited or undrained crawl cannot be labeled complete'
+);
+
+select extensions.throws_ok(
+  $$select public.record_listing_seo_audit(
+    '20000000-0000-0000-0000-000000000001', null,
+    'incomplete-dataforseo-audit', 'https://example.com/', 'dfs-incomplete',
+    'complete', 500, 1, 'finished', 90, 0.0018, '{}'::jsonb, '{}'::jsonb,
+    '[]'::jsonb,
+    jsonb_build_array(jsonb_build_object(
+      'artifact_kind', 'summary', 'artifact_index', 0,
+      'content_sha256', encode(extensions.digest(convert_to('{}', 'UTF8'), 'sha256'), 'hex'),
+      'byte_count', 2, 'content_type', 'application/json', 'raw_text', '{}',
+      'parsed_payload', '{}'::jsonb
+    )), now(), now()
+  )$$,
+  'P0001',
+  'complete SEO audit requires task_post, task_status, summary, and pages artifacts',
+  'an incomplete raw response set cannot be labeled a complete SEO audit'
 );
 
 select extensions.ok(
@@ -217,18 +236,25 @@ select extensions.ok(
     '{"load_resources":true,"enable_javascript":true}'::jsonb,
     '{"onpage_score":93.5,"issues":{"duplicate_title":0}}'::jsonb,
     '[]'::jsonb,
-    jsonb_build_array(jsonb_build_object(
-      'artifact_kind', 'summary',
-      'artifact_index', 0,
-      'content_sha256', encode(
-        extensions.digest(convert_to('{"onpage_score":93.5}', 'UTF8'), 'sha256'),
-        'hex'
-      ),
-      'byte_count', octet_length(convert_to('{"onpage_score":93.5}', 'UTF8')),
-      'content_type', 'application/json',
-      'raw_text', '{"onpage_score":93.5}',
-      'parsed_payload', '{"onpage_score":93.5}'::jsonb
-    )),
+    (
+      select jsonb_agg(jsonb_build_object(
+        'artifact_kind', evidence.kind,
+        'artifact_index', 0,
+        'content_sha256', encode(
+          extensions.digest(convert_to(evidence.raw_text, 'UTF8'), 'sha256'), 'hex'
+        ),
+        'byte_count', octet_length(convert_to(evidence.raw_text, 'UTF8')),
+        'content_type', 'application/json',
+        'raw_text', evidence.raw_text,
+        'parsed_payload', evidence.raw_text::jsonb
+      ) order by evidence.kind)
+      from (values
+        ('task_post', '{"task":"created"}'),
+        ('task_status', '{"status":"finished"}'),
+        ('summary', '{"onpage_score":93.5}'),
+        ('pages', '{"pages":[{"url":"https://example.com/"}]}')
+      ) evidence(kind, raw_text)
+    ),
     '2026-09-07T12:02:00Z',
     '2026-09-07T12:03:00Z'
   ) is not null,
@@ -237,8 +263,8 @@ select extensions.ok(
 
 select extensions.is(
   (select count(*)::integer from private.listing_seo_audit_artifacts),
-  1,
-  'the SEO audit retains its content-addressed raw provider response'
+  4,
+  'the SEO audit retains every required content-addressed raw provider response'
 );
 select extensions.is(
   (select seo_audit_status from private.listing_intelligence_accounts),
@@ -275,6 +301,21 @@ select extensions.is(
 select extensions.ok(
   not has_table_privilege('anon', 'app.listing_content_intelligence_candidates', 'select'),
   'anonymous visitors cannot read unpublished intelligence candidates'
+);
+
+update app.business_listings
+set website_url = null
+where id = '20000000-0000-0000-0000-000000000001';
+
+select extensions.is(
+  (select jsonb_array_length(source_inventory) from private.listing_intelligence_accounts),
+  1,
+  'clearing the primary URL removes it while retaining the registered Yelp source'
+);
+select extensions.is(
+  (select seo_audit_status from private.listing_intelligence_accounts),
+  'not_applicable',
+  'a platform-only Listing has a terminal not-applicable SEO audit status'
 );
 
 select * from extensions.finish();
