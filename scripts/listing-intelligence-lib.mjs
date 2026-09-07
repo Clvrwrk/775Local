@@ -112,7 +112,9 @@ export function assessCaptureCompleteness({
   if (pageCount === 0) blockers.push("no_accessible_pages");
   if (failedPageCount > 0) blockers.push("page_failures");
   if (hitPageLimit) blockers.push("page_limit_reached");
-  if (!paginationDrained) blockers.push("provider_pagination_not_drained");
+  if (sourceKind === "website" && !paginationDrained) {
+    blockers.push("provider_pagination_not_drained");
+  }
   const terminalStatus =
     blockers.length === 0 ? "complete" : accessBlocked || pageCount === 0 ? "blocked" : "partial";
   return {
@@ -126,6 +128,9 @@ export function estimateListingIntelligenceBudget(
   listings,
   { websitePageLimit = 500, dataForSeoUsdPerPage = 0.0018 } = {},
 ) {
+  if (!Number.isFinite(dataForSeoUsdPerPage) || dataForSeoUsdPerPage <= 0) {
+    throw new Error("dataForSeoUsdPerPage must be a positive finite number");
+  }
   const plans = listings.map((listing) => {
     const sources = normalizeListingSources(listing);
     const firecrawlCredits = sources.reduce(
@@ -145,14 +150,21 @@ export function estimateListingIntelligenceBudget(
     listingCount: listings.length,
     sourceCount: plans.reduce((total, plan) => total + plan.sources.length, 0),
     maximumFirecrawlCredits: plans.reduce((total, plan) => total + plan.maximumFirecrawlCredits, 0),
-    maximumDataForSeoUsd: Number(
-      plans.reduce((total, plan) => total + plan.maximumDataForSeoUsd, 0).toFixed(6),
-    ),
+    maximumDataForSeoUsd:
+      Math.ceil(plans.reduce((total, plan) => total + plan.maximumDataForSeoUsd, 0) * 1e6) / 1e6,
     plans,
   };
 }
 
 export function assertSpendEnvelope(estimate, { maxFirecrawlCredits, maxDataForSeoUsd }) {
+  if (
+    !Number.isFinite(estimate.maximumFirecrawlCredits) ||
+    !Number.isFinite(estimate.maximumDataForSeoUsd) ||
+    estimate.maximumFirecrawlCredits < 0 ||
+    estimate.maximumDataForSeoUsd < 0
+  ) {
+    throw new Error("Provider estimate must contain finite non-negative maxima.");
+  }
   if (
     !Number.isFinite(maxFirecrawlCredits) ||
     maxFirecrawlCredits < estimate.maximumFirecrawlCredits

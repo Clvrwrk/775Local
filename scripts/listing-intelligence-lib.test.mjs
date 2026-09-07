@@ -102,6 +102,18 @@ test("completeness is fail-closed when the page cap or pagination prevents a ful
     }).terminalStatus,
     "complete",
   );
+  assert.deepEqual(
+    assessCaptureCompleteness({
+      sourceKind: "yelp",
+      pageCount: 1,
+      providerStatus: "completed",
+    }),
+    {
+      terminalStatus: "complete",
+      completenessBasis: "single_landing_page",
+      blockers: [],
+    },
+  );
 });
 
 test("budget planning is deterministic and execution envelopes fail closed", () => {
@@ -124,5 +136,21 @@ test("budget planning is deterministic and execution envelopes fail closed", () 
   assert.throws(
     () => assertSpendEnvelope(estimate, { maxFirecrawlCredits: 100, maxDataForSeoUsd: 0.18 }),
     /below the worst-case estimate/,
+  );
+  assert.throws(
+    () => estimateListingIntelligenceBudget([], { dataForSeoUsdPerPage: Number.NaN }),
+    /positive finite number/,
+  );
+  assert.throws(
+    () => estimateListingIntelligenceBudget([], { dataForSeoUsdPerPage: -0.01 }),
+    /positive finite number/,
+  );
+  assert.throws(
+    () =>
+      assertSpendEnvelope(
+        { maximumFirecrawlCredits: 0, maximumDataForSeoUsd: Number.NaN },
+        { maxFirecrawlCredits: 0, maxDataForSeoUsd: 0 },
+      ),
+    /finite non-negative maxima/,
   );
 });
