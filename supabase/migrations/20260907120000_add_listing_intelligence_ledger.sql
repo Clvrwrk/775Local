@@ -657,7 +657,7 @@ begin
     coalesce(requested_facts->'serviceAreas', '[]'::jsonb),
     coalesce(requested_facts->'services', '[]'::jsonb),
     coalesce(requested_facts->'keyDifferentiators', '[]'::jsonb),
-    requested_facts->'topServiceOffering',
+    nullif(requested_facts->'topServiceOffering', 'null'::jsonb),
     coalesce(requested_facts->'provenance', '{}'::jsonb),
     coalesce((requested_facts->>'completenessScore')::numeric, 0)
   )
@@ -681,7 +681,7 @@ begin
         or stored.service_areas <> coalesce(requested_facts->'serviceAreas', '[]'::jsonb)
         or stored.services <> coalesce(requested_facts->'services', '[]'::jsonb)
         or stored.key_differentiators <> coalesce(requested_facts->'keyDifferentiators', '[]'::jsonb)
-        or stored.top_service_offering is distinct from requested_facts->'topServiceOffering'
+        or stored.top_service_offering is distinct from nullif(requested_facts->'topServiceOffering', 'null'::jsonb)
         or stored.provenance <> coalesce(requested_facts->'provenance', '{}'::jsonb)
         or stored.completeness_score <> coalesce((requested_facts->>'completenessScore')::numeric, 0)
       )
@@ -862,6 +862,11 @@ begin
     ) then
       raise exception 'existing SEO audit metadata does not match';
     end if;
+    update private.listing_intelligence_accounts set
+      seo_audit_status = requested_terminal_status,
+      latest_seo_audit_id = audit_id,
+      updated_at = statement_timestamp()
+    where listing_id = requested_listing_id;
     return audit_id;
   end if;
 
