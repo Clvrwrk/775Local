@@ -1,7 +1,23 @@
 begin;
 
 create extension if not exists pgtap with schema extensions;
-select extensions.plan(57);
+select extensions.plan(59);
+
+-- A combined-schema fixture may already contain unrelated published Listings.
+-- Scope cohort counts to this synthetic source batch and verify existing rows survive.
+create temporary table unrelated_public_rows as
+select id, to_jsonb(directory) as snapshot from public.directory_listings directory;
+create temporary table unrelated_counts as select
+  (select count(*) from app.business_listings) as listings,
+  (select count(*) from app.businesses) as businesses,
+  (select count(*) from public.directory_listings) as public_listings;
+grant select on unrelated_public_rows to authenticated;
+create temporary view fixture_publication_listings with (security_invoker = true) as
+select listing.* from app.business_listings listing
+join app.publication_receipts receipt on receipt.listing_id = listing.id
+join app.listing_candidates candidate on candidate.id = receipt.candidate_id
+where candidate.batch_id = '30000000-0000-4000-8000-000000000010';
+grant select on fixture_publication_listings to authenticated;
 
 insert into app.actors (id, workos_user_id, primary_email, display_name)
 values
@@ -982,13 +998,13 @@ select extensions.is(
 );
 
 select extensions.is(
-  (select count(*)::integer from app.business_listings),
+  (select count(*)::integer from fixture_publication_listings),
   100,
   'publication creates exactly 100 canonical Business Listings'
 );
 
 select extensions.ok(
-  (select count(*) = 99 from app.businesses)
+  (select count(distinct business_id) = 99 from fixture_publication_listings)
   and exists (
     select 1
     from app.businesses business
@@ -1001,7 +1017,8 @@ select extensions.ok(
 );
 
 select extensions.is(
-  (select count(*)::integer from public.directory_listings),
+  (select count(*)::integer from public.directory_listings
+   where id in (select id from fixture_publication_listings)),
   100,
   'all and only the reviewed launch selection enters the public projection'
 );
@@ -1177,8 +1194,9 @@ select extensions.lives_ok(
 
 select extensions.ok(
   (select count(*) = 1 and bool_and(published_at is null)
-   from app.business_listings where publication_status = 'suspended')
-  and (select count(*) = 99 from public.directory_listings),
+   from fixture_publication_listings where publication_status = 'suspended')
+  and (select count(*) = 99 from public.directory_listings
+       where id in (select id from fixture_publication_listings)),
   'suspension removes exactly one Listing from the public projection'
 );
 
@@ -1214,8 +1232,9 @@ select extensions.lives_ok(
 );
 
 select extensions.ok(
-  (select count(*) = 100 from app.business_listings where publication_status = 'published')
-  and (select count(*) = 100 from public.directory_listings)
+  (select count(*) = 100 from fixture_publication_listings where publication_status = 'published')
+  and (select count(*) = 100 from public.directory_listings
+       where id in (select id from fixture_publication_listings))
   and (select count(*) = 1 from app.listing_status_transition_receipts where transition = 'restore')
   and (select count(*) = 1 from app.listing_revisions where revision_type = 'restored')
   and (select count(*) = 1 from app.audit_events where action = 'business_listing_restored')
@@ -1224,6 +1243,19 @@ select extensions.ok(
 );
 
 reset role;
+
+select extensions.ok(not exists (
+  select 1 from unrelated_public_rows original
+  left join public.directory_listings current on current.id = original.id
+  where current.id is null or to_jsonb(current) is distinct from original.snapshot
+), 'publication, suspension and restoration preserve unrelated public Listings');
+
+select extensions.ok(
+  (select count(*) from app.business_listings) = (select listings + 100 from unrelated_counts)
+  and (select count(*) from app.businesses) = (select businesses + 99 from unrelated_counts)
+  and (select count(*) from public.directory_listings) = (select public_listings + 100 from unrelated_counts),
+  'publication adds exactly the reviewed cohort without unreceipted extra Listings or Businesses'
+);
 
 select extensions.throws_ok(
   $$

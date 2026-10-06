@@ -1,21 +1,31 @@
-import type { BusinessDetail, CaseStudy } from "@/lib/directory/types";
+import type { BusinessDetail, CaseStudy, ListingPhoto } from "@/lib/directory/types";
 import { cn } from "@/lib/utils";
-import { safeWebsite } from "@/lib/directory/presentation.mjs";
+import { reviewedMediaForUrl } from "@/lib/directory/public-presentation.mjs";
 import { Stars } from "./stars";
 
-function BeforeAfter({ study, compact = false }: { study: CaseStudy; compact?: boolean }) {
+function BeforeAfter({
+  study,
+  photos,
+  logoUrl,
+  compact = false,
+}: {
+  study: CaseStudy;
+  photos: ListingPhoto[];
+  logoUrl?: string | null;
+  compact?: boolean;
+}) {
   const pairs = (
     [
       ["Before", study.beforeUrl],
       ["After", study.afterUrl],
     ] as const
   )
-    .map(([label, url]) => [label, safeWebsite(url)] as const)
-    .filter((pair): pair is readonly ["Before" | "After", string] => Boolean(pair[1]));
+    .map(([label, url]) => ({ label, photo: reviewedMediaForUrl(photos, url, logoUrl) }))
+    .filter((pair) => pair.photo);
   if (!pairs.length) return null;
   return (
     <div className="grid grid-cols-2 gap-2">
-      {pairs.map(([label, url]) => (
+      {pairs.map(({ label, photo }) => (
         <figure
           key={label}
           className={cn(
@@ -23,9 +33,16 @@ function BeforeAfter({ study, compact = false }: { study: CaseStudy; compact?: b
             compact ? "aspect-square" : "aspect-[4/3]",
           )}
         >
-          <img src={url} alt={`${label}: ${study.title}`} className="size-full object-cover" />
+          <img
+            src={photo!.url}
+            alt={`${label}: ${study.title}`}
+            className="size-full object-cover"
+          />
           <figcaption className="absolute left-2 top-2 rounded-full bg-ink/70 px-2 py-0.5 text-[11px] font-medium text-paper">
-            {label}
+            {label} ·{" "}
+            <a href={photo!.sourceUrl} target="_blank" rel="noopener noreferrer">
+              {photo!.sourceCredit}
+            </a>
           </figcaption>
         </figure>
       ))}
@@ -56,7 +73,7 @@ export function CaseStudies({ biz }: { biz: BusinessDetail }) {
         ) : null}
       </div>
       <article className="mt-4 rounded-[20px] border border-line bg-card p-4 sm:p-5">
-        <BeforeAfter study={lead} />
+        <BeforeAfter study={lead} photos={biz.photos} logoUrl={biz.logoUrl} />
         <h3 className="mt-4 font-display text-2xl font-semibold leading-tight">{lead.title}</h3>
         {facts.length ? <p className="mt-1 text-xs text-muted">{facts.join(" · ")}</p> : null}
         {lead.summary ? (
@@ -107,7 +124,7 @@ export function CaseStudies({ biz }: { biz: BusinessDetail }) {
         <div className="mt-3 grid gap-3 sm:grid-cols-3">
           {rest.map((study) => (
             <article key={study.id} className="rounded-[20px] border border-line bg-card p-3">
-              <BeforeAfter study={study} compact />
+              <BeforeAfter study={study} photos={biz.photos} logoUrl={biz.logoUrl} compact />
               <h3 className="mt-3 font-display text-xl font-semibold leading-tight">
                 {study.title}
               </h3>

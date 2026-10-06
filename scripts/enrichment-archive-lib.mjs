@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { readFile, readdir, stat } from "node:fs/promises";
 import { extname, join, relative, sep } from "node:path";
 import { normalizeDomain, normalizeResultUrl } from "./serp-enrichment-lib.mjs";
+import { visibleServices } from "../src/lib/directory/presentation.mjs";
 
 export const ACCEPTED_ENRICHMENT_FILTER_VERSION = "business-controlled-domain-v10";
 export const PROFILE_PROPOSAL_VERSION = "seed-profile-v1";
@@ -97,22 +98,18 @@ export function extractServiceCandidates(sourcePages) {
     for (const rawLine of String(page?.markdown ?? "").split("\n")) {
       if (!/^#{2,4}\s+/.test(rawLine) && !/^[-*]\s+/.test(rawLine)) continue;
       const text = cleanText(rawLine.replace(/^#{2,4}\s+|^[-*]\s+/, ""));
-      if (text.length < 4 || text.length > 90 || reject.test(text) || isBoilerplate(text)) continue;
-      if (
-        /copyright|privacy|cookie|financing|special|promotion|coupon|career|employment/i.test(text)
-      ) {
-        continue;
-      }
+      if (text.length < 4 || text.length > 90 || reject.test(text)) continue;
       const key = text.toLowerCase();
       const score = (pageUrl.includes("/service") ? 20 : 0) + (rawLine.startsWith("#") ? 10 : 0);
       if (!candidates.has(key) || candidates.get(key).score < score)
         candidates.set(key, { text, score });
     }
   }
-  return [...candidates.values()]
-    .sort((left, right) => right.score - left.score || left.text.localeCompare(right.text))
-    .slice(0, 20)
-    .map(({ text }) => text);
+  return visibleServices(
+    [...candidates.values()]
+      .sort((left, right) => right.score - left.score || left.text.localeCompare(right.text))
+      .map(({ text }) => text),
+  ).slice(0, 20);
 }
 
 export function extractServiceAreaCandidates(sourcePages) {

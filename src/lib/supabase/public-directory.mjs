@@ -31,6 +31,10 @@ const PUBLIC_COLUMNS = [
   "faqs",
   "projects",
   "photo_urls",
+  "hours_text",
+  "about_text",
+  "address_locality",
+  "service_area_names",
 ].join(",");
 
 /** @typedef {{ city?: string, category?: string, q?: string, slug?: string, featured?: boolean, unclaimed?: boolean, limit?: number, offset?: number }} DirectoryFilters */
@@ -114,6 +118,14 @@ export function mapDirectoryListing(row, names = {}) {
     : [];
   const stableId = Number(row.stable_id);
   const primaryCategorySlug = String(row.primary_category_slug ?? categories[0] ?? "");
+  // Older public views may still return private postal/geocode fields. Treat the
+  // street/privacy decision as one boundary for every public location field.
+  const street = typeof row.street_address === "string" ? row.street_address.trim() : "";
+  const publishStreet =
+    Boolean(street) &&
+    !/^service area$/i.test(street) &&
+    row.is_service_area !== true &&
+    row.hide_street !== true;
   const offer = row.offer_title
     ? {
         id: stableId,
@@ -133,12 +145,16 @@ export function mapDirectoryListing(row, names = {}) {
     name: String(row.display_name),
     tagline: String(row.tagline ?? ""),
     description: String(row.description ?? ""),
+    about: typeof row.about_text === "string" ? row.about_text : "",
     phone: String(row.phone_e164 ?? ""),
-    street: row.street_address ? String(row.street_address) : "Service area",
-    zip: String(row.postal_code ?? ""),
+    street: publishStreet ? street : "Service area",
+    zip: publishStreet ? String(row.postal_code ?? "") : "",
     rating: null,
     reviewCount: null,
-    hours: "Call or visit the business website for current hours.",
+    hours:
+      typeof row.hours_text === "string" && row.hours_text.trim()
+        ? row.hours_text.trim()
+        : "Call or visit the business website for current hours.",
     featured: row.is_featured === true,
     contentTier: ["basic", "standard", "premium"].includes(row.content_tier)
       ? row.content_tier
@@ -147,6 +163,11 @@ export function mapDirectoryListing(row, names = {}) {
     ownerVerified: Boolean(row.owner_verified_at),
     citySlug: String(row.city_slug),
     cityName: names.cityName || String(row.city_slug),
+    verifiedAddressLocality:
+      publishStreet && typeof row.address_locality === "string" ? row.address_locality : null,
+    serviceAreas: Array.isArray(row.service_area_names)
+      ? row.service_area_names.filter((v) => typeof v === "string")
+      : [],
     primaryCategory:
       names.categoryName ||
       String((row.primary_category_name ?? primaryCategorySlug) || "Local business"),
@@ -155,14 +176,23 @@ export function mapDirectoryListing(row, names = {}) {
     claimedBy: null,
     website: String(row.website_url ?? ""),
     publicEmail: false,
-    hideStreet: !row.street_address,
+    hideStreet: !publishStreet,
     coverUrl: Array.isArray(row.photo_urls) && row.photo_urls[0] ? String(row.photo_urls[0]) : null,
-    lat: row.latitude == null ? null : Number(row.latitude),
-    lng: row.longitude == null ? null : Number(row.longitude),
+    lat: !publishStreet || row.latitude == null ? null : Number(row.latitude),
+    lng: !publishStreet || row.longitude == null ? null : Number(row.longitude),
     categories: categories.map((categorySlug) => ({ slug: categorySlug, name: categorySlug })),
     services: Array.isArray(row.services) ? row.services.map(String) : [],
     faqs: Array.isArray(row.faqs) ? row.faqs : [],
-    projects: Array.isArray(row.projects) ? row.projects : [],
+    projects: Array.isArray(row.projects)
+      ? row.projects
+          .filter((p) => p && typeof p === "object" && !Array.isArray(p))
+          .map((p) => {
+            const clean = { ...p };
+            delete clean.imageUrl;
+            delete clean.image_url;
+            return clean;
+          })
+      : [],
     reviews: [],
     photos: Array.isArray(row.photo_urls)
       ? row.photo_urls.map((url, index) => ({
@@ -249,7 +279,7 @@ export async function fetchDirectoryListings(options = {}) {
   if (url.protocol !== "https:") throw new Error("Directory data is temporarily unavailable.");
 
   try {
-    const response = await (options.fetchImpl ?? fetch)(url, {
+    const init = {
       method: "GET",
       headers: {
         apikey: publishableKey,
@@ -257,11 +287,43 @@ export async function fetchDirectoryListings(options = {}) {
         Accept: "application/json",
       },
       signal: AbortSignal.timeout(5_000),
-    });
+    };
+    let usedLegacyProjection = false;
+    let response = await (options.fetchImpl ?? fetch)(url, init);
+    // One read-only compatibility retry for this forward schema only. Never
+    // disguise authorization, network or unrelated schema failures as old data.
+    if (!response.ok && response.status === 400) {
+      const error = await response
+        .clone()
+        .json()
+        .catch(() => null);
+      if (
+        (error?.code === "42703" || error?.code === "PGRST204") &&
+        /\b(hours_text|about_text|address_locality|service_area_names)\b/.test(error?.message ?? "")
+      ) {
+        const legacy = new URL(url);
+        legacy.searchParams.set(
+          "select",
+          PUBLIC_COLUMNS.split(",")
+            .filter(
+              (v) =>
+                !["hours_text", "about_text", "address_locality", "service_area_names"].includes(v),
+            )
+            .join(","),
+        );
+        usedLegacyProjection = true;
+        response = await (options.fetchImpl ?? fetch)(legacy, init);
+      }
+    }
     if (!response.ok) throw new Error("Directory data is temporarily unavailable.");
 
     const rows = await response.json();
     if (!Array.isArray(rows)) throw new Error("Directory data is temporarily unavailable.");
+    // Missing new columns do not prove that the older view checks active owner
+    // participation. Neither "Owner verified" nor "Unclaimed" is safe to infer
+    // from a historical timestamp; refuse that ambiguous fallback response.
+    if (usedLegacyProjection && rows.some((row) => row?.owner_verified_at != null))
+      throw new Error("Directory data is temporarily unavailable.");
     return rows.map((row) => mapDirectoryListing(row));
   } catch {
     throw new Error("Directory data is temporarily unavailable.");
@@ -410,5 +472,44 @@ export async function fetchListingCaseStudies(options) {
   } catch {
     // Do not leak provider messages, response bodies, credentials or listing identifiers.
     return { status: "unavailable", studies: [] };
+  }
+}
+
+/** Optional, separately reviewed public media/contact projection. Missing schema
+ * never falls back to private contacts or old uncredited image rows.
+ * @param {{listingIds: string[], env?: PublicDirectoryEnv, fetchImpl?: typeof fetch}} options
+ */
+export async function fetchPublicListingPresentation(options) {
+  if (
+    !Array.isArray(options.listingIds) ||
+    options.listingIds.length > 100 ||
+    options.listingIds.some((id) => !/^[a-f0-9-]{36}$/i.test(id))
+  )
+    return { status: "unavailable", rows: [] };
+  if (!options.listingIds.length) return { status: "available", rows: [] };
+  try {
+    const { baseUrl, publishableKey } = directoryTarget(options.env ?? process.env);
+    const url = new URL("/rest/v1/directory_listing_presentation", baseUrl);
+    if (url.protocol !== "https:") throw Error("unavailable");
+    url.searchParams.set(
+      "select",
+      "listing_id,public_email,email_source_url,email_checked_at,media",
+    );
+    url.searchParams.set("listing_id", `in.(${options.listingIds.join(",")})`);
+    const response = await (options.fetchImpl ?? fetch)(url, {
+      headers: {
+        apikey: publishableKey,
+        Authorization: `Bearer ${publishableKey}`,
+        Accept: "application/json",
+      },
+      signal: AbortSignal.timeout(1500),
+    });
+    if (!response.ok) return { status: "unavailable", rows: [] };
+    const rows = await response.json();
+    if (!Array.isArray(rows) || rows.some((row) => !options.listingIds.includes(row?.listing_id)))
+      return { status: "unavailable", rows: [] };
+    return { status: "available", rows };
+  } catch {
+    return { status: "unavailable", rows: [] };
   }
 }

@@ -15,6 +15,7 @@ import { Route as AccountRouteImport } from './routes/account'
 import { Route as CategoriesRouteImport } from './routes/categories'
 import { Route as CitiesRouteImport } from './routes/cities'
 import { Route as ClaimRouteImport } from './routes/claim'
+import { Route as InvitationRouteImport } from './routes/invitation'
 import { Route as ListYourBusinessRouteImport } from './routes/list-your-business'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as OffersRouteImport } from './routes/offers'
@@ -22,6 +23,7 @@ import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as ReviewRouteImport } from './routes/review'
+import { Route as RoadmapRouteImport } from './routes/roadmap'
 import { Route as SearchRouteImport } from './routes/search'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SpecRouteImport } from './routes/spec'
@@ -65,6 +67,11 @@ const ClaimRoute = ClaimRouteImport.update({
   path: '/claim',
   getParentRoute: () => rootRouteImport,
 } as any)
+const InvitationRoute = InvitationRouteImport.update({
+  id: '/invitation',
+  path: '/invitation',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ListYourBusinessRoute = ListYourBusinessRouteImport.update({
   id: '/list-your-business',
   path: '/list-your-business',
@@ -98,6 +105,11 @@ const RegisterRoute = RegisterRouteImport.update({
 const ReviewRoute = ReviewRouteImport.update({
   id: '/review',
   path: '/review',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RoadmapRoute = RoadmapRouteImport.update({
+  id: '/roadmap',
+  path: '/roadmap',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SearchRoute = SearchRouteImport.update({
@@ -168,6 +180,7 @@ export interface FileRoutesByFullPath {
   '/categories': typeof CategoriesRoute
   '/cities': typeof CitiesRoute
   '/claim': typeof ClaimRoute
+  '/invitation': typeof InvitationRoute
   '/list-your-business': typeof ListYourBusinessRoute
   '/login': typeof LoginRoute
   '/offers': typeof OffersRoute
@@ -175,6 +188,7 @@ export interface FileRoutesByFullPath {
   '/privacy': typeof PrivacyRoute
   '/register': typeof RegisterRoute
   '/review': typeof ReviewRoute
+  '/roadmap': typeof RoadmapRoute
   '/search': typeof SearchRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/spec': typeof SpecRoute
@@ -195,6 +209,7 @@ export interface FileRoutesByTo {
   '/categories': typeof CategoriesRoute
   '/cities': typeof CitiesRoute
   '/claim': typeof ClaimRoute
+  '/invitation': typeof InvitationRoute
   '/list-your-business': typeof ListYourBusinessRoute
   '/login': typeof LoginRoute
   '/offers': typeof OffersRoute
@@ -202,6 +217,7 @@ export interface FileRoutesByTo {
   '/privacy': typeof PrivacyRoute
   '/register': typeof RegisterRoute
   '/review': typeof ReviewRoute
+  '/roadmap': typeof RoadmapRoute
   '/search': typeof SearchRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/spec': typeof SpecRoute
@@ -223,6 +239,7 @@ export interface FileRoutesById {
   '/categories': typeof CategoriesRoute
   '/cities': typeof CitiesRoute
   '/claim': typeof ClaimRoute
+  '/invitation': typeof InvitationRoute
   '/list-your-business': typeof ListYourBusinessRoute
   '/login': typeof LoginRoute
   '/offers': typeof OffersRoute
@@ -230,6 +247,7 @@ export interface FileRoutesById {
   '/privacy': typeof PrivacyRoute
   '/register': typeof RegisterRoute
   '/review': typeof ReviewRoute
+  '/roadmap': typeof RoadmapRoute
   '/search': typeof SearchRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/spec': typeof SpecRoute
@@ -252,6 +270,7 @@ export interface FileRouteTypes {
     | '/categories'
     | '/cities'
     | '/claim'
+    | '/invitation'
     | '/list-your-business'
     | '/login'
     | '/offers'
@@ -259,6 +278,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/register'
     | '/review'
+    | '/roadmap'
     | '/search'
     | '/sitemap.xml'
     | '/spec'
@@ -279,6 +299,7 @@ export interface FileRouteTypes {
     | '/categories'
     | '/cities'
     | '/claim'
+    | '/invitation'
     | '/list-your-business'
     | '/login'
     | '/offers'
@@ -286,6 +307,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/register'
     | '/review'
+    | '/roadmap'
     | '/search'
     | '/sitemap.xml'
     | '/spec'
@@ -306,6 +328,7 @@ export interface FileRouteTypes {
     | '/categories'
     | '/cities'
     | '/claim'
+    | '/invitation'
     | '/list-your-business'
     | '/login'
     | '/offers'
@@ -313,6 +336,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/register'
     | '/review'
+    | '/roadmap'
     | '/search'
     | '/sitemap.xml'
     | '/spec'
@@ -334,6 +358,7 @@ export interface RootRouteChildren {
   CategoriesRoute: typeof CategoriesRoute
   CitiesRoute: typeof CitiesRoute
   ClaimRoute: typeof ClaimRoute
+  InvitationRoute: typeof InvitationRoute
   ListYourBusinessRoute: typeof ListYourBusinessRoute
   LoginRoute: typeof LoginRoute
   OffersRoute: typeof OffersRoute
@@ -341,6 +366,7 @@ export interface RootRouteChildren {
   PrivacyRoute: typeof PrivacyRoute
   RegisterRoute: typeof RegisterRoute
   ReviewRoute: typeof ReviewRoute
+  RoadmapRoute: typeof RoadmapRoute
   SearchRoute: typeof SearchRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   SpecRoute: typeof SpecRoute
@@ -399,6 +425,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ClaimRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/invitation': {
+      id: '/invitation'
+      path: '/invitation'
+      fullPath: '/invitation'
+      preLoaderRoute: typeof InvitationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/list-your-business': {
       id: '/list-your-business'
       path: '/list-your-business'
@@ -446,6 +479,13 @@ declare module '@tanstack/react-router' {
       path: '/review'
       fullPath: '/review'
       preLoaderRoute: typeof ReviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/roadmap': {
+      id: '/roadmap'
+      path: '/roadmap'
+      fullPath: '/roadmap'
+      preLoaderRoute: typeof RoadmapRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/search': {
@@ -542,6 +582,7 @@ const rootRouteChildren: RootRouteChildren = {
   CategoriesRoute: CategoriesRoute,
   CitiesRoute: CitiesRoute,
   ClaimRoute: ClaimRoute,
+  InvitationRoute: InvitationRoute,
   ListYourBusinessRoute: ListYourBusinessRoute,
   LoginRoute: LoginRoute,
   OffersRoute: OffersRoute,
@@ -549,6 +590,7 @@ const rootRouteChildren: RootRouteChildren = {
   PrivacyRoute: PrivacyRoute,
   RegisterRoute: RegisterRoute,
   ReviewRoute: ReviewRoute,
+  RoadmapRoute: RoadmapRoute,
   SearchRoute: SearchRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   SpecRoute: SpecRoute,

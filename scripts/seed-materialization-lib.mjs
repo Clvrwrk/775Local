@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
+import { visibleServices } from "../src/lib/directory/presentation.mjs";
 
 export const SEED_FILTER_VERSION = "business-controlled-domain-v10";
 
@@ -51,16 +52,10 @@ function services(pages) {
       if (!/^#{2,4}\s+/.test(line) && !/^[-*]\s+/.test(line)) continue;
       const value = clean(line.replace(/^#{2,4}\s+|^[-*]\s+/, ""));
       if (value.length < 4 || value.length > 80 || reject.test(value)) continue;
-      if (
-        /privacy|cookie|financing|coupon|career|employment|testimonial|toggle|scroll to top|business hours|language spoken|insurance|^address$|typed the web address|page you were looking for|refresh button|go back to homepage/i.test(
-          value,
-        )
-      )
-        continue;
       values.set(value.toLowerCase(), value);
     }
   }
-  return [...values.values()].slice(0, 12);
+  return visibleServices([...values.values()]).slice(0, 12);
 }
 
 function hours(value) {
