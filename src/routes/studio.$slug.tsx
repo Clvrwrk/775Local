@@ -1,5 +1,6 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
+import { ListingPeoplePanel } from "@/components/directory/listing-people";
 import { SiteShell } from "@/components/layout/site-shell";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -33,6 +34,7 @@ function StudioPage() {
   const [saveError, setSaveError] = useState("");
   const [saving, setSaving] = useState(false);
   const [attempt, setAttempt] = useState(0);
+  const savingLock = useRef(false);
   const pending = useRef<{ fingerprint: string; key: string } | null>(null);
   useEffect(() => {
     if (!userId) {
@@ -58,6 +60,8 @@ function StudioPage() {
   }, [userId, business.sourceId, attempt]);
   async function propose(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (savingLock.current) return;
+    savingLock.current = true;
     const form = new FormData(event.currentTarget);
     const data = {
       action: "propose",
@@ -67,6 +71,10 @@ function StudioPage() {
       description: String(form.get("description")),
       phone: String(form.get("phone")),
       website: String(form.get("website")),
+      services: String(form.get("services"))
+        .split("\n")
+        .map((x) => x.trim())
+        .filter(Boolean),
     };
     const fingerprint = JSON.stringify(data);
     if (pending.current?.fingerprint !== fingerprint)
@@ -86,6 +94,7 @@ function StudioPage() {
     } catch {
       setSaveError("Connection interrupted. Retry to confirm your submission.");
     } finally {
+      savingLock.current = false;
       setSaving(false);
     }
   }
@@ -167,6 +176,15 @@ function StudioPage() {
                     placeholder="https://your-business.com"
                   />
                 </label>
+                <label className="grid gap-2 text-sm font-medium">
+                  Services (one per line)
+                  <Textarea
+                    name="services"
+                    defaultValue={workspace.editable.services.join("\n")}
+                    maxLength={3030}
+                    placeholder="List only services your business actually provides"
+                  />
+                </label>
                 <button className="action-primary justify-self-start" disabled={saving}>
                   {saving ? "Saving…" : "Submit changes for review"}
                 </button>
@@ -197,6 +215,9 @@ function StudioPage() {
               </section>
             )}
             <section>
+              {workspace.role === "business_owner" || workspace.role === "operator" ? (
+                <ListingPeoplePanel listingId={business.sourceId} />
+              ) : null}
               <h2 className="font-display text-2xl font-semibold">Recent submissions</h2>
               <div className="mt-4 grid gap-3">
                 {workspace.proposals.length ? (

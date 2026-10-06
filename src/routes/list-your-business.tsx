@@ -1,8 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { BadgeCheck, FileCheck2, Search, ShieldCheck } from "lucide-react";
+import { ListingRequestForm } from "@/components/directory/listing-request";
+import { listCategories } from "@/lib/directory/queries";
 import { SiteShell } from "@/components/layout/site-shell";
 
 export const Route = createFileRoute("/list-your-business")({
+  loader: () => listCategories(),
   head: () => ({
     meta: [
       { title: "List your business | 775Directory" },
@@ -31,6 +34,7 @@ const steps = [
 ];
 
 function ListPage() {
+  const categories = Route.useLoaderData();
   return (
     <SiteShell wash>
       <section className="app-page px-4 py-10 sm:px-6 sm:py-16">
@@ -43,8 +47,8 @@ function ListPage() {
           </h1>
           <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-ink-soft">
             Find your existing Reno listing and start an ownership claim. Every claim is reviewed
-            before owner access is granted. New listings are not yet open for self-service
-            submission.
+            before owner access is granted. If your business is missing, submit a request for review
+            below.
           </p>
         </div>
         <div className="mx-auto mt-10 grid max-w-4xl gap-4 md:grid-cols-3">
@@ -71,6 +75,7 @@ function ListPage() {
             </p>
           </div>
         </div>
+        <ListingRequestForm categories={categories} />
         <div className="mt-8 flex justify-center">
           <Link to="/claim" search={{ q: "", city: "reno" }} className="action-primary">
             Find your business and start a claim

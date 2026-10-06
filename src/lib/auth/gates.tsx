@@ -1,6 +1,7 @@
-import { Navigate } from "@tanstack/react-router";
+import { Navigate, useLocation } from "@tanstack/react-router";
 import { useAuth } from "@workos/authkit-tanstack-react-start/client";
 import type { ReactNode } from "react";
+import { safeReturnPath } from "./policy.mjs";
 import { useCurrentUserState } from "./use-current-user";
 
 export const SIGN_IN_PATH = "/login";
@@ -17,7 +18,8 @@ export function SignedOut({ children }: { children: ReactNode }) {
 }
 
 export function RedirectToSignIn({ to = SIGN_IN_PATH }: { to?: string }) {
-  return <Navigate to={to} />;
+  const location = useLocation();
+  return <Navigate to={to} search={{ next: safeReturnPath(location.href), error: undefined }} />;
 }
 
 export function UserButton() {

@@ -23,7 +23,12 @@ test("Claim submission validates the canonical Listing id, method, and idempoten
       method: "business_domain",
       idempotencyKey: "claim-submit-1",
     }),
-    { listingId, method: "business_domain", idempotencyKey: "claim-submit-1" },
+    {
+      listingId,
+      method: "business_domain",
+      role: "business_owner",
+      idempotencyKey: "claim-submit-1",
+    },
   );
   assert.throws(
     () =>
@@ -69,6 +74,7 @@ test("Claim submission uses the WorkOS bearer token and publishable key at one R
   assert.deepEqual(JSON.parse(request.init.body), {
     requested_listing_id: listingId,
     requested_method: "storefront",
+    requested_role: "business_owner",
     requested_idempotency_key: "claim-submit-2",
   });
   assert.doesNotMatch(request.init.body, /workos\.jwt\.token|service_role/i);

@@ -41,13 +41,16 @@ export function validateClaimSubmission(input) {
     !validUuid(candidate.listingId) ||
     typeof candidate.method !== "string" ||
     !CLAIM_METHODS.has(candidate.method) ||
-    !validIdempotencyKey(candidate.idempotencyKey)
+    !validIdempotencyKey(candidate.idempotencyKey) ||
+    (candidate.role !== undefined &&
+      !["business_owner", "listing_manager"].includes(String(candidate.role)))
   ) {
     throw new Error("invalid_claim_command");
   }
   return {
     listingId: /** @type {string} */ (candidate.listingId).toLowerCase(),
     method: /** @type {string} */ (candidate.method),
+    role: candidate.role === "listing_manager" ? "listing_manager" : "business_owner",
     idempotencyKey: /** @type {string} */ (candidate.idempotencyKey),
   };
 }
@@ -87,6 +90,31 @@ export function validateClaimDecision(input) {
 
 /** @param {string} message @param {string} fallback */
 function stableErrorCode(message, fallback) {
+  if (
+    [
+      "reauth_required",
+      "review_forbidden",
+      "claim_access_forbidden",
+      "claim_not_open",
+      "open_claim_conflict",
+      "claim_scope_changed",
+      "claim_scope_invalid",
+      "current_evidence_required",
+      "independent_authority_review_required",
+      "challenge_expired_or_replayed",
+      "challenge_not_expired",
+      "participation_limit_reached",
+      "self_review_forbidden",
+      "idempotency_conflict",
+      "people_management_forbidden",
+      "invitation_unavailable",
+      "invitation_identity_mismatch",
+      "ownership_conflict_review_required",
+      "participation_exists",
+      "last_owner_protected",
+    ].includes(message)
+  )
+    return message;
   if (/recent Operator authentication/i.test(message)) return "reauth_required";
   if (/actor projection|authenticated/i.test(message)) return "authentication_required";
   if (/business domain evidence/i.test(message)) return "domain_evidence_not_established";
@@ -171,6 +199,7 @@ export async function submitListingClaim(input, options) {
     body: {
       requested_listing_id: command.listingId,
       requested_method: command.method,
+      requested_role: command.role,
       requested_idempotency_key: command.idempotencyKey,
     },
   });
@@ -209,4 +238,120 @@ export async function decideListingClaim(input, options) {
       requested_idempotency_key: command.idempotencyKey,
     },
   });
+}
+
+/** Narrow lifecycle command allowlist; server identity always comes from AuthKit.
+ * @param {unknown} input
+ */
+export function claimWorkflowCommand(input) {
+  if (!input || typeof input !== "object") throw Error("invalid_claim_command");
+  const data = /** @type {Record<string, unknown>} */ (input);
+  const tokenValid = typeof data.token === "string" && /^[a-f0-9]{64}$/.test(data.token);
+  if (data.action === "invitation" && tokenValid)
+    return { rpc: "get_listing_invitation", body: { requested_token: data.token } };
+  if (data.action === "acceptInvitation" && tokenValid)
+    return { rpc: "accept_listing_invitation", body: { requested_token: data.token } };
+  if (data.action === "people" && validUuid(data.listingId))
+    return { rpc: "get_listing_people", body: { requested_listing_id: data.listingId } };
+  if (
+    data.action === "invite" &&
+    validUuid(data.listingId) &&
+    tokenValid &&
+    validIdempotencyKey(data.key) &&
+    typeof data.email === "string" &&
+    data.email.length <= 254 &&
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email.trim()) &&
+    ["business_owner", "listing_manager", "agency_representative"].includes(String(data.role))
+  )
+    return {
+      rpc: "create_listing_invitation",
+      body: {
+        requested_listing_id: data.listingId,
+        requested_email: data.email.trim().toLowerCase(),
+        requested_role: data.role,
+        requested_token: data.token,
+        requested_key: data.key,
+      },
+    };
+  if (data.action === "revokeInvitation" && validUuid(data.invitationId))
+    return {
+      rpc: "revoke_listing_invitation",
+      body: { requested_invitation_id: data.invitationId },
+    };
+  if (
+    data.action === "revokeParticipation" &&
+    validUuid(data.participationId) &&
+    typeof data.reason === "string" &&
+    data.reason.trim().length >= 10 &&
+    data.reason.trim().length <= 500
+  )
+    return {
+      rpc: "revoke_listing_authority",
+      body: {
+        requested_participation_id: data.participationId,
+        requested_reason: data.reason.trim(),
+      },
+    };
+  if (!validUuid(data.claimId)) throw Error("invalid_claim_command");
+  const claim = { requested_claim_id: data.claimId };
+  if (data.action === "withdraw") return { rpc: "withdraw_listing_claim", body: claim };
+  if (data.action === "challenge") return { rpc: "refresh_claim_challenge", body: claim };
+  if (data.action === "reviewEvidence") return { rpc: "get_claim_review_evidence", body: claim };
+  const text = (
+    /** @type {unknown} */ value,
+    /** @type {number} */ min,
+    /** @type {number} */ max,
+  ) => typeof value === "string" && value.trim().length >= min && value.trim().length <= max;
+  if (
+    data.action === "evidence" &&
+    validUuid(data.challenge) &&
+    validIdempotencyKey(data.key) &&
+    text(data.reference, 10, 2000) &&
+    text(data.explanation, 20, 4000)
+  )
+    return {
+      rpc: "submit_claim_evidence",
+      body: {
+        ...claim,
+        requested_challenge: data.challenge,
+        requested_reference: String(data.reference).trim(),
+        requested_explanation: String(data.explanation).trim(),
+        requested_key: data.key,
+      },
+    };
+  if (
+    data.action === "assess" &&
+    validUuid(data.evidenceId) &&
+    text(data.identityBasis, 10, 2000) &&
+    text(data.authorityBasis, 10, 2000) &&
+    text(data.conflictResolution, 10, 2000) &&
+    typeof data.validUntil === "string" &&
+    Number.isFinite(Date.parse(data.validUntil)) &&
+    data.scope &&
+    typeof data.scope === "object" &&
+    !Array.isArray(data.scope)
+  )
+    return {
+      rpc: "review_claim_authority",
+      body: {
+        ...claim,
+        requested_evidence_id: data.evidenceId,
+        requested_identity_basis: String(data.identityBasis).trim(),
+        requested_authority_basis: String(data.authorityBasis).trim(),
+        requested_conflict_resolution: String(data.conflictResolution).trim(),
+        requested_valid_until: data.validUntil,
+        requested_scope: data.scope,
+      },
+    };
+  throw Error("invalid_claim_command");
+}
+/** @param {unknown} input @param {ClaimOptions} options */
+export async function runClaimWorkflow(input, options) {
+  let command;
+  try {
+    command = claimWorkflowCommand(input);
+  } catch {
+    return { ok: false, code: "invalid_claim_command" };
+  }
+  return callClaimRpc({ ...options, ...command });
 }

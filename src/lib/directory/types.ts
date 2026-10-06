@@ -29,6 +29,7 @@ export type BusinessCard = {
   name: string;
   tagline: string;
   description: string;
+  about?: string;
   phone: string;
   street: string;
   zip: string;
@@ -41,6 +42,9 @@ export type BusinessCard = {
   ownerVerified: boolean;
   citySlug: string;
   cityName: string;
+  /** Independently reviewed physical locality; never inferred from discovery city. */
+  verifiedAddressLocality?: string | null;
+  serviceAreas?: string[];
   primaryCategory: string;
   primaryCategorySlug: string;
   categorySlugs: string[];
@@ -48,6 +52,9 @@ export type BusinessCard = {
   claimedBy: null;
   website: string;
   publicEmail: boolean;
+  publicEmailAddress?: string;
+  publicEmailSourceUrl?: string | null;
+  logoUrl?: string | null;
   hideStreet: boolean;
   coverUrl: string | null;
   informationCheckedAt: string | null;
@@ -56,7 +63,10 @@ export type BusinessCard = {
 };
 
 export type ListingPhoto = {
-  id: number;
+  id: number | string;
+  kind?: string;
+  sourceUrl?: string;
+  sourceCredit?: string;
   url: string;
   caption: string;
   sortOrder: number;

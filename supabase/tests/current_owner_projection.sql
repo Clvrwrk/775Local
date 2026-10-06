@@ -1,0 +1,30 @@
+begin;
+create extension if not exists pgtap with schema extensions;
+select extensions.no_plan();
+insert into app.actors(id,workos_user_id,primary_email) values('e1000000-0000-4000-8000-000000000001','projection-owner','owner@fixture.example');
+insert into app.businesses(id,canonical_name) values('e2000000-0000-4000-8000-000000000001','Synthetic Current Owner');
+insert into app.business_listings(id,business_id,current_slug,display_name,city_slug,postal_code,hide_street,publication_status,published_at,owner_verified_at)
+values('e3000000-0000-4000-8000-000000000001','e2000000-0000-4000-8000-000000000001','current-owner-fixture','Synthetic Current Owner','reno','89502',true,'published',statement_timestamp(),statement_timestamp());
+set local role anon;
+select extensions.ok((select owner_verified_at is null from public.directory_listings where current_slug='current-owner-fixture'),'historical owner timestamp alone is not a current public verification');
+reset role;
+insert into app.listing_participations(id,actor_id,listing_id,role,status,starts_at,expires_at)
+values('e4000000-0000-4000-8000-000000000001','e1000000-0000-4000-8000-000000000001','e3000000-0000-4000-8000-000000000001','business_owner','active',statement_timestamp()-interval '1 day',statement_timestamp()+interval '7 days');
+set local role anon;
+select extensions.ok((select owner_verified_at is not null from public.directory_listings where current_slug='current-owner-fixture'),'current active owner retains reviewed owner verification');
+reset role;
+update app.listing_participations set expires_at=statement_timestamp()-interval '1 second' where id='e4000000-0000-4000-8000-000000000001';
+set local role anon;
+select extensions.ok((select owner_verified_at is null from public.directory_listings where current_slug='current-owner-fixture'),'expired owner authority disappears from public projection');
+reset role;
+update app.listing_participations set expires_at=statement_timestamp()+interval '7 days' where id='e4000000-0000-4000-8000-000000000001';
+update app.actors set status='suspended' where id='e1000000-0000-4000-8000-000000000001';
+set local role anon;
+select extensions.ok((select owner_verified_at is null from public.directory_listings where current_slug='current-owner-fixture'),'suspended owner identity cannot retain public owner verification');
+reset role;
+update app.actors set status='active' where id='e1000000-0000-4000-8000-000000000001';
+update app.listing_participations set status='revoked',revoked_at=statement_timestamp() where id='e4000000-0000-4000-8000-000000000001';
+set local role anon;
+select extensions.ok((select owner_verified_at is null from public.directory_listings where current_slug='current-owner-fixture'),'revoked owner authority disappears from public projection');
+select * from extensions.finish();
+rollback;

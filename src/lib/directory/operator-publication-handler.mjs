@@ -4,6 +4,15 @@ import {
   reviewListingCandidate,
   transitionListingPublicationState,
 } from "../supabase/operator-publication.mjs";
+import {
+  listingPresentationSnapshot,
+  applyReviewedListingPresentation,
+} from "../supabase/listing-presentation.mjs";
+import {
+  listingCorrectionSnapshot,
+  applyReviewedListingCorrection,
+  rollbackReviewedListingCorrection,
+} from "../supabase/listing-corrections.mjs";
 
 /**
  * @typedef {{ok: boolean, code?: string, receipt?: any}} OperatorCommandResult
@@ -50,4 +59,26 @@ export function handlePublishLaunchSelection(input, options) {
  */
 export function handleListingPublicationTransition(input, options) {
   return runAuthenticatedCommand(input, transitionListingPublicationState, options);
+}
+
+/** @param {unknown} input @param {HandlerOptions} [options] */
+export function handleListingCorrectionSnapshot(input, options) {
+  return runAuthenticatedCommand(input, listingCorrectionSnapshot, options);
+}
+/** @param {unknown} input @param {HandlerOptions} [options] */
+export function handleApplyReviewedListingCorrection(input, options) {
+  return runAuthenticatedCommand(input, applyReviewedListingCorrection, options);
+}
+/** @param {unknown} input @param {HandlerOptions} [options] */
+export function handleRollbackReviewedListingCorrection(input, options) {
+  return runAuthenticatedCommand(input, rollbackReviewedListingCorrection, options);
+}
+
+/** @param {unknown} input @param {HandlerOptions} [options] */
+export function handleListingPresentationSnapshot(input, options) {
+  return runAuthenticatedCommand(input, listingPresentationSnapshot, options);
+}
+/** @param {unknown} input @param {HandlerOptions} [options] */
+export function handleApplyReviewedListingPresentation(input, options) {
+  return runAuthenticatedCommand(input, applyReviewedListingPresentation, options);
 }
