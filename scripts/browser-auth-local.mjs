@@ -11,15 +11,20 @@ try {
         ? route.continue()
         : route.abort(),
     );
+    await page.goto("http://127.0.0.1:8080/account");
+    await page.getByRole("heading", { name: "Join the 775" }).waitFor();
+    assert.equal(new URL(page.url()).searchParams.get("next"), "/account");
     await page.goto("http://127.0.0.1:8080/login?next=%2Fstudio%2Ffixture-shop");
     await page.getByRole("link", { name: "Continue with email or Google" }).click();
     await page.getByRole("alert").filter({ hasText: "Sign-in is not configured" }).waitFor();
     assert.equal(new URL(page.url()).searchParams.get("next"), "/studio/fixture-shop");
+    await page.evaluate(() => document.fonts.ready);
+    await page.screenshot({ path: `artifacts/browser/login-${width}.png`, fullPage: true });
     assert.equal(
       await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1),
       true,
     );
-    results.push({ width, unconfiguredSignIn: "fails_closed", returnPath: "preserved" });
+    results.push({ width, anonymousAccountRedirect: "pass", unconfiguredSignIn: "fails_closed", returnPath: "preserved" });
     await page.close();
   }
   writeFileSync(

@@ -173,7 +173,16 @@ The principal proof is not traffic. It is qualified Leads delivered reliably, ac
 
 ### Authentication and authorization
 
-- WorkOS AuthKit supports email magic code and Google only. Business Owners and Agency Representatives enter through Claim or invitation. Operators are invitation-only. Residents do not authenticate.
+October 9 scope update: optional regular user accounts and a private personal profile builder
+are now included, superseding the earlier exclusion of resident authentication. The same
+WorkOS identity supports regular users and Business Owners. Profiles contain a display name,
+optional city and introduction; their contents are private and remain separate from the
+provider-owned verified identity, Business Listing, Claim, Participation and Operator Grant.
+Profile creation/editing must persist across refresh and relogin, reject forged authority
+fields, enforce cross-user isolation, and handle repeated requests and stale edits safely.
+No favorites, marketing subscription or other resident feature is implied.
+
+- WorkOS AuthKit supports email magic code and Google only. Regular users may sign in to build their private profile. Business Owners and Agency Representatives may also enter through Claim or invitation. Operators are invitation-only. Residents may browse without authenticating.
 - Standard hosted AuthKit is used; no paid custom domain, enterprise SSO, or Directory Sync is enabled.
 - One Local775 WorkOS application has staging and production environments. Maximum session is seven days, inactivity timeout 24 hours, access token duration five minutes.
 - The initial Operator allowlist contains only `chussey@aia4.io`. Operator authority requires a separately recorded manual grant.
@@ -254,7 +263,7 @@ The principal proof is not traffic. It is qualified Leads delivered reliably, ac
 - Self-service Featured checkout, automated subscription management UI, prorations, refunds, and complex plan changes.
 - Physical Direct Mail fulfillment and paid Virtual Mail campaigns.
 - Convex.
-- Resident accounts or saved favorites.
+- Saved favorites.
 - Public Local775 first-party reviews or rating collection.
 - Paid Google reviews/photos/maps/geocoding, Google Ads, or unrelated Maps APIs.
 - WorkOS custom auth domain, enterprise SSO, Directory Sync, or Business organization mirroring.

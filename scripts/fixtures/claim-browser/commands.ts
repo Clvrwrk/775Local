@@ -20,6 +20,7 @@ export async function submitListingClaim({ data }) {
   return { ok: true, receipt };
 }
 export async function claimWorkflow({ data }) {
+  if (data.action === "people") return { ok: true, receipt: { participants: [], invitations: [] } };
   window.__calls.push(data);
   await new Promise((resolve) => setTimeout(resolve, 150));
   if (data.action === "evidence" && window.__fixture.interruptEvidence) {
@@ -58,6 +59,62 @@ export async function decideListingClaim({ data }) {
   return { ok: false, code: "independent_authority_review_required" };
 }
 export async function pilotCommand({ data }) {
+  if (data.action === "account")
+    return {
+      ok: true,
+      receipt: {
+        listings: window.__fixture.owner
+          ? [
+              {
+                id: "b1000000-0000-4000-8000-000000000001",
+                slug: "fixture-shop",
+                name: "Synthetic Reno Shop",
+                role: window.__fixture.role ?? "business_owner",
+              },
+            ]
+          : [],
+        claims: [],
+        canReview: false,
+      },
+    };
+  if (data.action === "workspace") {
+    if (!window.__fixture.owner || data.id !== "b1000000-0000-4000-8000-000000000001")
+      return { ok: false, code: "listing_access_forbidden" };
+    return {
+      ok: true,
+      receipt: {
+        role: window.__fixture.role ?? "business_owner",
+        canEdit: window.__fixture.role !== "lead_recipient",
+        editable: {
+          name: "Synthetic Reno Shop",
+          description: "Synthetic reviewed business description.",
+          phone: "+17755550100",
+          website: "https://fixture.example",
+          baseVersion: "2026-09-30T00:00:00Z",
+          services: ["Synthetic repair"],
+        },
+        proposals: JSON.parse(localStorage.getItem("fixture-proposals") ?? "[]"),
+      },
+    };
+  }
+  if (data.action === "propose") {
+    window.__calls.push(data);
+    await new Promise((resolve) => setTimeout(resolve, 150));
+    if (!window.__fixture.owner) return { ok: false, code: "listing_access_forbidden" };
+    if (window.__fixture.interruptProposal) {
+      window.__fixture.interruptProposal = false;
+      throw Error("Synthetic interruption");
+    }
+    if (window.__fixture.staleProposal)
+      return { ok: false, code: "listing_changed_since_proposal" };
+    if (!data.phone.match(/^(\+1)?7755550100$/) || !data.website.startsWith("https://"))
+      return { ok: false, code: "invalid_studio_command" };
+    const proposals = JSON.parse(localStorage.getItem("fixture-proposals") ?? "[]");
+    if (!proposals.some((p) => p.id === data.key))
+      proposals.push({ id: data.key, status: "pending_review", payload: data });
+    localStorage.setItem("fixture-proposals", JSON.stringify(proposals));
+    return { ok: true, receipt: {} };
+  }
   if (data.action === "requests")
     return { ok: true, receipt: window.__fixture.requestStatuses ?? [] };
   if (data.action === "requestReview")
@@ -144,4 +201,40 @@ export async function createListing({ data }) {
 }
 export async function listCategories() {
   return [{ id: 1, slug: "handyman", name: "Handyman" }];
+}
+export async function getBusiness({ data }) {
+  return {
+    sourceId:
+      data === "fixture-shop"
+        ? "b1000000-0000-4000-8000-000000000001"
+        : "b1000000-0000-4000-8000-000000000002",
+    name: "Synthetic Reno Shop",
+    slug: data,
+  };
+}
+export async function personProfile({ data }) {
+  const storage = `fixture-profile-${window.__fixture.actorId ?? "fixture-actor"}`;
+  if (data.action === "get")
+    return { ok: true, receipt: JSON.parse(localStorage.getItem(storage) ?? "null") };
+  window.__calls.push(data);
+  await new Promise((resolve) => setTimeout(resolve, 150));
+  const current = JSON.parse(localStorage.getItem(storage) ?? "null");
+  if (current?.key !== data.key && (current?.version ?? 0) !== data.version)
+    return { ok: false, code: "profile_changed" };
+  if (current?.key !== data.key)
+    localStorage.setItem(
+      storage,
+      JSON.stringify({
+        displayName: data.displayName,
+        city: data.city,
+        bio: data.bio,
+        version: data.version + 1,
+        key: data.key,
+      }),
+    );
+  if (window.__fixture.interruptProfile) {
+    window.__fixture.interruptProfile = false;
+    throw Error("Synthetic response lost after save");
+  }
+  return { ok: true, receipt: JSON.parse(localStorage.getItem(storage)) };
 }
