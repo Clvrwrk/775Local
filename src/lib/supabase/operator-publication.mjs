@@ -2,6 +2,11 @@ const OPERATOR_RPCS = Object.freeze({
   review: "review_listing_candidate",
   publish: "publish_launch_selection",
   transition: "transition_listing_publication_state",
+  correctionSnapshot: "listing_correction_snapshot",
+  correction: "apply_reviewed_listing_correction",
+  correctionRollback: "rollback_reviewed_listing_correction",
+  presentationSnapshot: "listing_presentation_snapshot",
+  presentation: "apply_reviewed_listing_presentation",
 });
 
 const UUID_PATTERN = /^[a-f0-9]{8}-[a-f0-9]{4}-[1-5][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i;
@@ -114,6 +119,39 @@ export function validateListingPublicationTransitionInput(input) {
 
 /** @param {string} message */
 function errorCode(message) {
+  if (
+    [
+      "reauth_required",
+      "correction_forbidden",
+      "invalid_listing_presentation",
+      "presentation_listing_unavailable",
+      "presentation_identity_conflict",
+      "presentation_changed_since_review",
+      "presentation_public_contact_evidence_required",
+      "presentation_source_identity_conflict",
+      "presentation_evidence_expired",
+      "presentation_media_limit",
+      "presentation_media_evidence_required",
+      "presentation_duplicate_media",
+      "presentation_approved_asset_required",
+      "invalid_listing_correction",
+      "correction_content_review_required",
+      "correction_clear_only_field",
+      "invalid_correction_provenance",
+      "correction_identity_conflict",
+      "correction_source_identity_conflict",
+      "correction_evidence_expired",
+      "invalid_correction_unknown",
+      "correction_address_not_public",
+      "correction_address_evidence_required",
+      "listing_changed_since_correction",
+      "correction_receipt_unavailable",
+      "correction_listing_unavailable",
+      "correction_already_rolled_back",
+      "idempotency_conflict",
+    ].includes(message)
+  )
+    return message;
   if (/recent Operator authentication is required/i.test(message)) return "reauth_required";
   if (/idempotency key was already used/i.test(message)) return "idempotency_conflict";
   if (
@@ -127,11 +165,15 @@ function errorCode(message) {
 /**
  * @param {{rpc: string, body: Record<string, any>, accessToken: string, env?: NodeJS.ProcessEnv, fetchImpl?: typeof fetch}} options
  */
-async function callOperatorRpc({ rpc, body, accessToken, env = process.env, fetchImpl = fetch }) {
+export async function callOperatorRpc({
+  rpc,
+  body,
+  accessToken,
+  env = process.env,
+  fetchImpl = fetch,
+}) {
   if (
-    (rpc !== OPERATOR_RPCS.review &&
-      rpc !== OPERATOR_RPCS.publish &&
-      rpc !== OPERATOR_RPCS.transition) ||
+    !Object.values(OPERATOR_RPCS).some((allowed) => allowed === rpc) ||
     typeof accessToken !== "string" ||
     !accessToken
   ) {

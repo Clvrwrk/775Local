@@ -132,7 +132,7 @@ const cardBase =
 
 function CardPhoto({ url }: { url: string | null }) {
   return url ? (
-    <img src={url} alt="" loading="lazy" className="size-full object-cover" />
+    <img src={url} alt="" loading="lazy" className="size-full bg-white object-contain p-2" />
   ) : (
     <div className="flex size-full min-h-20 items-center justify-center bg-paper-2 p-2 text-center text-xs text-muted">
       Photo not supplied

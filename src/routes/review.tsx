@@ -6,6 +6,8 @@ import { RedirectToSignIn } from "@/lib/auth/gates";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { pilotCommand, type PilotReview } from "@/lib/directory/studio";
 import { retryIdentity } from "@/lib/directory/retry-key.mjs";
+import { ListingRequestReview } from "@/components/directory/listing-request-review";
+import { ClaimAuthorityReview } from "@/components/directory/claim-authority-review";
 import { decideListingClaim } from "@/lib/directory/claims";
 export const Route = createFileRoute("/review")({
   head: () => ({
@@ -87,17 +89,24 @@ function ReviewPage() {
                       {claim.method.replaceAll("_", " ")} · {claim.status.replaceAll("_", " ")}
                     </p>
                     <p className="mt-3 text-sm text-muted">
-                      Approval requires current domain evidence or privately reviewed proof.
-                      Submission alone grants no ownership.
+                      Approval requires independently verified identity, this exact listing and the
+                      requested role. Submission alone grants no ownership.
                     </p>
                     <p className="mt-3 break-all text-sm">Requester: {claim.claimantEmail}</p>
                     <p className="mt-2 text-sm text-muted">
                       {claim.domainMatches
-                        ? "Current business-domain match confirmed. Review the listing identity before deciding."
-                        : "Domain evidence is not established. Private proof review must be completed before approval."}
+                        ? "A matching domain is a contact hint only; it grants no authority."
+                        : "Independent authority evidence must be reviewed before approval."}
                     </p>
+                    <p className="mt-2 text-sm">
+                      Requested role: {claim.requestedRole.replaceAll("_", " ")}
+                    </p>
+                    <ClaimAuthorityReview
+                      claimId={claim.id}
+                      onSaved={() => setAttempt((x) => x + 1)}
+                    />
                     <DecisionForm
-                      allowApprove={claim.domainMatches}
+                      allowApprove={claim.readyForApproval}
                       kind="claim"
                       id={claim.id}
                       onSaved={() => setAttempt((x) => x + 1)}
@@ -106,6 +115,35 @@ function ReviewPage() {
                 ))
               ) : (
                 <p className="text-muted">No pending ownership claims.</p>
+              )}
+            </div>
+            <h2 className="mt-8 font-display text-2xl font-semibold">New listing requests</h2>
+            <p className="mt-3 text-sm text-muted">
+              Check for duplicate locations and verify public business details before publication.
+              Publication and business authority remain separate.
+            </p>
+            <div className="mt-4 grid gap-4">
+              {queue.requests?.length ? (
+                queue.requests.map((request) => (
+                  <article key={request.id} className="rounded-2xl border border-line bg-card p-6">
+                    <h3 className="font-semibold">{request.payload.name}</h3>
+                    <p className="mt-2 text-sm">{request.payload.description}</p>
+                    <p className="mt-2 text-sm">
+                      Reno {request.payload.zip} · {request.payload.categorySlug} ·{" "}
+                      {request.payload.phone}
+                    </p>
+                    <p className="mt-2 break-all text-sm">{request.payload.website}</p>
+                    <p className="mt-3 text-xs text-muted">
+                      Request {request.id} · Publication review pending
+                    </p>
+                    <ListingRequestReview
+                      id={request.id}
+                      onSaved={() => setAttempt((x) => x + 1)}
+                    />
+                  </article>
+                ))
+              ) : (
+                <p className="text-muted">No new listing requests.</p>
               )}
             </div>
             <h2 className="mt-8 font-display text-2xl font-semibold">Business details</h2>
@@ -123,6 +161,12 @@ function ReviewPage() {
                         <dt className="text-muted">Description</dt>
                         <dd className="whitespace-pre-wrap">{proposal.payload.description}</dd>
                       </div>
+                      {proposal.payload.services ? (
+                        <div>
+                          <dt className="text-muted">Services</dt>
+                          <dd>{proposal.payload.services.join(", ") || "None"}</dd>
+                        </div>
+                      ) : null}
                       <div>
                         <dt className="text-muted">Phone</dt>
                         <dd>{proposal.payload.phone}</dd>
@@ -162,9 +206,12 @@ function DecisionForm({
 }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const lock = useRef(false);
   const pending = useRef<{ fingerprint: string; key: string } | null>(null);
   async function decide(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (lock.current) return;
+    lock.current = true;
     const form = new FormData(event.currentTarget);
     const decision = String(form.get("decision"));
     const reason = String(form.get("reason")).trim();
@@ -190,6 +237,7 @@ function DecisionForm({
     } catch {
       setError("Connection interrupted. Retry to confirm this decision.");
     } finally {
+      lock.current = false;
       setBusy(false);
     }
   }

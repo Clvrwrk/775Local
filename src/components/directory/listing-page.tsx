@@ -8,7 +8,12 @@ import {
   visibleProjects,
   descriptionBlocks,
 } from "@/lib/directory/presentation.mjs";
-import { serializeStructuredData } from "@/lib/directory/structured-data.mjs";
+import {
+  serializeStructuredData,
+  listingLocationStructuredData,
+  listingPublicLocationLabel,
+} from "@/lib/directory/structured-data.mjs";
+import { publicEmailHref, reviewedMediaForUrl } from "@/lib/directory/public-presentation.mjs";
 import { formatPhone } from "@/lib/utils";
 import { BrandMark } from "@/components/brand/logo";
 import { SiteShell } from "@/components/layout/site-shell";
@@ -59,10 +64,7 @@ function Details({ biz, basic = false }: { biz: BusinessDetail; basic?: boolean 
     >
       <dl className="listing-details">
         <dt>{showStreet ? "Address" : "Service area"}</dt>
-        <dd>
-          {showStreet ? `${biz.street}, ` : ""}
-          {biz.cityName}, NV {biz.zip}
-        </dd>
+        <dd>{listingPublicLocationLabel(biz)}</dd>
         {phone ? (
           <>
             <dt>Phone</dt>
@@ -85,6 +87,24 @@ function Details({ biz, basic = false }: { biz: BusinessDetail; basic?: boolean 
             </dd>
           </>
         ) : null}
+        {publicEmailHref(biz.email) ? (
+          <>
+            <dt>Email</dt>
+            <dd>
+              <a href={publicEmailHref(biz.email)!}>{biz.email}</a>
+              {safeWebsite(biz.publicEmailSourceUrl) ? (
+                <a
+                  className="ml-2 text-xs underline"
+                  href={biz.publicEmailSourceUrl!}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Public source
+                </a>
+              ) : null}
+            </dd>
+          </>
+        ) : null}
         <dt>Category</dt>
         <dd>{biz.primaryCategory}</dd>
         <dt>Serving</dt>
@@ -96,12 +116,12 @@ function Details({ biz, basic = false }: { biz: BusinessDetail; basic?: boolean 
 
 function Location({ biz }: { biz: BusinessDetail }) {
   const showStreet = !biz.hideStreet && biz.street && biz.street !== "Service area";
-  const address = `${showStreet ? `${biz.street}, ` : ""}${biz.cityName}, NV`;
+  const address = listingPublicLocationLabel(biz);
   const map = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
   return (
     <div className="listing-location">
       <BrandMark className="size-9 opacity-60" />
-      <p>{showStreet ? address : `Serving ${biz.cityName}, Nevada`}</p>
+      <p>{address}</p>
       <a href={map} target="_blank" rel="noopener noreferrer">
         <MapPin size={15} strokeWidth={1.75} />
         {showStreet ? "View location on map" : "Explore the service area"}
@@ -142,7 +162,8 @@ function About({ biz }: { biz: BusinessDetail }) {
     <Panel title="About">
       <div className="listing-prose">
         {descriptionBlocks(
-          biz.description ||
+          biz.about ||
+            biz.description ||
             `${biz.name} is listed for ${biz.primaryCategory.toLowerCase()} in ${biz.cityName}. Contact the business for current service details.`,
         ).map((paragraph, i) => (
           <p key={i}>{paragraph}</p>
@@ -191,7 +212,7 @@ function Services({ biz }: { biz: BusinessDetail }) {
 function PremiumContent({ biz }: { biz: BusinessDetail }) {
   const projects = visibleProjects(biz.projects).map((project) => ({
     ...project,
-    imageUrl: safeWebsite(project.imageUrl),
+    reviewedImage: reviewedMediaForUrl(biz.photos, project.imageUrl, biz.logoUrl),
   }));
   return (
     <>
@@ -215,7 +236,20 @@ function PremiumContent({ biz }: { biz: BusinessDetail }) {
           <div className="listing-projects">
             {projects.map((project, i) => (
               <article key={i}>
-                {project.imageUrl ? <img src={project.imageUrl} alt="" loading="lazy" /> : null}
+                {project.reviewedImage ? (
+                  <figure>
+                    <img src={project.reviewedImage.url} alt={project.title} loading="lazy" />
+                    <figcaption>
+                      <a
+                        href={project.reviewedImage.sourceUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        {project.reviewedImage.sourceCredit}
+                      </a>
+                    </figcaption>
+                  </figure>
+                ) : null}
                 <h3>{project.title}</h3>
                 {project.description ? <p>{project.description}</p> : null}
               </article>
@@ -229,28 +263,46 @@ function PremiumContent({ biz }: { biz: BusinessDetail }) {
 }
 
 export function ListingPage({ biz }: { biz: BusinessDetail }) {
-  const cover = safeWebsite(biz.coverUrl);
+  const logo = safeWebsite(biz.logoUrl);
+  const logoPhoto = biz.photos.find((photo) => photo.kind === "logo");
   const basic = biz.contentTier === "basic";
   const premium = biz.contentTier === "premium";
-  const showStreet = !biz.hideStreet && biz.street && biz.street !== "Service area";
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "LocalBusiness",
     name: biz.name,
     ...(biz.description ? { description: biz.description } : {}),
     ...(biz.phone ? { telephone: biz.phone } : {}),
+    ...(publicEmailHref(biz.email) ? { email: biz.email } : {}),
+    ...(logo ? { logo } : {}),
     ...(safeWebsite(biz.website) ? { url: biz.website } : {}),
-    address: {
-      "@type": "PostalAddress",
-      ...(showStreet ? { streetAddress: biz.street } : {}),
-      addressLocality: biz.cityName,
-      addressRegion: "NV",
-      ...(biz.zip ? { postalCode: biz.zip } : {}),
-    },
-    ...(!showStreet ? { areaServed: `${biz.cityName}, Nevada` } : {}),
+    ...listingLocationStructuredData({
+      street: biz.street,
+      hideStreet: biz.hideStreet,
+      cityName: biz.cityName,
+      zip: biz.zip,
+      verifiedAddressLocality: biz.verifiedAddressLocality,
+      serviceAreas: biz.serviceAreas,
+    }),
   };
   const heading = (
     <div className="listing-heading-copy">
+      {logo ? (
+        <figure className="mb-5">
+          <img
+            src={logo}
+            alt={`${biz.name} logo`}
+            className="h-24 max-w-64 rounded-xl bg-white p-3 object-contain"
+          />
+          {logoPhoto?.sourceCredit && safeWebsite(logoPhoto.sourceUrl) ? (
+            <figcaption className="mt-1 text-xs">
+              <a href={logoPhoto.sourceUrl} target="_blank" rel="noopener noreferrer">
+                {logoPhoto.sourceCredit}
+              </a>
+            </figcaption>
+          ) : null}
+        </figure>
+      ) : null}
       <p className="listing-eyebrow">
         {biz.primaryCategory} · {biz.cityName}, NV
       </p>
@@ -299,10 +351,14 @@ export function ListingPage({ biz }: { biz: BusinessDetail }) {
         </div>
         {premium ? (
           <header className="listing-premium-hero">
-            {cover ? <img className="listing-hero-photo" src={cover} alt="" /> : null}
             <div className="listing-container listing-hero-inner">
               {heading}
-              <ContactActions phone={biz.phone} website={biz.website} sponsored={biz.featured} />
+              <ContactActions
+                phone={biz.phone}
+                website={biz.website}
+                email={biz.email}
+                sponsored={biz.featured}
+              />
             </div>
           </header>
         ) : null}
@@ -314,7 +370,12 @@ export function ListingPage({ biz }: { biz: BusinessDetail }) {
                 <span className="listing-tier-label">
                   {basic ? "Basic listing" : "Standard listing"}
                 </span>
-                <ContactActions phone={biz.phone} website={biz.website} sponsored={biz.featured} />
+                <ContactActions
+                  phone={biz.phone}
+                  website={biz.website}
+                  email={biz.email}
+                  sponsored={biz.featured}
+                />
               </div>
             </header>
           ) : null}
@@ -325,6 +386,8 @@ export function ListingPage({ biz }: { biz: BusinessDetail }) {
             <div className="listing-stack">
               {basic ? (
                 <>
+                  <About biz={biz} />
+                  <Services biz={biz} />
                   <Details biz={biz} basic />
                   <Hours biz={biz} />
                   <Claim biz={biz} />
@@ -374,7 +437,6 @@ export function ListingPage({ biz }: { biz: BusinessDetail }) {
                       Listing content and owner verification are separate.
                     </p>
                   </Panel>
-                  {biz.description ? <About biz={biz} /> : null}
                 </>
               ) : (
                 <>

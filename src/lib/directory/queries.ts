@@ -1,3 +1,5 @@
+import { runAuthenticated } from "./claim-handler.mjs";
+import { runStudioCommand } from "../supabase/studio-commands.mjs";
 import { createServerFn } from "@tanstack/react-start";
 import { pilotFilters, categoryForQuery } from "@/lib/directory/pilot.mjs";
 import { CATEGORIES, CITIES } from "@/data/seed";
@@ -5,7 +7,9 @@ import {
   fetchDirectoryCategories,
   fetchDirectoryListings,
   fetchListingCaseStudies,
+  fetchPublicListingPresentation,
 } from "@/lib/supabase/public-directory.mjs";
+import { attachPublicPresentation, reviewedMediaForUrl } from "./public-presentation.mjs";
 import type {
   BusinessCard,
   BusinessDetail,
@@ -67,7 +71,10 @@ function enrichCard(raw: Record<string, unknown>): BusinessCard {
 
 async function fetchCards(filters: DirectoryFilters = {}): Promise<BusinessCard[]> {
   const rows = await fetchDirectoryListings({ filters: pilotFilters(filters) });
-  return rows.map((row) => enrichCard(row));
+  const presentation = await fetchPublicListingPresentation({
+    listingIds: rows.map((row) => row.sourceId),
+  });
+  return attachPublicPresentation(rows, presentation.rows).map((row) => enrichCard(row));
 }
 
 function ownerAccessUnavailable<T>(): T {
@@ -165,7 +172,7 @@ export const getBusiness = createServerFn({ method: "GET" })
     if (!card) return null;
     return {
       ...card,
-      email: "",
+      email: card.publicEmailAddress ?? "",
       lat: (card as BusinessCard & { lat?: number | null }).lat ?? null,
       lng: (card as BusinessCard & { lng?: number | null }).lng ?? null,
       categories: card.categorySlugs.map((categorySlug) => ({
@@ -178,7 +185,21 @@ export const getBusiness = createServerFn({ method: "GET" })
       faqs: (card as BusinessCard & { faqs?: BusinessDetail["faqs"] }).faqs ?? [],
       projects: (card as BusinessCard & { projects?: BusinessDetail["projects"] }).projects ?? [],
       offer: (card as BusinessCard & { offer?: BusinessDetail["offer"] }).offer ?? null,
-      caseStudies: caseStudies.studies,
+      caseStudies: caseStudies.studies.map((study) => ({
+        ...study,
+        beforeUrl:
+          reviewedMediaForUrl(
+            (card as BusinessCard & { photos?: BusinessDetail["photos"] }).photos ?? [],
+            study.beforeUrl,
+            card.logoUrl,
+          )?.url ?? null,
+        afterUrl:
+          reviewedMediaForUrl(
+            (card as BusinessCard & { photos?: BusinessDetail["photos"] }).photos ?? [],
+            study.afterUrl,
+            card.logoUrl,
+          )?.url ?? null,
+      })),
       caseStudiesStatus: caseStudies.status,
     } satisfies BusinessDetail;
   });
@@ -205,18 +226,14 @@ export const submitLead = createServerFn({ method: "POST" })
   .handler(async () => ownerAccessUnavailable<{ ok: true }>());
 
 export const createListing = createServerFn({ method: "POST" })
-  .validator(
-    (input: {
-      name: string;
-      citySlug: string;
-      categorySlug: string;
-      phone: string;
-      street: string;
-      zip: string;
-      description: string;
-    }) => input,
-  )
-  .handler(async () => ownerAccessUnavailable<{ slug: string }>());
+  .validator((input: unknown) => input)
+  .handler(
+    ({ data }) =>
+      runAuthenticated(data, runStudioCommand) as Promise<
+        | { ok: true; receipt: { id: string; status: "pending_review"; idempotent: boolean } }
+        | { ok: false; code: string }
+      >,
+  );
 
 export const myListings = createServerFn({ method: "GET" }).handler(
   async () => [] as BusinessCard[],

@@ -1,0 +1,204 @@
+{
+  "format": 1,
+  "targetProjectRef": "dpxeldzunfxmjahgvjhm",
+  "sourceCommit": "cbf6c8ddd060e274bae662ca6f54f2da41eca58d",
+  "baselineLedger": [
+    {
+      "version": "20260824180136",
+      "name": "remote_schema",
+      "sqlSha256": "8cec567d53f9f17868c7110b48d17212e1ba8db897f513aee36e287f0016335d"
+    },
+    {
+      "version": "20260824194926",
+      "name": "initial_directory_foundation",
+      "sqlSha256": "db4e377ff0f949c73c72db37133076759b50aa37799c5286f4ca26d05f5c0d69"
+    },
+    {
+      "version": "20260824195114",
+      "name": "fix_public_projection_policies",
+      "sqlSha256": "7bcce0df19070286360e1415f6e72b7a22540a1b208a94dc7a16303d0c4b46f1"
+    },
+    {
+      "version": "20260824195357",
+      "name": "fix_rls_identity_recursion",
+      "sqlSha256": "4a0c5c794e1488196d371f399ce98712f3ccdb9d74512dc2ee0a5dbbe32387c6"
+    },
+    {
+      "version": "20260824201427",
+      "name": "add_launch_corpus_review",
+      "sqlSha256": "fcfff38896db146c0791f760f2ac12981d6bd64576e2a4815cb17db43b6388f4"
+    },
+    {
+      "version": "20260824201611",
+      "name": "add_private_import_rpcs",
+      "sqlSha256": "deceb389946a700b60920315e8601e9661692db8710f931e6c74f5f458a75033"
+    },
+    {
+      "version": "20260824202000",
+      "name": "add_source_batch_status",
+      "sqlSha256": "5f541f2c043bd103294549270498e11a904921842cdd48d2511b0b80daec89ad"
+    },
+    {
+      "version": "20260824202344",
+      "name": "seed_launch_categories",
+      "sqlSha256": "e28b3beb8d668ff5e0ef329be415fabf73f4a1280f3670af97c8cb80bf95dc68"
+    },
+    {
+      "version": "20260824202507",
+      "name": "add_candidate_import_rpcs",
+      "sqlSha256": "9ccc46dd528cb4171e2d43211770d72a3bf3fcab7fcfa8e23eac744ba82e3057"
+    },
+    {
+      "version": "20260824203213",
+      "name": "add_candidate_fk_indexes",
+      "sqlSha256": "ae92bd6956433e2cf1f66503d52b1664e46aae673bcba321153c2aa98b002a50"
+    },
+    {
+      "version": "20260824210505",
+      "name": "add_workos_identity_projection",
+      "sqlSha256": "0b8dcad2f027664f38271e847de5085ec0eca7e34d0cd6d67b7ed19350da9555"
+    },
+    {
+      "version": "20260826212821",
+      "name": "add_enrichment_archive",
+      "sqlSha256": "32508105cb294702e241fae2ec75e0c9bc1ca4c2ed86fb2147f6e4bcf276fd32"
+    },
+    {
+      "version": "20260827060401",
+      "name": "fix_enrichment_snapshot_status",
+      "sqlSha256": "73ab1462f9432c187cb03745e84f344c1b986640d831d49cd4616adbde236a55"
+    },
+    {
+      "version": "20260830160344",
+      "name": "preview_require_clean_review_for_launch_selection",
+      "sqlSha256": "500d929288086176d1dba8f1106369517e16380a0ea5beaaa93070192fdfce8f"
+    },
+    {
+      "version": "20260830160350",
+      "name": "preview_add_candidate_screening_reconciliation",
+      "sqlSha256": "0147d0c6e81817ebf39ed59b7e1a8ac30d52c416a6674b45b1fe6b585e0175bc"
+    },
+    {
+      "version": "20260830160355",
+      "name": "preview_lock_listing_candidate_mutations",
+      "sqlSha256": "bf3994b7960aa089ec25633427fca22485da7d2095e67b7ef1e5c762ba234c07"
+    },
+    {
+      "version": "20260830160402",
+      "name": "preview_add_operator_publication_commands",
+      "sqlSha256": "8f41ad5f8c0319f547b5da371fa7b73979abdc798a7d83378e2803712a4cbe5b"
+    },
+    {
+      "version": "20260830160409",
+      "name": "preview_add_content_tiers_and_category_counts",
+      "sqlSha256": "fc11900137a8e5fb1663e846e328413c6c9ab4c68c4e4b19751ba48fd183ff7a"
+    },
+    {
+      "version": "20260830161939",
+      "name": "add_serp_seed_publication_receipts",
+      "sqlSha256": "65b8b7f43ca4b70bbeb8ac88669ff74b51cbdd96a0d6a18d73469795c9b20437"
+    },
+    {
+      "version": "20260830162858",
+      "name": "harden_serp_seed_idempotency_preview",
+      "sqlSha256": "e42e60d9d219bb40686fde22d92d13d8df44b6244197c18ade2bdb80c67099e1"
+    },
+    {
+      "version": "20260830163633",
+      "name": "finalize_serp_seed_publication_preview",
+      "sqlSha256": "b382b15a900ae87997f1e793c462795797c01ffb68bebf8219d83651232eadf9"
+    },
+    {
+      "version": "20260908063439",
+      "name": "add_listing_intelligence_ledger",
+      "sqlSha256": "506a4f51607e2f465d88df32102c18378688d8c544873d510b9131a843146ad5"
+    },
+    {
+      "version": "20260908072331",
+      "name": "normalize_listing_fact_json_null",
+      "sqlSha256": "738ea92f1fb4349dee598119745c79beba8a03de67813267f736c98bc4f25b89"
+    },
+    {
+      "version": "20260908171528",
+      "name": "add_chunked_intelligence_page_ingestion",
+      "sqlSha256": "329520b8f2e46dfe1f75e04e26ac33b2a2247b5b3d9829bf066a31aed064da8c"
+    },
+    {
+      "version": "20260908173726",
+      "name": "add_intelligence_foreign_key_indexes",
+      "sqlSha256": "8776b09ac9bf92405b494d74ea2dedc9c8ae0860a04733c3081354b42c7988f2"
+    },
+    {
+      "version": "20260908174025",
+      "name": "reconcile_listing_intelligence_accounts",
+      "sqlSha256": "216bfa2f2bd979a627c1ab3ae42690aca168a9bede0adf9f9ee49071016e6335"
+    },
+    {
+      "version": "20260908174146",
+      "name": "fix_listing_intelligence_reconciliation",
+      "sqlSha256": "cb7660c3159529f0aa2efda13e0f5836e7bbc7d8e6e595a3a7b03eaffec8e92b"
+    }
+  ],
+  "changes": [
+    {
+      "source": "supabase/migrations/20260831120000_add_claim_commands_and_listing_manager.sql",
+      "sourceSha256": "115332d129d2657ba4007a7bab87028410ae034fe43cfd7a7cd0cc85c4235142",
+      "forwardVersion": "20260930160000",
+      "forwardName": "forward_claim_launch_add_claim_commands_and_listing_manager"
+    },
+    {
+      "source": "supabase/migrations/20260902120000_add_brand_assets_and_case_studies.sql",
+      "sourceSha256": "87c739ad05e986ab44e5a3a4d5a03d99c273fb47c9bb9bb832f2ef9da07b25e2",
+      "forwardVersion": "20260930160001",
+      "forwardName": "forward_claim_launch_add_brand_assets_and_case_studies"
+    },
+    {
+      "source": "supabase/migrations/20260904233000_add_reno_studio_commands.sql",
+      "sourceSha256": "062a7fd3a6976d3911771e79f19daaa26df0cea67f2bbde3e4827e7bed7a0735",
+      "forwardVersion": "20260930160002",
+      "forwardName": "forward_claim_launch_add_reno_studio_commands"
+    },
+    {
+      "source": "supabase/migrations/20260905001000_add_reno_inquiry_intake.sql",
+      "sourceSha256": "518bcb3c769cef402cf10b0f898a4226b1197b5686eb7bc3b2d2799cef392ae4",
+      "forwardVersion": "20260930160003",
+      "forwardName": "forward_claim_launch_add_reno_inquiry_intake"
+    },
+    {
+      "source": "supabase/migrations/20260930120000_harden_claim_authority.sql",
+      "sourceSha256": "7128453e36a55de31d1f3b9b88d480b5280e0581d38e92963dd6b9f95c12018d",
+      "forwardVersion": "20260930160004",
+      "forwardName": "forward_claim_launch_harden_claim_authority"
+    },
+    {
+      "source": "supabase/migrations/20260930121000_add_scoped_listing_invitations.sql",
+      "sourceSha256": "d6397335fa47282eea7ca829d58e9f7dc4402879bc6076344d9127c0d84405ab",
+      "forwardVersion": "20260930160005",
+      "forwardName": "forward_claim_launch_add_scoped_listing_invitations"
+    },
+    {
+      "source": "supabase/migrations/20260930122000_add_listing_requests_and_evidence_retention.sql",
+      "sourceSha256": "7b839cd4906a296cbb4ffc8869d1c29cae474b5482a455975b4405c20b4aafc2",
+      "forwardVersion": "20260930160006",
+      "forwardName": "forward_claim_launch_add_listing_requests_and_evidence_retention"
+    },
+    {
+      "source": "supabase/migrations/20260930123000_extend_reviewed_studio_services.sql",
+      "sourceSha256": "486ae9ef3646ada9015459024af258818f60c035a3a30769825e01cfe4fc2b9c",
+      "forwardVersion": "20260930160007",
+      "forwardName": "forward_claim_launch_extend_reviewed_studio_services"
+    },
+    {
+      "source": "supabase/migrations/20260930130000_add_synthetic_claim_proof_jobs.sql",
+      "sourceSha256": "5abb5b29ca0b28a99d2aa1a4cfc1a84b23881a311152ac807583fd7e10f22484",
+      "forwardVersion": "20260930160008",
+      "forwardName": "forward_claim_launch_add_synthetic_claim_proof_jobs"
+    },
+    {
+      "source": "supabase/migrations/20260930131000_add_manual_listing_request_publication.sql",
+      "sourceSha256": "1711ea4e406d58bd609a92c21f5238a252315e77ab808ea1db5613b784803fc3",
+      "forwardVersion": "20260930160009",
+      "forwardName": "forward_claim_launch_add_manual_listing_request_publication"
+    }
+  ]
+}

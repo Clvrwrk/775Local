@@ -1,0 +1,44 @@
+{
+  "format": 1,
+  "targetProjectRef": "dpxeldzunfxmjahgvjhm",
+  "candidateBaseCommit": "92966e5e1f93bb3d3ab1ac93897febad7b56796c",
+  "historicalPackage": "release/preview-claims/manifest.json",
+  "supplements": [
+    {
+      "source": "supabase/migrations/20260930170000_add_private_directory_feedback.sql",
+      "sourceSha256": "0b24d5b69a36c9f0ab5d34f02c93bcbdf1b4d017738862b0e5f484e70a330917",
+      "version": "20260930170000",
+      "name": "add_private_directory_feedback"
+    },
+    {
+      "source": "supabase/migrations/20261003141500_preserve_reviewed_listing_hours.sql",
+      "sourceSha256": "fbee57f450d486fc94e0c65017f17c79b814992e4ed22ea7931d91eb43306c54",
+      "version": "20261003141500",
+      "name": "preserve_reviewed_listing_hours"
+    },
+    {
+      "source": "supabase/migrations/20261003160000_add_reviewed_listing_corrections.sql",
+      "sourceSha256": "31c2ec8a3836886b5294dfc9d56aa4f9a407953e0b301c2a82eb8bb8136c8763",
+      "version": "20261003160000",
+      "name": "add_reviewed_listing_corrections"
+    },
+    {
+      "source": "supabase/migrations/20261005182500_add_reviewed_listing_presentation.sql",
+      "sourceSha256": "3acd096404fdd4bf60cbe055417ec1050857121d79697cf7c9b08a6f751cfd67",
+      "version": "20261005182500",
+      "name": "add_reviewed_listing_presentation"
+    },
+    {
+      "source": "supabase/migrations/20261005190500_preserve_independent_reviewed_copy.sql",
+      "sourceSha256": "f28b90a90585656f1e93ecd723cc7e1e42ef3b5a809ba4ab41ab29da737664d3",
+      "version": "20261005190500",
+      "name": "preserve_independent_reviewed_copy"
+    },
+    {
+      "source": "supabase/migrations/20261009140000_add_private_person_profiles.sql",
+      "sourceSha256": "0cec9bbf88f8dbd7219905aa9508d2c2323ffea4a36872c1ddb27e55db5edda9",
+      "version": "20261009140000",
+      "name": "add_private_person_profiles"
+    }
+  ]
+}

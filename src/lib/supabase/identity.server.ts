@@ -26,6 +26,7 @@ export async function syncWorkosActor(user: User) {
     body: JSON.stringify({
       requested_workos_user_id: user.id,
       requested_primary_email: user.email,
+      requested_email_verified: user.emailVerified === true,
       requested_display_name: [user.firstName, user.lastName].filter(Boolean).join(" ") || null,
     }),
     signal: AbortSignal.timeout(10_000),

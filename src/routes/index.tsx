@@ -3,6 +3,7 @@ import { ArrowRight, BadgeCheck, MapPin } from "lucide-react";
 import { BusinessCardView } from "@/components/directory/business-card";
 import { OfferTile } from "@/components/directory/offer-card";
 import { SearchBox } from "@/components/directory/search-box";
+import { FeedbackActions } from "@/components/directory/roadmap";
 import { SiteShell } from "@/components/layout/site-shell";
 import { categoryIcon } from "@/lib/directory/icons";
 import { listActiveOffers } from "@/lib/directory/package";
@@ -79,6 +80,12 @@ function Home() {
         </div>
       </section>
 
+      <section className="app-page px-4 py-6 sm:px-6" aria-labelledby="feedback-heading">
+        <h2 id="feedback-heading" className="mb-4 font-display text-2xl font-semibold">
+          Make the directory more useful.
+        </h2>
+        <FeedbackActions />
+      </section>
       <section className="app-page px-4 py-10 sm:px-6 sm:py-14" aria-labelledby="services-heading">
         <div className="flex items-end justify-between gap-4">
           <div>

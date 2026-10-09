@@ -7,11 +7,17 @@ export const Route = createFileRoute("/api/auth/sign-in")({
     handlers: {
       GET: async ({ request }) => {
         if (!isWorkosServerConfigured(process.env)) {
-          return Response.redirect(new URL("/login?error=not_configured", request.url), 307);
+          const failed = new URL("/login", request.url);
+          failed.searchParams.set("error", "not_configured");
+          failed.searchParams.set(
+            "next",
+            safeReturnPath(new URL(request.url).searchParams.get("returnPathname")),
+          );
+          return Response.redirect(failed, 307);
         }
         const requested = new URL(request.url).searchParams.get("returnPathname");
         const returnPathname = safeReturnPath(requested);
-        const url = await getSignInUrl({ data: { returnPathname } });
+        const url = await getSignInUrl({ data: { returnPathname, prompt: "login", maxAge: 0 } });
         return new Response(null, { status: 307, headers: { Location: url } });
       },
     },
