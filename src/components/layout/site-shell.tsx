@@ -13,7 +13,7 @@ function AuthSlot() {
       <div className="flex items-center gap-2">
         <Link
           to="/account"
-          className="hidden h-10 items-center rounded-full px-3 text-sm font-medium text-ink-soft hover:bg-paper-2 sm:inline-flex"
+          className="inline-flex h-10 items-center rounded-full px-3 text-sm font-medium text-ink-soft hover:bg-paper-2"
         >
           Account
         </Link>

@@ -10,6 +10,7 @@ const fixture = resolve(root, "scripts/fixtures/claim-browser");
 const server = await createServer({
   configFile: false,
   root,
+  cacheDir: resolve(root, "node_modules/.vite-claim-fixture"),
   plugins: [tailwind(), react()],
   resolve: {
     alias: [
@@ -20,6 +21,7 @@ const server = await createServer({
       },
       { find: "@/lib/directory/claims", replacement: resolve(fixture, "commands.ts") },
       { find: "@/lib/directory/studio", replacement: resolve(fixture, "commands.ts") },
+      { find: "@/lib/directory/profile", replacement: resolve(fixture, "commands.ts") },
       { find: "@/lib/directory/queries", replacement: resolve(fixture, "commands.ts") },
       { find: "@", replacement: resolve(root, "src") },
     ],
@@ -58,6 +60,7 @@ try {
       const p = await context.newPage();
       await p.addInitScript((state) => {
         window.__fixture = state;
+        if (localStorage.getItem("fixture-signed-out") === "true") window.__fixture.user = false;
       }, state);
       await p.goto("http://127.0.0.1:8093" + path);
       return p;
@@ -235,6 +238,172 @@ try {
     await status.getByRole("link", { name: "View published listing" }).waitFor();
     assert.equal(await status.getByRole("link", { name: "Open Studio" }).count(), 0);
     await status.close();
+    const profile = await pageFor(
+      { user: true, actorId: "profile-a", interruptProfile: true },
+      "/account",
+    );
+    await profile.getByLabel("Display name").fill("Synthetic Neighbor");
+    await profile.getByLabel("City (optional)").selectOption("reno");
+    await profile.getByLabel("Introduction (optional)").fill("Synthetic private introduction.");
+    await profile.getByRole("button", { name: "Save profile", exact: true }).dblclick();
+    await profile
+      .getByText("Connection interrupted. Retry the same details", { exact: false })
+      .waitFor();
+    await profile.getByRole("button", { name: "Save profile", exact: true }).click();
+    await profile.getByText("Your private profile is saved.").waitFor();
+    const profileCalls = await profile.evaluate(() =>
+      window.__calls.filter((x) => x.action === "save"),
+    );
+    assert.equal(profileCalls.length, 2);
+    assert.equal(
+      profileCalls[0].key,
+      profileCalls[1].key,
+      "response-loss retry retains profile key",
+    );
+    await profile.reload();
+    await profile.evaluate(() => {
+      window.__fixture.interruptProfile = false;
+    });
+    await profile.getByLabel("Display name").waitFor();
+    assert.equal(await profile.getByLabel("Display name").inputValue(), "Synthetic Neighbor");
+    assert.equal(
+      await profile.getByLabel("Introduction (optional)").inputValue(),
+      "Synthetic private introduction.",
+    );
+    assert.equal(
+      await profile.getByText("No active listing access yet.", { exact: false }).count(),
+      1,
+    );
+    const secondSession = await pageFor({ user: true, actorId: "profile-a" }, "/account");
+    await secondSession.getByLabel("Display name").waitFor();
+    assert.equal(await secondSession.getByLabel("Display name").inputValue(), "Synthetic Neighbor");
+    await profile.getByLabel("Display name").fill("Updated Synthetic Neighbor");
+    await profile.getByRole("button", { name: "Save profile", exact: true }).click();
+    await profile.getByText("Your private profile is saved.").waitFor();
+    await secondSession.getByLabel("Display name").fill("Stale Neighbor");
+    await secondSession.getByRole("button", { name: "Save profile", exact: true }).click();
+    await secondSession
+      .getByText("Your profile changed in another session.", { exact: false })
+      .waitFor();
+    await secondSession.getByRole("button", { name: "Reload profile" }).click();
+    await secondSession.waitForFunction(
+      () => document.querySelector('[name="displayName"]')?.value === "Updated Synthetic Neighbor",
+    );
+    await secondSession.close();
+    await profile.getByRole("button", { name: "Sign out", exact: true }).click();
+    await profile.getByRole("heading", { name: "Join the 775" }).waitFor();
+    assert.equal(await profile.getByLabel("Display name").count(), 0);
+    await profile.evaluate(() => localStorage.removeItem("fixture-signed-out"));
+    await profile.goto("http://127.0.0.1:8093/account");
+    await profile.getByLabel("Display name").waitFor();
+    assert.equal(
+      await profile.getByLabel("Display name").inputValue(),
+      "Updated Synthetic Neighbor",
+    );
+    await profile.evaluate(() => {
+      window.__fixture.actorId = "profile-b";
+      window.__fixture.interruptProfile = false;
+      window.dispatchEvent(new Event("fixture-identity"));
+    });
+    await profile.waitForFunction(
+      () => document.querySelector('[name="displayName"]')?.value === "Fixture Manager",
+    );
+    assert.equal(await profile.getByLabel("Introduction (optional)").inputValue(), "");
+    await profile.getByLabel("Display name").fill("");
+    await profile.getByRole("button", { name: "Save profile", exact: true }).click();
+    assert.equal(await profile.getByLabel("Display name").evaluate((x) => x.validity.valueMissing), true);
+    await profile.getByLabel("Display name").fill("Second Synthetic Neighbor");
+    await profile.getByLabel("Display name").focus();
+    await profile.keyboard.press("Tab");
+    assert.equal(await profile.getByLabel("City (optional)").evaluate((x) => x === document.activeElement), true);
+    await profile.keyboard.press("Tab");
+    assert.equal(await profile.getByLabel("Introduction (optional)").evaluate((x) => x === document.activeElement), true);
+    await profile.keyboard.press("Tab");
+    assert.equal(await profile.getByRole("button", { name: "Save profile", exact: true }).evaluate((x) => x === document.activeElement), true);
+    await profile.keyboard.press("Enter");
+    await profile.getByText("Your private profile is saved.").waitFor();
+    assert.equal(
+      await profile.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1),
+      true,
+    );
+    await profile.evaluate(async () => { document.activeElement?.blur(); window.scrollTo(0, 0); await document.fonts.ready; });
+    await profile.screenshot({
+      path: `artifacts/browser/profile-${viewport.width}.png`,
+      fullPage: true,
+    });
+    await profile.close();
+    const owner = await pageFor({ user: true, owner: true, interruptProposal: true }, "/account");
+    await owner.getByRole("link", { name: /Synthetic Reno Shop/ }).click();
+    await owner.getByLabel("Business name", { exact: true }).fill("Synthetic Updated Shop");
+    await owner.getByLabel("Business phone", { exact: true }).fill("invalid");
+    await owner.getByRole("button", { name: "Submit changes for review" }).click();
+    await owner.getByText("Connection interrupted. Retry to confirm", { exact: false }).waitFor();
+    await owner.getByRole("button", { name: "Submit changes for review" }).click();
+    await owner.getByText("Check the business name, description", { exact: false }).waitFor();
+    await owner.getByLabel("Business phone", { exact: true }).fill("+17755550100");
+    await owner
+      .getByLabel("About your business")
+      .fill("Synthetic edited business profile for review.");
+    await owner
+      .getByLabel("Services (one per line)")
+      .fill("Synthetic repair\nSynthetic maintenance");
+    await owner.getByRole("button", { name: "Submit changes for review" }).dblclick();
+    await owner.getByText("Changes saved for review.", { exact: false }).waitFor();
+    await owner.getByText("Pending review", { exact: false }).waitFor();
+    const publicListing = await pageFor({ user: false }, "/biz/fixture-shop");
+    await publicListing
+      .getByRole("heading", { name: "Synthetic Reno Shop", exact: true })
+      .waitFor();
+    assert.equal(
+      await publicListing.getByText("Synthetic Updated Shop").count(),
+      0,
+      "pending proposal remains private",
+    );
+    await publicListing.close();
+    await owner.reload();
+    await owner.getByText("Pending review", { exact: false }).waitFor();
+    await owner.screenshot({
+      path: `artifacts/browser/studio-${viewport.width}.png`,
+      fullPage: true,
+    });
+    assert.equal(
+      await owner.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1),
+      true,
+    );
+    await owner.close();
+    for (const state of [{ user: true }, { user: true, owner: true }]) {
+      const denied = await pageFor(
+        state,
+        state.owner ? "/studio/other-shop" : "/studio/fixture-shop",
+      );
+      await denied
+        .getByText("Your account does not have the required listing permission.", { exact: false })
+        .waitFor();
+      assert.equal(
+        await denied.getByRole("button", { name: "Submit changes for review" }).count(),
+        0,
+      );
+      await denied.close();
+    }
+    const manager = await pageFor(
+      { user: true, owner: true, role: "listing_manager", staleProposal: true },
+      "/studio/fixture-shop",
+    );
+    await manager.getByLabel("Business name", { exact: true }).waitFor();
+    assert.equal(await manager.getByRole("heading", { name: "Listing participants" }).count(), 0);
+    await manager.getByRole("button", { name: "Submit changes for review" }).click();
+    await manager.getByText("This listing changed. Reload Studio", { exact: false }).waitFor();
+    await manager.close();
+    const recipient = await pageFor(
+      { user: true, owner: true, role: "lead_recipient" },
+      "/studio/fixture-shop",
+    );
+    await recipient.getByRole("heading", { name: "Recipient access" }).waitFor();
+    assert.equal(
+      await recipient.getByRole("button", { name: "Submit changes for review" }).count(),
+      0,
+    );
+    await recipient.close();
     await context.close();
     results.push({
       viewport,
@@ -251,6 +420,14 @@ try {
       duplicateAndPermissionBlock: "pass",
       publicationRetry: "pass",
       requesterStatus: "pass",
+      privateProfileCreateEditRefresh: "pass",
+      profileResponseLossReplay: "pass",
+      profileSecondSessionAndStaleEdit: "pass",
+      syntheticLogoutReloginAndIdentityIsolation: "pass",
+      ownerPortalReviewPersistence: "pass",
+      studioValidationAndCrossOwnerDenial: "pass",
+      managerAndRecipientLeastPrivilege: "pass",
+      profileKeyboardAndRequiredValidation: "pass",
     });
   }
   writeFileSync(

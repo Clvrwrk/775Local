@@ -27,6 +27,23 @@ export const Route = createFileRoute("/studio/$slug")({
 function StudioPage() {
   const { business } = Route.useLoaderData();
   const { user, isPending } = useCurrentUserState();
+  if (!isPending && !user) return <RedirectToSignIn />;
+  if (!user)
+    return (
+      <SiteShell>
+        <p role="status" className="app-page p-6">
+          Checking sign-in…
+        </p>
+      </SiteShell>
+    );
+  return <StudioSession key={`${user.id}:${business.sourceId}`} business={business} />;
+}
+function StudioSession({
+  business,
+}: {
+  business: NonNullable<Awaited<ReturnType<typeof getBusiness>>>;
+}) {
+  const { user } = useCurrentUserState();
   const userId = user?.id;
   const [workspace, setWorkspace] = useState<PilotWorkspace | null>(null);
   const [error, setError] = useState("");
@@ -36,6 +53,13 @@ function StudioPage() {
   const [attempt, setAttempt] = useState(0);
   const savingLock = useRef(false);
   const pending = useRef<{ fingerprint: string; key: string } | null>(null);
+  const alive = useRef(true);
+  useEffect(() => {
+    alive.current = true;
+    return () => {
+      alive.current = false;
+    };
+  }, []);
   useEffect(() => {
     if (!userId) {
       setWorkspace(null);
@@ -84,6 +108,7 @@ function StudioPage() {
     setSaveError("");
     try {
       const result = await pilotCommand({ data: { ...data, key: pending.current.key } });
+      if (!alive.current) return;
       if (result.ok) {
         setMessage(
           "Changes saved for review. Your public listing remains unchanged until approval.",
@@ -92,13 +117,12 @@ function StudioPage() {
         setAttempt((x) => x + 1);
       } else setSaveError(studioFeedback(result.code));
     } catch {
-      setSaveError("Connection interrupted. Retry to confirm your submission.");
+      if (alive.current) setSaveError("Connection interrupted. Retry to confirm your submission.");
     } finally {
       savingLock.current = false;
-      setSaving(false);
+      if (alive.current) setSaving(false);
     }
   }
-  if (!isPending && !user) return <RedirectToSignIn />;
   return (
     <SiteShell wash>
       <section className="app-page px-4 py-10 sm:px-6">

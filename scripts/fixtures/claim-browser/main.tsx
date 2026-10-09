@@ -12,6 +12,8 @@ import { Route as Invitation } from "../../../src/routes/invitation";
 import { Route as Review } from "../../../src/routes/review";
 import { Route as Login } from "../../../src/routes/login";
 import { Route as ListingRequest } from "../../../src/routes/list-your-business";
+import { Route as Account } from "../../../src/routes/account";
+import { Route as Studio } from "../../../src/routes/studio.$slug";
 import "../../../src/styles.css";
 window.__calls = [];
 const root = createRootRoute({ component: () => <Outlet /> });
@@ -36,12 +38,9 @@ const invitation = Invitation.update({ getParentRoute: () => root, path: "/invit
 const review = Review.update({ getParentRoute: () => root, path: "/review" });
 const login = Login.update({ getParentRoute: () => root, path: "/login" });
 const request = ListingRequest.update({ getParentRoute: () => root, path: "/list-your-business" });
-const account = createRoute({
-  getParentRoute: () => root,
-  path: "/account",
-  component: () => <h1>Fixture account</h1>,
-});
-const routeTree = root.addChildren([biz, invitation, review, login, request, account]);
+const account = Account.update({ getParentRoute: () => root, path: "/account" });
+const studio = Studio.update({ getParentRoute: () => root, path: "/studio/$slug" });
+const routeTree = root.addChildren([biz, invitation, review, login, request, account, studio]);
 createRoot(document.getElementById("root")!).render(
   <RouterProvider router={createRouter({ routeTree })} />,
 );

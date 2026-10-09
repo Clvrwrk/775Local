@@ -1,14 +1,15 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { SiteShell } from "@/components/layout/site-shell";
+import { PersonProfileBuilder } from "@/components/directory/person-profile";
 import { RedirectToSignIn } from "@/lib/auth/gates";
-import { useCurrentUserState } from "@/lib/auth/use-current-user";
+import { useCurrentUserState, type AppUser } from "@/lib/auth/use-current-user";
 import { pilotCommand, type PilotAccount } from "@/lib/directory/studio";
 
 export const Route = createFileRoute("/account")({
   head: () => ({
     meta: [
-      { title: "Your Reno listings | 775Directory" },
+      { title: "Your account | 775Directory" },
       { name: "robots", content: "noindex, nofollow" },
     ],
   }),
@@ -16,7 +17,19 @@ export const Route = createFileRoute("/account")({
 });
 function AccountPage() {
   const { user, isPending } = useCurrentUserState();
-  const userId = user?.id;
+  if (!isPending && !user) return <RedirectToSignIn />;
+  if (!user)
+    return (
+      <SiteShell>
+        <p role="status" className="app-page p-6">
+          Checking sign-in…
+        </p>
+      </SiteShell>
+    );
+  return <AccountSession key={user.id} user={user} />;
+}
+function AccountSession({ user }: { user: AppUser }) {
+  const userId = user.id;
   const [account, setAccount] = useState<PilotAccount | null>(null);
   const [error, setError] = useState("");
   const [attempt, setAttempt] = useState(0);
@@ -42,15 +55,15 @@ function AccountPage() {
       active = false;
     };
   }, [userId, attempt]);
-  if (!isPending && !user) return <RedirectToSignIn />;
   return (
     <SiteShell wash>
       <section className="app-page px-4 py-10 sm:px-6">
         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-teal">Your account</p>
         <h1 className="mt-2 font-display text-4xl font-semibold">Your place in Reno.</h1>
         <p className="mt-3 text-muted">
-          Manage approved listing access and follow your claim reviews.
+          Build your personal profile, manage approved listing access and follow your claim reviews.
         </p>
+        {user ? <PersonProfileBuilder key={user.id} displayName={user.displayName} /> : null}
         {error ? (
           <div role="alert" className="mt-6 rounded-2xl border border-line bg-card p-5">
             <p>{error}</p>
