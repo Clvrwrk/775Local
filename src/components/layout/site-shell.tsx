@@ -105,9 +105,8 @@ export function SiteShell({
       </a>
       <header className="sticky top-0 z-30 border-b border-line/70 bg-paper/90 backdrop-blur-xl">
         <div className="mx-auto flex h-[4.5rem] max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
-          <Link to="/" className="shrink-0" aria-label="775Directory home">
-            <BrandLogo className="hidden w-[11.5rem] sm:block" />
-            <BrandMark className="size-10 sm:hidden" />
+          <Link to="/" className="site-brand" aria-label="775Directory home">
+            <BrandLogo className="site-brand-logo" />
           </Link>
           <nav className="hidden items-center gap-1 lg:flex" aria-label="Primary navigation">
             <Link to="/nv/$city" params={{ city: "reno" }} className={navClass}>
