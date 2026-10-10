@@ -15,10 +15,14 @@ export function BrandMark({ className, dark = false }: { className?: string; dar
 export function BrandLogo({ className, dark = false }: { className?: string; dark?: boolean }) {
   return (
     <img
-      src={dark ? "/brand/775directory-lockup-horizontal-dark.svg" : "/brand/775directory-lockup-horizontal.svg"}
+      src={
+        dark
+          ? "/brand/775directory-lockup-horizontal-dark.svg"
+          : "/brand/775directory-lockup-horizontal.svg"
+      }
       alt="775Directory"
-      width="456"
-      height="128"
+      width="267"
+      height="48"
       className={cn("block h-auto", className)}
     />
   );
