@@ -8,6 +8,7 @@ import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { studioFeedback } from "@/lib/directory/studio-feedback.mjs";
 import { getBusiness } from "@/lib/directory/queries";
 import { pilotCommand, type PilotWorkspace } from "@/lib/directory/studio";
+import { BusinessImagePanel } from "@/components/directory/business-image-panel";
 
 export const Route = createFileRoute("/studio/$slug")({
   head: () => ({
@@ -226,6 +227,9 @@ function StudioPage() {
             </section>
           </div>
         )}
+        {workspace && userId ? (
+          <BusinessImagePanel key={userId} listingId={business.sourceId} />
+        ) : null}
       </section>
     </SiteShell>
   );
