@@ -25,7 +25,7 @@ try {
   );
   await writeFile(
     resolve(fixture, "commands.mjs"),
-    'export const claimWorkflow=async()=>({ok:false}); export const getMyListingClaim=async()=>null; export const submitListingClaim=async()=>({ok:false}); export const inquiryAvailability=async()=>({available:false,siteKey:""});',
+    'export const claimWorkflow=async()=>({ok:false}); export const getMyListingClaim=async()=>({ok:true,receipt:null}); export const submitListingClaim=async()=>({ok:false}); export const inquiryAvailability=async()=>({available:false,siteKey:""});',
   );
   await writeFile(
     resolve(fixture, "fixture.css"),
@@ -174,6 +174,15 @@ createRoot(document.getElementById("root")!).render(<RouterProvider router={rout
         await page
           .getByRole("heading", { name: "Synthetic Local Business", exact: true })
           .waitFor();
+        if (signedIn) {
+          await page.getByText("Checking Claim status…", { exact: true }).waitFor({ state: "hidden" });
+          for (const message of [
+            "Connection interrupted while checking your claim.",
+            "Claim status could not be loaded. Retry before starting another claim.",
+          ]) {
+            assert.equal(await page.getByText(message, { exact: true }).count(), 0);
+          }
+        }
         assert.deepEqual(errors, []);
         const name = `listing-brand-${viewport.width}-${physical ? "physical" : "service"}`;
         await page.screenshot({

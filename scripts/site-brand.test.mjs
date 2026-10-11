@@ -20,3 +20,11 @@ test("brand wordmark dimensions match the source asset aspect ratio", async () =
   assert.match(svg, /viewBox="0 0 267 48"/);
   assert.match(logo, /width="267"\s+height="48"/);
 });
+
+
+test("signed-in brand fixture supplies a successful empty claim receipt", async () => {
+  const fixture = await read("scripts/listing-brand.browser.mjs");
+  const match = fixture.match(/export const getMyListingClaim=(async\(\)=>\(\{ok:true,receipt:null\}\));/);
+  assert.ok(match, "claim lookup fixture must satisfy the success result contract");
+  assert.doesNotMatch(fixture, /getMyListingClaim=async\(\)=>null/);
+});
