@@ -16,8 +16,8 @@ create table app.business_image_submissions (
 );
 alter table app.business_image_submissions enable row level security;
 revoke all on app.business_image_submissions from public,anon,authenticated;
--- Owners cannot bypass review through the legacy broad media mutation grant.
-revoke insert,update,delete on app.media_assets from anon,authenticated;
+-- Preserve existing legacy grants. Restrictive guards below protect only this
+-- managed workflow and its reserved UUID/original key namespace.
 -- The baseline approved-public SELECT policy exposes whole media rows. Hide this
 -- workflow's rows from direct selects; scoped SECURITY DEFINER RPCs expose safe fields.
 create function app.business_image_is_managed(media uuid) returns boolean
@@ -28,12 +28,12 @@ revoke all on function app.business_image_is_managed(uuid) from public,anon,auth
 grant execute on function app.business_image_is_managed(uuid) to anon,authenticated;
 create policy business_image_metadata_guard on app.media_assets as restrictive for select to anon,authenticated
  using (not app.business_image_is_managed(id));
--- Table revocation alone cannot remove an unknown pre-existing column grant.
--- Keep managed rows and the reserved original-key namespace protected by RLS too.
+-- These guards also constrain inherited table/column grants. A reserved key must
+-- never be smuggled in through another row ID or uppercase UUID spelling.
 create policy business_image_media_insert_guard on app.media_assets as restrictive for insert to anon,authenticated
- with check (not app.business_image_is_managed(id) and original_path<>id::text||'/original');
+ with check (not app.business_image_is_managed(id) and original_path !~* '^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/original$');
 create policy business_image_media_update_guard on app.media_assets as restrictive for update to anon,authenticated
- using (not app.business_image_is_managed(id)) with check (not app.business_image_is_managed(id) and original_path<>id::text||'/original');
+ using (not app.business_image_is_managed(id)) with check (not app.business_image_is_managed(id) and original_path !~* '^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/original$');
 create policy business_image_media_delete_guard on app.media_assets as restrictive for delete to anon,authenticated
  using (not app.business_image_is_managed(id));
 
@@ -146,7 +146,7 @@ begin
  end if;
  if m.status not in ('uploaded','pending_review') then raise exception 'invalid_decision'; end if;
  if requested_decision='approved' and (m.status<>'pending_review' or requested_rights_checked is distinct from true or not exists(select 1 from storage.objects where bucket_id='business-images' and name=m.id::text||'/approved.webp')) then raise exception 'review_incomplete'; end if;
- update app.media_assets set status=requested_decision,public_path=case when requested_decision='approved' then 'https://775directory.com/api/business-images/'||m.id::text end,
+ update app.media_assets set status=requested_decision,public_path=case when requested_decision='approved' then '/api/business-images/'||m.id::text end,
   reviewed_by=app.current_actor_id(),updated_at=statement_timestamp(),quarantine_until=case when requested_decision='rejected' then statement_timestamp()+interval '30 days' end where id=m.id;
  update app.business_image_submissions set review_reason=requested_reason,rights_checked=requested_rights_checked where media_id=m.id;
  if requested_decision='approved' and m.kind='logo' then
@@ -159,7 +159,7 @@ end $$;
 -- Safe public projection, deliberately not the broad PR15 presentation schema.
 create function public.published_business_images(requested_listing_id uuid) returns jsonb
 language sql stable security definer set search_path='' as $$
- select coalesce(jsonb_agg(jsonb_build_object('id',m.id,'kind',m.kind,'alt',s.alt_text,'url',m.public_path,'width',s.width,'height',s.height) order by m.created_at,m.id),'[]'::jsonb)
+ select coalesce(jsonb_agg(jsonb_build_object('id',m.id,'kind',m.kind,'alt',s.alt_text,'url','/api/business-images/'||m.id::text,'width',s.width,'height',s.height) order by m.created_at,m.id),'[]'::jsonb)
  from app.media_assets m join app.business_image_submissions s on s.media_id=m.id join app.business_listings bl on bl.id=m.listing_id
  where m.listing_id=requested_listing_id and m.status='approved' and s.rights_checked and bl.publication_status='published'
 $$;

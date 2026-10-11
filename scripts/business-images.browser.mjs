@@ -51,7 +51,7 @@ const origin=location.origin;const listing=${JSON.stringify(listing)};
 const card=mapDirectoryListing({id:listing,stable_id:1,current_slug:'synthetic-business',display_name:'Synthetic Local Business',description:'Owned synthetic test imagery for a local business listing.',city_slug:'reno',postal_code:'89502',is_service_area:true,content_tier:'basic',category_slugs:['handyman']},{cityName:'Reno',categoryName:'Handyman'});
 const root=createRootRoute();const studio=createRoute({getParentRoute:()=>root,path:'/studio/synthetic-business',component:()=> <SiteShell><main className="app-page p-4"><h1>Synthetic Local Business Studio</h1><BusinessImagePanel listingId={listing}/></main></SiteShell>});
 const review=createRoute({getParentRoute:()=>root,path:'/review-images',component:()=> <SiteShell><main className="app-page p-4"><h1>Operator image review fixture</h1><BusinessImagePanel review/></main></SiteShell>});
-const publicRoute=createRoute({getParentRoute:()=>root,path:'/biz/synthetic-business',loader:async()=>{const images=await fetch(origin+'/fixture/public?listingId='+listing).then(r=>r.json());return images.map(i=>({...i,url:i.url.replace('https://775directory.com',origin)}));},component:()=>{const images=publicRoute.useLoaderData();return <ListingPage biz={{...card,businessImages:images,email:'',lat:null,lng:null,categories:[],reviews:[],photos:[],services:[],faqs:[],projects:[],offer:null,caseStudies:[],caseStudiesStatus:'unavailable'}}/>;}});
+const publicRoute=createRoute({getParentRoute:()=>root,path:'/biz/synthetic-business',loader:()=>fetch(origin+'/fixture/public?listingId='+listing).then(r=>r.json()),component:()=>{const images=publicRoute.useLoaderData();return <ListingPage biz={{...card,businessImages:images,email:'',lat:null,lng:null,categories:[],reviews:[],photos:[],services:[],faqs:[],projects:[],offer:null,caseStudies:[],caseStudiesStatus:'unavailable'}}/>;}});
 const router=createRouter({routeTree:root.addChildren([studio,review,publicRoute])});createRoot(document.getElementById('root')!).render(<RouterProvider router={router}/>);
 `,
   );
@@ -214,6 +214,17 @@ const router=createRouter({routeTree:root.addChildren([studio,review,publicRoute
   const schema = JSON.parse(await page.locator('script[type="application/ld+json"]').textContent());
   assert.equal(schema.image.length, 1);
   assert.notEqual(schema.logo, schema.image[0]);
+  for (const alt of ["Synthetic teal photograph", "Synthetic business logo"]) {
+    const img = page.getByAltText(alt, { exact: true });
+    await img.evaluate((el) => el.decode());
+    assert.equal(await img.evaluate((el) => el.complete && el.naturalWidth > 0), true);
+    assert.ok((await img.getAttribute("src")).startsWith("/api/business-images/"));
+    assert.equal(new URL(await img.evaluate((el) => el.currentSrc)).origin, origin);
+    const bytes = await page.request.get(await img.evaluate((el) => el.currentSrc));
+    assert.equal(bytes.status(), 200);
+  }
+  assert.ok(schema.logo.startsWith("/api/business-images/"));
+  assert.ok(schema.image[0].startsWith("/api/business-images/"));
   assert.equal(
     await page.getByLabel("Business photographs", { exact: true }).getByRole("img").count(),
     1,

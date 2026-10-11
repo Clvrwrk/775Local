@@ -223,6 +223,18 @@ test("local HTTP upload/review with real PostgreSQL RLS and durable object bytes
       assert.equal(published.length, 1);
       assert.equal(published[0].kind, "image");
       assert.equal(published[0].alt, "Synthetic teal business photograph");
+      assert.equal(published[0].url, "/api/business-images/" + id);
+      assert.equal(
+        (await r.db.query("select public_path from app.media_assets where id=$1", [id])).rows[0]
+          .public_path,
+        "/api/business-images/" + id,
+      );
+      // Projection must not trust an old host-bound value from an earlier release.
+      await r.db.query("update app.media_assets set public_path=$2 where id=$1", [
+        id,
+        "https://775directory.com/api/business-images/" + id,
+      ]);
+      assert.equal((await publicImages())[0].url, "/api/business-images/" + id);
       assert.equal(published[0].source, undefined);
       assert.equal(
         (
@@ -367,11 +379,13 @@ test("local HTTP upload/review with real PostgreSQL RLS and durable object bytes
     await r.db.exec(
       "create policy fixture_existing_broad_policy on storage.objects for all to anon,authenticated using(true) with check(true)",
     );
-    await assert.rejects(
-      r.as("owner", (tx) =>
-        tx.query("update app.media_assets set status='approved' where id=$1", [id]),
-      ),
-      /permission denied/,
+    assert.equal(
+      (
+        await r.as("owner", (tx) =>
+          tx.query("update app.media_assets set status='approved' where id=$1 returning id", [id]),
+        )
+      ).rows.length,
+      0,
     );
     assert.equal(
       (
@@ -434,6 +448,87 @@ test("local HTTP upload/review with real PostgreSQL RLS and durable object bytes
       /permission denied/,
     );
   });
+  await t.test(
+    "ordinary legacy media keeps CRUD while every reserved original path stays protected",
+    async () => {
+      const legacy = randomUUID();
+      const insert = (rowId, path) =>
+        r.as("owner", (tx) =>
+          tx.query(
+            "insert into app.media_assets(id,listing_id,kind,original_path,media_type,byte_size,sha256,created_by) values($1,$2,'video',$3,'video/mp4',100,$4,$5) returning id",
+            [rowId, listing, path, "0".repeat(64), actorIds.owner],
+          ),
+        );
+      assert.equal(
+        (await insert(legacy, "legacy-fixture/" + legacy + "/upload.mp4")).rows[0].id,
+        legacy,
+      );
+      assert.equal(
+        (
+          await r.as("owner", (tx) =>
+            tx.query("update app.media_assets set byte_size=101 where id=$1 returning byte_size", [
+              legacy,
+            ]),
+          )
+        ).rows[0].byte_size,
+        101,
+      );
+      const other = randomUUID();
+      for (const path of [
+        legacy + "/original",
+        other + "/original",
+        other.toUpperCase() + "/original",
+        other + "/ORIGINAL",
+      ]) {
+        await assert.rejects(insert(randomUUID(), path), /row-level security/);
+        await assert.rejects(
+          r.as("owner", (tx) =>
+            tx.query("update app.media_assets set original_path=$2 where id=$1", [legacy, path]),
+          ),
+          /row-level security/,
+        );
+        await assert.rejects(
+          r.as("owner", (tx) =>
+            tx.query("update app.media_assets set id=$2,original_path=$3 where id=$1", [
+              legacy,
+              randomUUID(),
+              path,
+            ]),
+          ),
+          /row-level security/,
+        );
+      }
+      for (const identity of ["owner", "operator"]) {
+        assert.equal(
+          (
+            await r.as(identity, (tx) =>
+              tx.query(
+                "update app.media_assets set id=$2,original_path='legacy-forged' where id=$1 returning id",
+                [id, randomUUID()],
+              ),
+            )
+          ).rows.length,
+          0,
+        );
+        assert.equal(
+          (
+            await r.as(identity, (tx) =>
+              tx.query("delete from app.media_assets where id=$1 returning id", [id]),
+            )
+          ).rows.length,
+          0,
+        );
+      }
+      assert.equal(
+        (
+          await r.as("owner", (tx) =>
+            tx.query("delete from app.media_assets where id=$1 returning id", [legacy]),
+          )
+        ).rows[0].id,
+        legacy,
+      );
+    },
+  );
   await t.test(
     "scoped delegation works and revocation/expiry immediately denies access",
     async () => {

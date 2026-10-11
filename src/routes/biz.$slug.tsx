@@ -2,6 +2,7 @@ import { createFileRoute, notFound } from "@tanstack/react-router";
 import { ListingPage } from "@/components/directory/listing-page";
 import { getBusiness } from "@/lib/directory/queries";
 import { getPublishedImages } from "@/lib/directory/business-images";
+import { isManagedBusinessImageUrl } from "@/lib/directory/business-image-urls.mjs";
 
 export const Route = createFileRoute("/biz/$slug")({
   loader: async ({ params }) => {
@@ -10,9 +11,7 @@ export const Route = createFileRoute("/biz/$slug")({
     const businessImages = await getPublishedImages({ data: biz.sourceId });
     // The new workflow has its own reviewed projection and alt text. Avoid duplicate
     // legacy gallery entries and never treat its logo as a photograph.
-    const photos = biz.photos.filter(
-      (p) => !p.url.startsWith("https://775directory.com/api/business-images/"),
-    );
+    const photos = biz.photos.filter((p) => !isManagedBusinessImageUrl(p.url));
     return { biz: { ...biz, photos, businessImages } };
   },
   head: ({ loaderData, params }) => ({
