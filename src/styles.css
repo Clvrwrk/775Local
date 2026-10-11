@@ -202,9 +202,31 @@
   height: 84px;
   padding-inline: 48px;
 }
-.listing-shell > header img {
-  max-height: 40px;
-  width: auto;
+/* A definite flex basis prevents a viewBox-only SVG from collapsing inside
+   the listing header. Keep the same recognizable home wordmark on mobile. */
+.site-brand {
+  display: inline-flex;
+  align-items: center;
+  width: 160px;
+  flex: 0 0 160px;
+  min-height: 44px;
+}
+.site-brand-logo {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+@media (max-width: 359px) {
+  .site-brand {
+    width: 136px;
+    flex-basis: 136px;
+  }
+}
+@media (min-width: 640px) {
+  .site-brand {
+    width: 184px;
+    flex-basis: 184px;
+  }
 }
 .listing-page {
   --listing-width: 1000px;
