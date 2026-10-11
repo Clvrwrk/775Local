@@ -47,6 +47,7 @@ export async function startMediaRuntime() {
   let interruptFinish = false;
   let interruptDecision = false;
   let interruptStorage = false;
+  let writerConfigured = true;
   const server = createServer(async (req, res) => {
     try {
       const chunks = [];
@@ -62,11 +63,14 @@ export async function startMediaRuntime() {
       }
       const bytes = Buffer.concat(chunks);
       const url = new URL(req.url, origin);
-      const identity = String(
-        req.headers["x-fixture-identity"] ??
-          req.headers.authorization?.replace(/^Bearer /, "") ??
-          "",
-      );
+      const identity =
+        req.headers.apikey === "sb_secret_fixture_only_0000"
+          ? "server_writer"
+          : String(
+              req.headers["x-fixture-identity"] ??
+                req.headers.authorization?.replace(/^Bearer /, "") ??
+                "",
+            );
       if (url.pathname.startsWith("/rest/v1/rpc/")) {
         const rpc = url.pathname.split("/").at(-1);
         if (!Object.hasOwn(rpcArgs, rpc)) {
@@ -150,6 +154,9 @@ export async function startMediaRuntime() {
         env: {
           SUPABASE_URL: "https://fixture.supabase.co",
           SUPABASE_PUBLISHABLE_KEY: "sb_publishable_synthetic_fixture_only",
+          SUPABASE_MEDIA_WRITER_KEY: writerConfigured
+            ? "sb_secret_fixture_only_0000"
+            : "",
           BUSINESS_IMAGE_UPLOAD_ENABLED: "true",
         },
         fetchImpl: (target, init) => fetch(new URL(new URL(target).pathname, origin), init),
@@ -187,6 +194,9 @@ export async function startMediaRuntime() {
   await once(server, "listening");
   origin = `http://127.0.0.1:${server.address().port}`;
   return {
+    setWriterConfigured: (value) => {
+      writerConfigured = value;
+    },
     origin,
     db,
     as,

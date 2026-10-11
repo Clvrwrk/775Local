@@ -52,7 +52,7 @@ test("local HTTP upload/review with real PostgreSQL RLS and durable object bytes
   const publicImages = async () =>
     (await fetch(r.origin + "/fixture/public?listingId=" + listing)).json();
   await t.test("anonymous, cross-owner, recipient and unscoped manager cannot upload", async () => {
-    for (const who of ["", "other", "recipient", "manager"])
+    for (const who of ["", "other", "recipient", "manager", "impersonated", "impersonated_id"])
       assert.equal((await upload(imageForm(bytes), who)).ok, false);
     assert.equal(
       (await r.db.query("select count(*)::int as n from app.media_assets")).rows[0].n,
@@ -94,6 +94,18 @@ test("local HTTP upload/review with real PostgreSQL RLS and durable object bytes
         403,
       );
       assert.equal((await command({ action: "preview", id }, "other")).ok, false);
+      for (const who of ["impersonated", "impersonated_id"]) {
+        assert.equal((await command({ action: "workspace", id: listing }, who)).ok, false);
+        assert.equal(
+          (
+            await fetch(
+              r.origin + "/storage/v1/object/authenticated/business-images/" + id + "/original",
+              { headers: { Authorization: "Bearer " + who } },
+            )
+          ).status,
+          403,
+        );
+      }
     },
   );
   await t.test(
@@ -134,6 +146,55 @@ test("local HTTP upload/review with real PostgreSQL RLS and durable object bytes
     },
   );
   await t.test(
+    "Operator cannot bypass the server sanitizer by writing an approved object directly",
+    async () => {
+      for (const [mime, payload] of [
+        ["image/png", bytes],
+        ["image/webp", Buffer.from("not an image")],
+      ]) {
+        const response = await fetch(
+          r.origin + "/storage/v1/object/business-images/" + id + "/approved.webp",
+          {
+            method: "POST",
+            headers: { Authorization: "Bearer operator", "Content-Type": mime },
+            body: payload,
+          },
+        );
+        assert.equal(response.status, 400);
+      }
+      await assert.rejects(
+        r.as("operator", (tx) =>
+          tx.query(
+            "select public.decide_business_image($1,'approved','Synthetic rights checked',true)",
+            [id],
+          ),
+        ),
+        /review_incomplete/,
+      );
+      r.setWriterConfigured(false);
+      try {
+        assert.equal(
+          (
+            await command(
+              {
+                action: "decide",
+                id,
+                decision: "approved",
+                reason: "Synthetic rights checked",
+                rightsChecked: true,
+              },
+              "operator",
+            )
+          ).code,
+          "media_writer_not_configured",
+        );
+        assert.equal((await fetch(r.origin + "/api/business-images/" + id)).status, 404);
+      } finally {
+        r.setWriterConfigured(true);
+      }
+    },
+  );
+  await t.test(
     "review re-decodes original, ignores a tampered staged derivative and strips metadata",
     async () => {
       await writeFile(
@@ -171,6 +232,59 @@ test("local HTTP upload/review with real PostgreSQL RLS and durable object bytes
         ).rows[0].n,
         1,
       );
+    },
+  );
+  await t.test(
+    "baseline public media grants do not expose sidecar metadata to anonymous or owners",
+    async () => {
+      for (const identity of ["", "owner", "other", "operator"])
+        assert.deepEqual(
+          (
+            await r.as(identity, (tx) =>
+              tx.query(
+                "select original_path,sha256,created_by,reviewed_by from app.media_assets where id=$1",
+                [id],
+              ),
+            )
+          ).rows,
+          [],
+        );
+      assert.equal((await publicImages())[0].id, id);
+    },
+  );
+  await t.test(
+    "column-level legacy grants cannot edit managed approvals or inject reserved originals",
+    async () => {
+      await r.db.exec(
+        "grant update(status,public_path),insert(id,listing_id,kind,original_path,media_type,byte_size,sha256,created_by) on app.media_assets to authenticated",
+      );
+      try {
+        assert.deepEqual(
+          (
+            await r.as("owner", (tx) =>
+              tx.query(
+                "update app.media_assets set status='rejected',public_path=null where id=$1 returning id",
+                [id],
+              ),
+            )
+          ).rows,
+          [],
+        );
+        const forged = randomUUID();
+        await assert.rejects(
+          r.as("owner", (tx) =>
+            tx.query(
+              "insert into app.media_assets(id,listing_id,kind,original_path,media_type,byte_size,sha256,created_by) values($1,$2,'image',$3,'image/png',100,$4,$5)",
+              [forged, listing, forged + "/original", "0".repeat(64), actorIds.owner],
+            ),
+          ),
+          /row-level security/,
+        );
+      } finally {
+        await r.db.exec(
+          "revoke update(status,public_path),insert(id,listing_id,kind,original_path,media_type,byte_size,sha256,created_by) on app.media_assets from authenticated",
+        );
+      }
     },
   );
   await t.test(

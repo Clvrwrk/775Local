@@ -4,6 +4,8 @@ import { imageCommand, uploadImage, type BusinessImage } from "@/lib/directory/b
 function feedback(code: string) {
   const messages: Record<string, string> = {
     media_not_configured: "Image uploads are not enabled yet.",
+    media_writer_not_configured:
+      "Image publication is not available yet. This submission remains private.",
     authentication_required: "Sign in again to continue.",
     listing_access_forbidden: "Your current listing role does not allow image submissions.",
     reauth_required: "Sign in again as an authorized Operator before reviewing images.",

@@ -19,6 +19,7 @@ const errors = new Set([
   "upload_incomplete",
   "idempotency_conflict",
   "media_limit_reached",
+  "media_writer_not_configured",
 ]);
 /** @typedef {import('./claim-commands.mjs').ClaimOptions} Options */
 /** @param {Options} o */
@@ -75,13 +76,25 @@ function target(o) {
     throw new Error("media_not_configured");
   return { url, key };
 }
+/** Existing approved server credential only; never supplied by the browser.
+ * This narrowly configured writer is required only to persist validated approved bytes.
+ * @param {Options} o
+ */
+function writerKey(o) {
+  const key = (o.env ?? process.env).SUPABASE_MEDIA_WRITER_KEY ?? "";
+  if (!key.startsWith("sb_secret_") || key.length < 24)
+    throw new Error("media_writer_not_configured");
+  return key;
+}
 /** @param {string} path @param {Options} o @param {Buffer} [bytes] @param {string} [type] */
-async function object(path, o, bytes, type = "image/webp") {
+async function object(path, o, bytes, type = "image/webp", trustedWriter = false) {
   if (!/^[a-f0-9-]{36}\/(original|sanitized\.webp|approved\.webp)$/.test(path))
     throw new Error("invalid_image_details");
   const { url, key } = target(o);
-  const headers = /** @type {Record<string,string>} */ ({ apikey: key });
-  if (o.accessToken) headers.Authorization = `Bearer ${o.accessToken}`;
+  const headers = /** @type {Record<string,string>} */ ({
+    apikey: trustedWriter ? writerKey(o) : key,
+  });
+  if (!trustedWriter && o.accessToken) headers.Authorization = `Bearer ${o.accessToken}`;
   if (bytes) headers["Content-Type"] = type;
   return (o.fetchImpl ?? fetch)(
     new URL(`/storage/v1/object/${bytes ? "" : "authenticated/"}business-images/${path}`, url),
@@ -117,8 +130,8 @@ async function readObject(path, o) {
 /** Immutable keys; interrupted retries verify existing bytes instead of overwriting.
  * @param {string} path @param {Buffer} bytes @param {string} type @param {Options} o
  */
-async function putObject(path, bytes, type, o) {
-  const r = await object(path, o, bytes, type);
+async function putObject(path, bytes, type, o, trustedWriter = false) {
+  const r = await object(path, o, bytes, type, trustedWriter);
   if (r.ok) return;
   if (r.status === 409 || r.status === 400) {
     const existing = await readObject(path, o);
@@ -249,7 +262,7 @@ export async function runBusinessImageCommand(input, o) {
         receipt: { dataUrl: `data:image/webp;base64,${clean.bytes.toString("base64")}` },
       };
     if (m.status === "pending_review")
-      await putObject(`${d.id}/approved.webp`, clean.bytes, "image/webp", o);
+      await putObject(`${d.id}/approved.webp`, clean.bytes, "image/webp", o, true);
     return command(
       "decide_business_image",
       {

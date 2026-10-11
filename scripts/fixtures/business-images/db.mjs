@@ -12,6 +12,13 @@ export const actorIds = {
   recipient: "41000000-0000-4000-8000-000000000005",
 };
 export function claimsFor(identity) {
+  if (identity === "impersonated" || identity === "impersonated_id")
+    return {
+      sub: "fixture_owner",
+      ...(identity === "impersonated"
+        ? { act: { sub: "fixture_admin" } }
+        : { impersonator_id: "fixture_admin" }),
+    };
   if (identity === "operator" || identity === "stale" || identity === "wrong_org")
     return {
       sub: "fixture_operator",
@@ -22,7 +29,7 @@ export function claimsFor(identity) {
 }
 export async function createMediaDb() {
   const db = new PGlite();
-  await db.exec(`create role anon; create role authenticated; create role service_role;
+  await db.exec(`create role anon; create role authenticated; create role service_role bypassrls;
     create schema extensions; create schema auth; grant usage on schema auth,extensions to anon,authenticated,service_role;
     create function auth.jwt() returns jsonb language sql stable as $$ select coalesce(nullif(current_setting('request.jwt.claims',true),''),'{}')::jsonb $$;
     create function extensions.gen_random_uuid() returns uuid language sql as $$ select pg_catalog.gen_random_uuid() $$;
@@ -38,6 +45,7 @@ export async function createMediaDb() {
     "20260824195800_fix_public_projection_policies.sql",
     "20260824201500_fix_rls_identity_recursion.sql",
     "20260824224500_add_workos_identity_projection.sql",
+    "20260830120000_add_content_tiers_and_category_counts.sql",
   ]) {
     let sql = await readFile(resolve(root, "supabase/migrations", file), "utf8");
     sql = sql.replace("create extension if not exists pgcrypto with schema extensions;", "");
@@ -88,11 +96,18 @@ export async function createMediaDb() {
     );
   const as = async (identity, operation) =>
     db.transaction(async (tx) => {
-      await tx.exec(`set local role ${identity ? "authenticated" : "anon"}`);
+      await tx.exec(
+        `set local role ${identity === "server_writer" ? "service_role" : identity ? "authenticated" : "anon"}`,
+      );
       await tx.query(`select set_config('request.jwt.claims',$1,true)`, [
         JSON.stringify(claimsFor(identity)),
       ]);
       return operation(tx);
     });
+  // Supabase's trusted server role has existing Storage DML privileges. The
+  // synthetic role carries no real key or actor/ownership/operator grant.
+  await db.exec(
+    "grant usage on schema storage to service_role; grant select,insert,update,delete on storage.objects to service_role;",
+  );
   return { db, as };
 }

@@ -18,10 +18,29 @@ alter table app.business_image_submissions enable row level security;
 revoke all on app.business_image_submissions from public,anon,authenticated;
 -- Owners cannot bypass review through the legacy broad media mutation grant.
 revoke insert,update,delete on app.media_assets from anon,authenticated;
+-- The baseline approved-public SELECT policy exposes whole media rows. Hide this
+-- workflow's rows from direct selects; scoped SECURITY DEFINER RPCs expose safe fields.
+create function app.business_image_is_managed(media uuid) returns boolean
+language sql stable security definer set search_path='' as $$
+ select exists(select 1 from app.business_image_submissions where media_id=media)
+$$;
+revoke all on function app.business_image_is_managed(uuid) from public,anon,authenticated;
+grant execute on function app.business_image_is_managed(uuid) to anon,authenticated;
+create policy business_image_metadata_guard on app.media_assets as restrictive for select to anon,authenticated
+ using (not app.business_image_is_managed(id));
+-- Table revocation alone cannot remove an unknown pre-existing column grant.
+-- Keep managed rows and the reserved original-key namespace protected by RLS too.
+create policy business_image_media_insert_guard on app.media_assets as restrictive for insert to anon,authenticated
+ with check (not app.business_image_is_managed(id) and original_path<>id::text||'/original');
+create policy business_image_media_update_guard on app.media_assets as restrictive for update to anon,authenticated
+ using (not app.business_image_is_managed(id)) with check (not app.business_image_is_managed(id) and original_path<>id::text||'/original');
+create policy business_image_media_delete_guard on app.media_assets as restrictive for delete to anon,authenticated
+ using (not app.business_image_is_managed(id));
 
 create function app.can_upload_business_image(listing uuid) returns boolean
 language sql stable security definer set search_path='' as $$
- select app.current_actor_id() is not null and exists(select 1 from app.business_listings where id=listing and city_slug='reno') and
+ select (select auth.jwt()->'act') is null and (select auth.jwt()->>'impersonator_id') is null
+ and app.current_actor_id() is not null and exists(select 1 from app.business_listings where id=listing and city_slug='reno') and
  (exists(select 1 from app.listing_participations where listing_id=listing and actor_id=app.current_actor_id() and status='active'
    and (starts_at is null or starts_at<=statement_timestamp()) and (expires_at is null or expires_at>statement_timestamp())
    and (role='business_owner' or (role in ('listing_manager','agency_representative') and authority_scope->>'media'='propose')))
@@ -166,7 +185,9 @@ begin
  end if;
  if operation='insert' then
   if object_name=m.id::text||'/approved.webp' then
-   perform app.require_business_image_reviewer(); return m.status='pending_review';
+   -- Only the separately approved trusted server writer may bypass RLS for this
+   -- immutable derivative. An Operator JWT cannot upload arbitrary public bytes.
+   return false;
   end if;
   return m.status='uploaded' and m.created_by=app.current_actor_id() and app.can_upload_business_image(m.listing_id);
  end if;
