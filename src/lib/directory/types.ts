@@ -102,6 +102,14 @@ export type CaseStudy = {
 };
 
 export type BusinessDetail = BusinessCard & {
+  businessImages?: {
+    id: string;
+    kind: "logo" | "image";
+    alt: string;
+    url: string;
+    width: number;
+    height: number;
+  }[];
   email: string;
   website: string;
   lat: number | null;
