@@ -81,8 +81,8 @@ function target(o) {
  * @param {Options} o
  */
 function writerKey(o) {
-  const key = (o.env ?? process.env).SUPABASE_MEDIA_WRITER_KEY ?? "";
-  if (!key.startsWith("sb_secret_") || key.length < 24)
+  const key = (o.env ?? process.env).SUPABASE_SERVICE_ROLE_KEY?.trim() ?? "";
+  if (key.length < 24 || key.startsWith("sb_publishable_"))
     throw new Error("media_writer_not_configured");
   return key;
 }
@@ -94,6 +94,8 @@ async function object(path, o, bytes, type = "image/webp", trustedWriter = false
   const headers = /** @type {Record<string,string>} */ ({
     apikey: trustedWriter ? writerKey(o) : key,
   });
+  if (trustedWriter && !headers.apikey.startsWith("sb_secret_"))
+    headers.Authorization = `Bearer ${headers.apikey}`;
   if (!trustedWriter && o.accessToken) headers.Authorization = `Bearer ${o.accessToken}`;
   if (bytes) headers["Content-Type"] = type;
   return (o.fetchImpl ?? fetch)(

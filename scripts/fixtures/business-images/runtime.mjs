@@ -48,6 +48,8 @@ export async function startMediaRuntime() {
   let interruptDecision = false;
   let interruptStorage = false;
   let writerConfigured = true;
+  let writerCredential = "sb_secret_fixture_only_0000";
+  const approvedWrites = [];
   const server = createServer(async (req, res) => {
     try {
       const chunks = [];
@@ -64,7 +66,7 @@ export async function startMediaRuntime() {
       const bytes = Buffer.concat(chunks);
       const url = new URL(req.url, origin);
       const identity =
-        req.headers.apikey === "sb_secret_fixture_only_0000"
+        req.headers.apikey === writerCredential
           ? "server_writer"
           : String(
               req.headers["x-fixture-identity"] ??
@@ -113,6 +115,10 @@ export async function startMediaRuntime() {
           return;
         }
         if (req.method === "POST") {
+          if (path.endsWith("/approved.webp"))
+            approvedWrites.push({
+              serverBearer: req.headers.authorization === `Bearer ${writerCredential}`,
+            });
           if (path.endsWith("/sanitized.webp") && interruptStorage) {
             interruptStorage = false;
             res.writeHead(503);
@@ -154,9 +160,7 @@ export async function startMediaRuntime() {
         env: {
           SUPABASE_URL: "https://fixture.supabase.co",
           SUPABASE_PUBLISHABLE_KEY: "sb_publishable_synthetic_fixture_only",
-          SUPABASE_MEDIA_WRITER_KEY: writerConfigured
-            ? "sb_secret_fixture_only_0000"
-            : "",
+          SUPABASE_SERVICE_ROLE_KEY: writerConfigured ? writerCredential : "",
           BUSINESS_IMAGE_UPLOAD_ENABLED: "true",
         },
         fetchImpl: (target, init) => fetch(new URL(new URL(target).pathname, origin), init),
@@ -194,6 +198,10 @@ export async function startMediaRuntime() {
   await once(server, "listening");
   origin = `http://127.0.0.1:${server.address().port}`;
   return {
+    approvedWrites,
+    setWriterCredential: (value) => {
+      writerCredential = value;
+    },
     setWriterConfigured: (value) => {
       writerConfigured = value;
     },

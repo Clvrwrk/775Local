@@ -300,10 +300,25 @@ test("local HTTP upload/review with real PostgreSQL RLS and durable object bytes
     },
   );
   await t.test(
-    "a logo is associated as a logo, not silently counted as a gallery image",
+    "the shared existing server binding supports legacy credentials and keeps logos separate",
     async () => {
       const logo = randomUUID();
       assert.equal((await upload(imageForm(bytes, logo, "logo"))).ok, true);
+      const decide = {
+        action: "decide",
+        id: logo,
+        decision: "approved",
+        reason: "Synthetic logo rights checked",
+        rightsChecked: true,
+      };
+      r.setWriterCredential("sb_publishable_not_a_server_key");
+      assert.equal((await command(decide, "operator")).code, "media_writer_not_configured");
+      const legacy = [
+        Buffer.from('{"alg":"HS256"}').toString("base64url"),
+        Buffer.from('{"role":"service_role","ref":"fixture"}').toString("base64url"),
+        "synthetic-signature",
+      ].join(".");
+      r.setWriterCredential(legacy);
       assert.equal(
         (
           await command(
@@ -319,6 +334,8 @@ test("local HTTP upload/review with real PostgreSQL RLS and durable object bytes
         ).ok,
         true,
       );
+      assert.equal(r.approvedWrites.at(-1).serverBearer, true);
+      r.setWriterCredential("sb_secret_fixture_only_0000");
       const p = await publicImages();
       assert.equal(p.filter((x) => x.kind === "logo").length, 1);
       assert.equal(p.filter((x) => x.kind === "image").length, 1);
