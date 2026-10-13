@@ -312,12 +312,12 @@ select extensions.ok(
   'service role cannot impersonate a human candidate reviewer'
 );
 select extensions.ok(
-  has_function_privilege(
+  not has_function_privilege(
     'authenticated',
     'public.review_listing_candidate(uuid,jsonb,text)',
     'execute'
   ),
-  'authenticated callers may enter the guarded review command'
+  'authenticated callers cannot execute the review command'
 );
 select extensions.ok(
   not has_function_privilege(
@@ -336,12 +336,12 @@ select extensions.ok(
   'service role cannot impersonate a human launch publisher'
 );
 select extensions.ok(
-  has_function_privilege(
+  not has_function_privilege(
     'authenticated',
     'public.publish_launch_selection(uuid[],text)',
     'execute'
   ),
-  'authenticated callers may enter the guarded publication command'
+  'authenticated callers cannot execute the publication command'
 );
 select extensions.ok(
   not has_table_privilege('service_role', 'app.candidate_review_receipts', 'insert'),
@@ -368,13 +368,19 @@ select extensions.ok(
   'service role cannot impersonate a human rollback Operator'
 );
 select extensions.ok(
-  has_function_privilege(
+  not has_function_privilege(
     'authenticated',
     'public.transition_listing_publication_state(uuid,text,text[],text)',
     'execute'
   ),
-  'authenticated callers may enter the guarded Listing transition command'
+  'authenticated callers cannot execute the Listing transition command'
 );
+
+-- Body coverage below still calls the commands as authenticated. The grant is
+-- inside this rolled-back test transaction. The migration default stays denied.
+grant execute on function public.review_listing_candidate(uuid, jsonb, text) to authenticated;
+grant execute on function public.publish_launch_selection(uuid[], text) to authenticated;
+grant execute on function public.transition_listing_publication_state(uuid, text, text[], text) to authenticated;
 
 select set_config(
   'request.jwt.claims',
