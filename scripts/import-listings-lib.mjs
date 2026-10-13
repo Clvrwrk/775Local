@@ -50,23 +50,63 @@ export function rowReceipt(worksheet, sourceRow, rawPayload) {
   };
 }
 
+const PRODUCTION_PROJECT_REF = "hcfryjrajqftcnnbnybj";
+const LOCAL_REHEARSAL_PROJECT_ID = "local775cli";
+const LOCAL_REHEARSAL_PORT = "55421";
+
+/**
+ * @param {URL} url
+ */
+function assertNotProduction(url) {
+  if (url.hostname === `${PRODUCTION_PROJECT_REF}.supabase.co` || url.href.includes(PRODUCTION_PROJECT_REF)) {
+    throw new Error("Workbook apply cannot target production.");
+  }
+}
+
+/**
+ * @param {Record<string, string | undefined>} env
+ * @param {URL} url
+ * @param {string} serviceRoleKey
+ */
+function validateLocalRehearsal(env, url, serviceRoleKey) {
+  if (env.LOCAL_SUPABASE_PROJECT_ID?.trim() !== LOCAL_REHEARSAL_PROJECT_ID) {
+    throw new Error("LOCAL_SUPABASE_PROJECT_ID must name the local CLI rehearsal.");
+  }
+  assertNotProduction(url);
+  if (url.protocol !== "http:") throw new Error("Local rehearsal SUPABASE_URL must use HTTP.");
+  if (url.hostname !== "127.0.0.1" || url.port !== LOCAL_REHEARSAL_PORT) {
+    throw new Error("Local rehearsal SUPABASE_URL must be the isolated CLI loopback.");
+  }
+  return { url, projectRef: LOCAL_REHEARSAL_PROJECT_ID, serviceRoleKey };
+}
+
 /**
  * @param {Record<string, string | undefined>} env
  */
 export function validateImportTarget(env) {
-  if (env.IMPORT_TARGET !== "preview") {
-    throw new Error("Raw workbook apply is allowed only when IMPORT_TARGET=preview.");
-  }
-  const expectedRef = env.PREVIEW_SUPABASE_PROJECT_REF?.trim();
-  if (!expectedRef || !/^[a-z0-9]{8,32}$/.test(expectedRef)) {
-    throw new Error("PREVIEW_SUPABASE_PROJECT_REF is required.");
+  const serviceRoleKey = env.SUPABASE_SERVICE_ROLE_KEY?.trim() ?? "";
+  if (serviceRoleKey.length < 24 || serviceRoleKey.startsWith("sb_publishable_")) {
+    throw new Error("A service-role key is required for private raw import.");
   }
 
   let url;
   try {
     url = new URL(env.SUPABASE_URL ?? "");
   } catch {
-    throw new Error("SUPABASE_URL must be the Preview project HTTPS URL.");
+    throw new Error("SUPABASE_URL must be the rehearsal or Preview project URL.");
+  }
+  assertNotProduction(url);
+
+  if (env.IMPORT_TARGET === "local") {
+    return validateLocalRehearsal(env, url, serviceRoleKey);
+  }
+  if (env.IMPORT_TARGET !== "preview") {
+    throw new Error("Raw workbook apply is allowed only when IMPORT_TARGET=preview or IMPORT_TARGET=local.");
+  }
+
+  const expectedRef = env.PREVIEW_SUPABASE_PROJECT_REF?.trim();
+  if (!expectedRef || !/^[a-z0-9]{8,32}$/.test(expectedRef)) {
+    throw new Error("PREVIEW_SUPABASE_PROJECT_REF is required.");
   }
   if (url.protocol !== "https:") throw new Error("SUPABASE_URL must use HTTPS.");
   const projectRef = url.hostname.endsWith(".supabase.co")
@@ -74,11 +114,6 @@ export function validateImportTarget(env) {
     : "";
   if (projectRef !== expectedRef) {
     throw new Error("SUPABASE_URL project ref does not match PREVIEW_SUPABASE_PROJECT_REF.");
-  }
-
-  const serviceRoleKey = env.SUPABASE_SERVICE_ROLE_KEY?.trim() ?? "";
-  if (serviceRoleKey.length < 24 || serviceRoleKey.startsWith("sb_publishable_")) {
-    throw new Error("A service-role key is required for private raw import.");
   }
   return { url, projectRef, serviceRoleKey };
 }
