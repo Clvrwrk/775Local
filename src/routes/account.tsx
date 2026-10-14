@@ -49,8 +49,12 @@ function AccountPage() {
         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-teal">Your account</p>
         <h1 className="mt-2 font-display text-4xl font-semibold">Your place in Reno.</h1>
         <p className="mt-3 text-muted">
-          Manage approved listing access and follow your claim reviews.
+          Keep a Local Member profile for neighbor experiences, and manage any listing access you
+          have been approved for.
         </p>
+        <Link to="/member" search={{ next: "" }} className="action-primary mt-6">
+          Your Local Member profile
+        </Link>
         {error ? (
           <div role="alert" className="mt-6 rounded-2xl border border-line bg-card p-5">
             <p>{error}</p>

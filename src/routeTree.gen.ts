@@ -17,6 +17,8 @@ import { Route as CitiesRouteImport } from './routes/cities'
 import { Route as ClaimRouteImport } from './routes/claim'
 import { Route as ListYourBusinessRouteImport } from './routes/list-your-business'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as MemberRouteImport } from './routes/member'
+import { Route as MemberHandleRouteImport } from './routes/member.$handle'
 import { Route as OffersRouteImport } from './routes/offers'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as PrivacyRouteImport } from './routes/privacy'
@@ -73,6 +75,16 @@ const ListYourBusinessRoute = ListYourBusinessRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MemberRoute = MemberRouteImport.update({
+  id: '/member',
+  path: '/member',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MemberHandleRoute = MemberHandleRouteImport.update({
+  id: '/member/$handle',
+  path: '/member/$handle',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OffersRoute = OffersRouteImport.update({
@@ -170,6 +182,8 @@ export interface FileRoutesByFullPath {
   '/claim': typeof ClaimRoute
   '/list-your-business': typeof ListYourBusinessRoute
   '/login': typeof LoginRoute
+  '/member': typeof MemberRoute
+  '/member/$handle': typeof MemberHandleRoute
   '/offers': typeof OffersRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
@@ -197,6 +211,8 @@ export interface FileRoutesByTo {
   '/claim': typeof ClaimRoute
   '/list-your-business': typeof ListYourBusinessRoute
   '/login': typeof LoginRoute
+  '/member': typeof MemberRoute
+  '/member/$handle': typeof MemberHandleRoute
   '/offers': typeof OffersRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
@@ -225,6 +241,8 @@ export interface FileRoutesById {
   '/claim': typeof ClaimRoute
   '/list-your-business': typeof ListYourBusinessRoute
   '/login': typeof LoginRoute
+  '/member': typeof MemberRoute
+  '/member/$handle': typeof MemberHandleRoute
   '/offers': typeof OffersRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
@@ -254,6 +272,8 @@ export interface FileRouteTypes {
     | '/claim'
     | '/list-your-business'
     | '/login'
+    | '/member'
+    | '/member/$handle'
     | '/offers'
     | '/pricing'
     | '/privacy'
@@ -281,6 +301,8 @@ export interface FileRouteTypes {
     | '/claim'
     | '/list-your-business'
     | '/login'
+    | '/member'
+    | '/member/$handle'
     | '/offers'
     | '/pricing'
     | '/privacy'
@@ -308,6 +330,8 @@ export interface FileRouteTypes {
     | '/claim'
     | '/list-your-business'
     | '/login'
+    | '/member'
+    | '/member/$handle'
     | '/offers'
     | '/pricing'
     | '/privacy'
@@ -336,6 +360,8 @@ export interface RootRouteChildren {
   ClaimRoute: typeof ClaimRoute
   ListYourBusinessRoute: typeof ListYourBusinessRoute
   LoginRoute: typeof LoginRoute
+  MemberRoute: typeof MemberRoute
+  MemberHandleRoute: typeof MemberHandleRoute
   OffersRoute: typeof OffersRoute
   PricingRoute: typeof PricingRoute
   PrivacyRoute: typeof PrivacyRoute
@@ -411,6 +437,20 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/member': {
+      id: '/member'
+      path: '/member'
+      fullPath: '/member'
+      preLoaderRoute: typeof MemberRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/member/$handle': {
+      id: '/member/$handle'
+      path: '/member/$handle'
+      fullPath: '/member/$handle'
+      preLoaderRoute: typeof MemberHandleRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/offers': {
@@ -544,6 +584,8 @@ const rootRouteChildren: RootRouteChildren = {
   ClaimRoute: ClaimRoute,
   ListYourBusinessRoute: ListYourBusinessRoute,
   LoginRoute: LoginRoute,
+  MemberRoute: MemberRoute,
+  MemberHandleRoute: MemberHandleRoute,
   OffersRoute: OffersRoute,
   PricingRoute: PricingRoute,
   PrivacyRoute: PrivacyRoute,
