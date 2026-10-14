@@ -49,6 +49,15 @@ function PrivacyPage() {
           </p>
         </section>
         <section className="mt-8">
+          <h2 className="font-display text-2xl font-semibold">Local Member experiences</h2>
+          <p className="mt-3 leading-7 text-ink-soft">
+            A Local Member profile publishes the name, town, short bio, reviews, and photos you
+            choose to share. Your email address is not shown. You can withdraw an experience from
+            your profile, which removes it from the public listing. A private audit record of the
+            publication and withdrawal remains.
+          </p>
+        </section>
+        <section className="mt-8">
           <h2 className="font-display text-2xl font-semibold">Your choices</h2>
           <p className="mt-3 leading-7 text-ink-soft">
             You can browse without creating an account and contact businesses directly using their

@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { pilotFilters, categoryForQuery } from "@/lib/directory/pilot.mjs";
 import { CATEGORIES, CITIES } from "@/data/seed";
+import { fetchListingExperiences } from "@/lib/directory/member-read.mjs";
 import {
   fetchDirectoryCategories,
   fetchDirectoryListings,
@@ -163,8 +164,16 @@ export const getBusiness = createServerFn({ method: "GET" })
     ]);
     const card = rows[0];
     if (!card) return null;
+    const experiences = await fetchListingExperiences(slug).catch(() => []);
+    const reviewCount = experiences.length;
+    const rating = reviewCount
+      ? Math.round((experiences.reduce((sum, review) => sum + review.rating, 0) / reviewCount) * 10) /
+        10
+      : null;
     return {
       ...card,
+      rating,
+      reviewCount: reviewCount || null,
       email: "",
       lat: (card as BusinessCard & { lat?: number | null }).lat ?? null,
       lng: (card as BusinessCard & { lng?: number | null }).lng ?? null,
@@ -172,7 +181,7 @@ export const getBusiness = createServerFn({ method: "GET" })
         slug: categorySlug,
         name: categoryNames.get(categorySlug) ?? categorySlug,
       })),
-      reviews: [] as BusinessDetail["reviews"],
+      reviews: experiences,
       photos: (card as BusinessCard & { photos?: BusinessDetail["photos"] }).photos ?? [],
       services: (card as BusinessCard & { services?: string[] }).services ?? [],
       faqs: (card as BusinessCard & { faqs?: BusinessDetail["faqs"] }).faqs ?? [],

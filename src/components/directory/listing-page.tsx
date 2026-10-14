@@ -15,7 +15,9 @@ import { SiteShell } from "@/components/layout/site-shell";
 import { ContactActions } from "./contact-actions";
 import { ClaimListingPanel } from "./claim-listing";
 import { InquiryForm } from "./inquiry-form";
+import { ExperienceComposer } from "./experience-composer";
 import { ListingGallery } from "./listing-gallery";
+import { formatMemberDay } from "./member-profile";
 import { Stars } from "./stars";
 import { CaseStudies } from "./case-studies";
 
@@ -154,20 +156,39 @@ function About({ biz }: { biz: BusinessDetail }) {
 
 function Reviews({ biz }: { biz: BusinessDetail }) {
   return (
-    <Panel title={biz.contentTier === "premium" ? `What ${biz.cityName} neighbors say` : "Reviews"}>
+    <Panel title="Neighbor experiences">
+      <p className="listing-note">
+        Written by Local Members about their own visits. A business cannot post these for itself.
+      </p>
       {biz.reviews.length ? (
         <div className="listing-reviews">
           {biz.reviews.map((review) => (
             <blockquote key={review.id}>
-              <strong>{review.author}</strong>
+              <Link to="/member/$handle" params={{ handle: review.handle }}>
+                {review.author}
+              </Link>
+              <span className="listing-note">
+                {review.town}
+                {review.createdAt ? ` · ${formatMemberDay(review.createdAt)}` : ""}
+              </span>
               <Stars rating={review.rating} />
               <p>{review.body}</p>
+              {review.photos.length ? (
+                <div className="listing-experience-photos">
+                  {review.photos.map((photo) =>
+                    safeWebsite(photo) ? (
+                      <img key={photo} src={photo} alt={`${review.author} at ${biz.name}`} />
+                    ) : null,
+                  )}
+                </div>
+              ) : null}
             </blockquote>
           ))}
         </div>
       ) : (
-        <p className="listing-note">No reviews are published on this listing yet.</p>
+        <p className="listing-note">No neighbor has shared an experience here yet.</p>
       )}
+      <ExperienceComposer listingId={biz.sourceId} slug={biz.slug} businessName={biz.name} />
     </Panel>
   );
 }
@@ -256,6 +277,17 @@ export function ListingPage({ biz }: { biz: BusinessDetail }) {
       ...(biz.zip ? { postalCode: biz.zip } : {}),
     },
     ...(!showStreet ? { areaServed: `${biz.cityName}, Nevada` } : {}),
+    ...(biz.reviewCount && biz.rating != null
+      ? {
+          aggregateRating: {
+            "@type": "AggregateRating",
+            ratingValue: biz.rating,
+            reviewCount: biz.reviewCount,
+            bestRating: 5,
+            worstRating: 1,
+          },
+        }
+      : {}),
   };
   const heading = (
     <div className="listing-heading-copy">
@@ -336,6 +368,7 @@ export function ListingPage({ biz }: { biz: BusinessDetail }) {
                 <>
                   <Details biz={biz} basic />
                   <Hours biz={biz} />
+                  <Reviews biz={biz} />
                   <Claim biz={biz} />
                 </>
               ) : premium ? (
@@ -373,6 +406,10 @@ export function ListingPage({ biz }: { biz: BusinessDetail }) {
                       <li>
                         <Check size={16} />
                         Category & town search
+                      </li>
+                      <li>
+                        <Check size={16} />
+                        Neighbor experiences
                       </li>
                       <li>
                         <Check size={16} />

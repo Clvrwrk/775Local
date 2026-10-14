@@ -107,7 +107,16 @@ export type BusinessDetail = BusinessCard & {
   lat: number | null;
   lng: number | null;
   categories: { slug: string; name: string }[];
-  reviews: { id: number; author: string; rating: number; body: string }[];
+  reviews: {
+    id: string;
+    author: string;
+    handle: string;
+    town: string;
+    rating: number;
+    body: string;
+    createdAt: string;
+    photos: string[];
+  }[];
   photos: ListingPhoto[];
   services: string[];
   faqs: { question: string; answer: string }[];

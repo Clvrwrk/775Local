@@ -26,8 +26,9 @@ function Login() {
           </div>
         </div>
         <p className="mt-6 text-sm text-ink-soft">
-          Claim or manage your Reno business listing. Your account access is separate from approval
-          to manage a business.
+          Sign in to keep a Local Member profile, review a Reno business, and add photos of your
+          experience. Claiming a business is a separate step, and sign-in alone does not make you
+          the owner.
         </p>
         {error ? (
           <p role="alert" className="mt-6 rounded-[16px] border border-line bg-card p-4 text-sm">
@@ -43,7 +44,7 @@ function Login() {
           Continue with email or Google
         </a>
         <p className="mt-8 text-sm text-muted">
-          Residents do not need an account. Owner and operator access is individually authorized.
+          You can browse without an account. Owner access is approved one listing at a time.
         </p>
         <p className="mt-4 text-sm">
           <Link to="/" className="text-teal underline-offset-4 hover:underline">
