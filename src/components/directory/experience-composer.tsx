@@ -23,6 +23,12 @@ const errors: Record<string, string> = {
   experience_command_failed: "The experience could not be saved. The listing was not changed.",
 };
 
+function bytesToBase64(bytes: Uint8Array) {
+  let binary = "";
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  return btoa(binary);
+}
+
 async function toJpeg(file: File) {
   const bitmap = await createImageBitmap(file);
   const scale = Math.min(1, 1600 / Math.max(bitmap.width, bitmap.height));
@@ -35,10 +41,18 @@ async function toJpeg(file: File) {
   bitmap.close();
   const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.82));
   if (!blob || blob.size > 900_000) throw new Error("photo");
-  const bytes = new Uint8Array(await blob.arrayBuffer());
-  let binary = "";
-  for (const byte of bytes) binary += String.fromCharCode(byte);
-  return btoa(binary);
+  return bytesToBase64(new Uint8Array(await blob.arrayBuffer()));
+}
+
+async function photoBase64(file: File) {
+  try {
+    return await toJpeg(file);
+  } catch {
+    if (!/^image\/(jpeg|png|webp)$/.test(file.type) || file.size > 900_000 || file.size < 12) {
+      throw new Error("photo");
+    }
+    return bytesToBase64(new Uint8Array(await file.arrayBuffer()));
+  }
 }
 
 export function ExperienceComposer({
@@ -103,18 +117,27 @@ export function ExperienceComposer({
       return;
     }
     const reviewId = result.experience.reviewId;
+    let photoFailed = false;
     for (const [index, file] of files.slice(0, 4).entries()) {
       try {
-        const imageBase64 = await toJpeg(file);
+        const imageBase64 = await photoBase64(file);
         const photo = await attachExperiencePhoto({ data: { reviewId, sort: index, imageBase64 } });
         if (!photo.ok) {
-          setError(errors.photo_rejected);
+          photoFailed = true;
           break;
         }
       } catch {
-        setError(errors.photo_rejected);
+        photoFailed = true;
         break;
       }
+    }
+    if (photoFailed) {
+      setStatus("idle");
+      setError(
+        "Your words are on the listing. A photo could not be saved. Use a smaller JPEG, PNG, or WebP and publish again.",
+      );
+      await router.invalidate();
+      return;
     }
     setStatus("saved");
     setFiles([]);

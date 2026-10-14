@@ -3,7 +3,7 @@ import { MemberProfileView } from "@/components/directory/member-profile";
 import { SiteShell } from "@/components/layout/site-shell";
 import { getPublicMember } from "@/lib/directory/members";
 
-export const Route = createFileRoute("/member/$handle")({
+export const Route = createFileRoute("/member_/$handle")({
   loader: async ({ params }) => {
     const member = await getPublicMember({ data: params.handle });
     if (!member) throw notFound();
@@ -17,8 +17,11 @@ export const Route = createFileRoute("/member/$handle")({
             name: "description",
             content: `${loaderData.member.displayName} is a Local Member in ${loaderData.member.town}.`,
           },
+          ...(loaderData.member.experiences.length
+            ? []
+            : [{ name: "robots", content: "noindex, nofollow" }]),
         ]
-      : [],
+      : [{ name: "robots", content: "noindex, nofollow" }],
     links: [{ rel: "canonical", href: `https://775directory.com/member/${params.handle}` }],
   }),
   component: PublicMemberPage,
