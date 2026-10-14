@@ -134,7 +134,7 @@ const cardBase =
 function CardPhoto({ url, alt, template }: { url: string; alt: string; template: boolean }) {
   return (
     <>
-      <img src={url} alt={alt} loading="lazy" className="size-full object-cover" />
+      <img src={url} alt={alt} loading="lazy" className="listing-media-img absolute inset-0 size-full" />
       {template ? <span className="listing-template-pill">Template</span> : null}
     </>
   );
@@ -148,7 +148,7 @@ export function BusinessCardView({ biz, layout }: { biz: BusinessCard; layout?: 
     categorySlug: biz.primaryCategorySlug,
     categoryName: biz.primaryCategory,
     businessName: biz.name,
-  }).images[0];
+  }).logo;
   const tier = ["basic", "standard", "premium"].includes(biz.contentTier)
     ? biz.contentTier
     : "basic";

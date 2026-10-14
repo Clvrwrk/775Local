@@ -112,7 +112,9 @@ test("builds a byte-preserving snapshot and robust private seed profile", async 
     assert.ok(profile.description_candidate.includes("Acme Heating & Cooling provides"));
     assert.ok(profile.about_source_excerpt.includes("served Reno and Sparks since 1985"));
     assert.equal(profile.photo_candidates.length, 2);
+    assert.equal(profile.photo_candidates[0].role_candidate, "logo");
     assert.equal(profile.photo_candidates[0].same_site, true);
+    assert.equal(profile.photo_candidates[1].role_candidate, "gallery");
     assert.ok(profile.completeness_score >= 90);
 
     const summary = summarizeEnrichmentSnapshot(snapshot);
@@ -167,6 +169,45 @@ test("photo extraction rejects widgets and retains exact source provenance", () 
       evidence_score: 110,
     },
   ]);
+});
+
+test("a company logo is kept, sorted first, and a widget svg is dropped", () => {
+  const photos = extractPhotoCandidates(
+    [
+      {
+        url: "https://shop.example/about",
+        markdown:
+          "![Shop logo](https://shop.example/brand/logo.svg)\n![Project](https://shop.example/uploads/project.webp)\n![Spinner](https://cdn.userway.org/spin.svg)",
+      },
+    ],
+    "shop.example",
+  );
+  assert.deepEqual(
+    photos.map((photo) => photo.role_candidate),
+    ["logo", "gallery"],
+  );
+  assert.equal(photos[0].image_url, "https://shop.example/brand/logo.svg");
+});
+
+test("an html svg is kept as the logo when alt text names it and the filename does not", () => {
+  const photos = extractPhotoCandidates(
+    [
+      {
+        url: "https://acme.example/about",
+        markdown:
+          '<img alt="Acme logo" src="https://acme.example/assets/acme.svg"><img src="https://acme.example/media/mark.svg" alt="Acme brand mark"><img alt="Crew on a roof" src="https://acme.example/uploads/crew.jpg"><img alt="" src="https://acme.example/assets/icon.svg">',
+      },
+    ],
+    "acme.example",
+  );
+  assert.deepEqual(
+    photos.map((photo) => [photo.role_candidate, photo.image_url, photo.alt_text]),
+    [
+      ["logo", "https://acme.example/assets/acme.svg", "Acme logo"],
+      ["logo", "https://acme.example/media/mark.svg", "Acme brand mark"],
+      ["gallery", "https://acme.example/uploads/crew.jpg", "Crew on a roof"],
+    ],
+  );
 });
 
 test("archive hashes original UTF-8 bytes and rejects invalid bytes without leaking payload", async () => {

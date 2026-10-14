@@ -262,7 +262,7 @@ export function ListingPage({ biz }: { biz: BusinessDetail }) {
     categoryName: biz.primaryCategory,
     businessName: biz.name,
   });
-  const hero = media.images[0];
+  const hero = media.logo;
   const basic = biz.contentTier === "basic";
   const premium = biz.contentTier === "premium";
   const showStreet = !biz.hideStreet && biz.street && biz.street !== "Service area";

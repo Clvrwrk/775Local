@@ -285,10 +285,21 @@
   background: var(--color-paper);
   border: 1px solid var(--color-line);
 }
-.listing-logo img {
+.listing-logo img,
+.listing-media-img,
+.listing-gallery img,
+.listing-hero-photo,
+.listing-photo-frame > img,
+.listing-photo-viewer > img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  object-position: center;
+  box-sizing: border-box;
+  padding: 10px;
+  background: var(--color-paper);
 }
 .listing-template-pill {
   position: absolute;
@@ -604,7 +615,8 @@
   inset: 0;
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
+  object-position: center;
   opacity: 0.24;
 }
 .listing-hero-inner {
@@ -734,11 +746,8 @@
 .listing-gallery img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
-  transition: transform 0.3s;
-}
-.listing-gallery button:hover img {
-  transform: scale(1.03);
+  object-fit: contain;
+  object-position: center;
 }
 .listing-gallery button span.listing-gallery-more {
   position: absolute;

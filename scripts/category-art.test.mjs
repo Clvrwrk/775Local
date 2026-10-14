@@ -65,21 +65,35 @@ test("a real logo and three real images keep those and fill two template slots",
   assert.equal(media.images[4].url, templateImageUrl("hvac", 2));
 });
 
-test("real images beyond five stay behind more-photos and templates do not pad", () => {
+test("the first stored image is the company logo and is not repeated in the five", () => {
   const media = listingMediaSlots({
     photos: [1, 2, 3, 4, 5, 6].map(real),
     categorySlug: "dentists",
     categoryName: "Dentists",
     businessName: "River Dentists",
   });
-  assert.equal(media.logo.template, true);
+  assert.equal(media.logo.template, false);
+  assert.equal(media.logo.url, "https://cdn.example/photo-1.jpg");
+  assert.equal(media.logo.alt, "River Dentists logo");
+  assert.equal(media.images[0].url, "https://cdn.example/photo-2.jpg");
   assert.equal(media.images.length, 5);
   assert.equal(
-    media.images.every((image) => image.template === false),
+    media.images.every((image) => image.template === false && image.url !== media.logo.url),
     true,
   );
+  assert.equal(media.more.length, 0);
+});
+
+test("a seventh stored image stays behind more-photos after the logo is taken", () => {
+  const media = listingMediaSlots({
+    photos: [1, 2, 3, 4, 5, 6, 7].map(real),
+    categorySlug: "dentists",
+    categoryName: "Dentists",
+    businessName: "River Dentists",
+  });
+  assert.equal(media.logo.url, "https://cdn.example/photo-1.jpg");
   assert.equal(media.more.length, 1);
-  assert.equal(media.more[0].url, "https://cdn.example/photo-6.jpg");
+  assert.equal(media.more[0].url, "https://cdn.example/photo-7.jpg");
 });
 
 test("an unknown category uses the directory art set", () => {

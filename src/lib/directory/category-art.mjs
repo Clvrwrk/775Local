@@ -65,39 +65,52 @@ export function listingMediaSlots(input) {
       ? input.businessName.trim()
       : "This business";
   const illustration = `${categoryName} illustration`;
-  const realLogo = safeWebsite(input.logoUrl);
-  const logo = realLogo
-    ? { id: "logo", url: realLogo, alt: `${businessName} logo`, template: false }
-    : { id: "logo-template", url: templateLogoUrl(input.categorySlug), alt: illustration, template: true };
 
   /** @type {{ id: string, url: string, alt: string, template: false }[]} */
-  const realImages = [];
+  const stored = [];
   const seen = new Set();
   for (const photo of input.photos ?? []) {
     const url = safeWebsite(photo?.url);
     if (!url || seen.has(url)) continue;
     seen.add(url);
-    realImages.push({
-      id: `photo-${photo?.id ?? realImages.length + 1}`,
+    stored.push({
+      id: `photo-${photo?.id ?? stored.length + 1}`,
       url,
       alt:
         typeof photo?.caption === "string" && photo.caption.trim()
           ? photo.caption.trim()
-          : `${businessName}, photo ${realImages.length + 1}`,
+          : `${businessName}, photo ${stored.length + 1}`,
       template: false,
     });
   }
-  if (!realImages.length) {
+  if (!stored.length) {
     const cover = safeWebsite(input.coverUrl);
-    if (cover) {
-      realImages.push({
+    if (cover && !seen.has(cover)) {
+      stored.push({
         id: "cover",
         url: cover,
-        alt: `${businessName}, photo 1`,
+        alt: `${businessName} logo`,
         template: false,
       });
     }
   }
+
+  const explicitLogo = safeWebsite(input.logoUrl);
+  // The public listing stores the company logo as the first image until a
+  // separate logo column exists. The cover uses that mark and does not repeat it.
+  const logo = explicitLogo
+    ? { id: "logo", url: explicitLogo, alt: `${businessName} logo`, template: false }
+    : stored[0]
+      ? { id: "logo", url: stored[0].url, alt: `${businessName} logo`, template: false }
+      : {
+          id: "logo-template",
+          url: templateLogoUrl(input.categorySlug),
+          alt: illustration,
+          template: true,
+        };
+  const realImages = (explicitLogo ? stored : stored.slice(1)).filter(
+    (image) => image.url !== logo.url,
+  );
 
   /** @type {{ id: string, url: string, alt: string, template: boolean }[]} */
   const images = realImages.slice(0, LISTING_IMAGE_SLOT_COUNT);

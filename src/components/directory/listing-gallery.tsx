@@ -37,7 +37,7 @@ export function ListingGallery({
             onClick={() => setActive(i)}
             aria-label={`Open photo ${i + 1} of ${viewer.length} for ${name}`}
           >
-            <img src={slot.url} alt={slot.alt} loading="lazy" />
+            <img className="listing-media-img" src={slot.url} alt={slot.alt} loading="lazy" />
             {slot.template ? <TemplatePill /> : null}
             {i === slots.length - 1 && more.length > 0 ? (
               <span className="listing-gallery-more">+ {more.length} more photos</span>
@@ -56,7 +56,7 @@ export function ListingGallery({
             <X size={20} strokeWidth={1.75} />
           </button>
           <div className="listing-photo-frame">
-            <img src={current.url} alt={current.alt} />
+            <img className="listing-media-img" src={current.url} alt={current.alt} />
             {current.template ? <TemplatePill /> : null}
           </div>
           <div>

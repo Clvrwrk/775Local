@@ -157,6 +157,23 @@ function imageRole(altText, imageUrl) {
   return /\b(logo|brand mark)\b/i.test(`${altText} ${imageUrl}`) ? "logo" : "gallery";
 }
 
+function imageFromMatch(match) {
+  if (match.length >= 3) {
+    return {
+      altText: cleanText(match[1]).slice(0, 500),
+      imageUrl: String(match[2]).replaceAll("&amp;", "&"),
+    };
+  }
+  const tag = match[0];
+  const src = tag.match(/\bsrc=["'](https?:\/\/[^"']+)["']/i);
+  if (!src) return null;
+  const alt = tag.match(/\balt=["']([^"']*)["']/i);
+  return {
+    altText: cleanText(alt?.[1] ?? "").slice(0, 500),
+    imageUrl: src[1].replaceAll("&amp;", "&"),
+  };
+}
+
 export function extractPhotoCandidates(sourcePages, businessDomain) {
   const candidates = new Map();
   for (const page of sourcePages ?? []) {
@@ -165,11 +182,12 @@ export function extractPhotoCandidates(sourcePages, businessDomain) {
     const markdown = String(page?.markdown ?? "");
     const matches = [
       ...markdown.matchAll(/!\[([^\]]*)\]\((https?:\/\/[^)\s]+)(?:\s+"[^"]*")?\)/gi),
-      ...markdown.matchAll(/<img\b[^>]*\bsrc=["'](https?:\/\/[^"']+)["'][^>]*>/gi),
+      ...markdown.matchAll(/<img\b[^>]*>/gi),
     ];
     for (const match of matches) {
-      const altText = cleanText(match.length >= 3 ? match[1] : "").slice(0, 500);
-      const imageUrl = String(match.length >= 3 ? match[2] : match[1]).replaceAll("&amp;", "&");
+      const parsed = imageFromMatch(match);
+      if (!parsed) continue;
+      const { altText, imageUrl } = parsed;
       let image;
       try {
         image = new URL(imageUrl);
@@ -180,7 +198,9 @@ export function extractPhotoCandidates(sourcePages, businessDomain) {
       if (BAD_IMAGE_HOSTS.some((blocked) => host === blocked || host.endsWith(`.${blocked}`))) {
         continue;
       }
-      if (BAD_IMAGE_TEXT.test(`${altText} ${image.pathname}`) || /\.svg(?:$|\?)/i.test(imageUrl)) {
+      const roleCandidate = imageRole(altText, imageUrl);
+      const svg = /\.svg(?:$|\?)/i.test(imageUrl);
+      if (BAD_IMAGE_TEXT.test(`${altText} ${image.pathname}`) || (svg && roleCandidate !== "logo")) {
         continue;
       }
       const imageDomain = normalizeDomain(imageUrl);
@@ -189,7 +209,6 @@ export function extractPhotoCandidates(sourcePages, businessDomain) {
         businessDomain &&
         (imageDomain === businessDomain || imageDomain.endsWith(`.${businessDomain}`)),
       );
-      const roleCandidate = imageRole(altText, imageUrl);
       let evidenceScore = sameSite ? 50 : 10;
       if (/\.(?:jpe?g|png|webp|avif)(?:$|\?)/i.test(imageUrl)) evidenceScore += 20;
       if (/\/uploads?\/|\/gallery\/|\/portfolio\/|\/projects?\/|\/team\//i.test(image.pathname)) {
@@ -216,10 +235,14 @@ export function extractPhotoCandidates(sourcePages, businessDomain) {
     }
   }
   return [...candidates.values()]
-    .sort(
-      (left, right) =>
-        right.evidence_score - left.evidence_score || left.image_url.localeCompare(right.image_url),
-    )
+    .sort((left, right) => {
+      const role = Number(right.role_candidate === "logo") - Number(left.role_candidate === "logo");
+      return (
+        role ||
+        right.evidence_score - left.evidence_score ||
+        left.image_url.localeCompare(right.image_url)
+      );
+    })
     .slice(0, 30);
 }
 
