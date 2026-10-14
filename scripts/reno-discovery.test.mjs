@@ -106,6 +106,7 @@ test("navigation fragments and empty project shells do not become business servi
       "Provide same-day repairs",
       "After Hours",
       "Sunday open mic",
+      "Monday: Open",
     ]),
     [
       "Drain cleaning",

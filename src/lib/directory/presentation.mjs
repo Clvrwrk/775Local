@@ -44,6 +44,13 @@ function isHoursOfOperation(value) {
     )
   )
     return true;
+  // "Monday: Open" is a schedule. "Sunday open mic" is a service name.
+  if (
+    /^(?:monday|tuesday|wednesday|thursday|friday|saturday|sunday|mon|tue|tues|wed|thu|thur|thurs|fri|sat|sun)\b[:\s-].*\bopen$/i.test(
+      line,
+    )
+  )
+    return true;
   if (/^\d{1,2}:\d{2}\s*(?:a\.?m\.?|p\.?m\.?)\b/i.test(line)) return true;
   if (
     /^\d{1,2}(?::\d{2})?\s*(?:a\.?m\.?|p\.?m\.?)\s*(?:-|–|—|to)\s*\d{1,2}(?::\d{2})?\s*(?:a\.?m\.?|p\.?m\.?)?$/i.test(
