@@ -191,8 +191,6 @@ export async function handleAttachExperiencePhoto(input, options = {}) {
     fetchImpl: options.fetchImpl,
     failureCode: "photo_rejected",
   });
-  if (!registered.ok) {
-    return { ok: false, code: "photo_register", detail: String(registered.detail || registered.code).slice(0, 140) };
-  }
+  if (!registered.ok) return { ok: false, code: registered.code === "photo_rejected" ? "photo_register" : registered.code };
   return { ok: true, photoUrl: `${storage.url.origin}/storage/v1/object/public/member-photos/${prepared.receipt}` };
 }

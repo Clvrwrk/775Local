@@ -450,7 +450,7 @@ as $$
 declare
   actor uuid := app.current_actor_id();
   expected_prefix text;
-  sort_order integer;
+  photo_sort integer;
   saved_path text;
 begin
   if actor is null then
@@ -470,13 +470,13 @@ begin
   then
     raise exception 'invalid experience photo';
   end if;
-  sort_order := substring(requested_path from '/([0-3])\.')::integer;
+  photo_sort := substring(requested_path from '/([0-3])\.')::integer;
   insert into app.experience_photos (review_id, storage_path, sort_order)
-  values (requested_review_id, requested_path, sort_order)
+  values (requested_review_id, requested_path, photo_sort)
   on conflict (review_id, sort_order) do update
     set storage_path = excluded.storage_path
   returning storage_path into saved_path;
-  return jsonb_build_object('storagePath', saved_path, 'sortOrder', sort_order);
+  return jsonb_build_object('storagePath', saved_path, 'sortOrder', photo_sort);
 end;
 $$;
 
