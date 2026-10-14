@@ -189,6 +189,27 @@ test("a company logo is kept, sorted first, and a widget svg is dropped", () => 
   assert.equal(photos[0].image_url, "https://shop.example/brand/logo.svg");
 });
 
+test("an html svg is kept as the logo when alt text names it and the filename does not", () => {
+  const photos = extractPhotoCandidates(
+    [
+      {
+        url: "https://acme.example/about",
+        markdown:
+          '<img alt="Acme logo" src="https://acme.example/assets/acme.svg"><img src="https://acme.example/media/mark.svg" alt="Acme brand mark"><img alt="Crew on a roof" src="https://acme.example/uploads/crew.jpg"><img alt="" src="https://acme.example/assets/icon.svg">',
+      },
+    ],
+    "acme.example",
+  );
+  assert.deepEqual(
+    photos.map((photo) => [photo.role_candidate, photo.image_url, photo.alt_text]),
+    [
+      ["logo", "https://acme.example/assets/acme.svg", "Acme logo"],
+      ["logo", "https://acme.example/media/mark.svg", "Acme brand mark"],
+      ["gallery", "https://acme.example/uploads/crew.jpg", "Crew on a roof"],
+    ],
+  );
+});
+
 test("archive hashes original UTF-8 bytes and rejects invalid bytes without leaking payload", async () => {
   await withFixture(async (root) => {
     const { createHash } = await import("node:crypto");

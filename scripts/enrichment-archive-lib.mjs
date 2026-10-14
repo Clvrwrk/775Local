@@ -157,6 +157,23 @@ function imageRole(altText, imageUrl) {
   return /\b(logo|brand mark)\b/i.test(`${altText} ${imageUrl}`) ? "logo" : "gallery";
 }
 
+function imageFromMatch(match) {
+  if (match.length >= 3) {
+    return {
+      altText: cleanText(match[1]).slice(0, 500),
+      imageUrl: String(match[2]).replaceAll("&amp;", "&"),
+    };
+  }
+  const tag = match[0];
+  const src = tag.match(/\bsrc=["'](https?:\/\/[^"']+)["']/i);
+  if (!src) return null;
+  const alt = tag.match(/\balt=["']([^"']*)["']/i);
+  return {
+    altText: cleanText(alt?.[1] ?? "").slice(0, 500),
+    imageUrl: src[1].replaceAll("&amp;", "&"),
+  };
+}
+
 export function extractPhotoCandidates(sourcePages, businessDomain) {
   const candidates = new Map();
   for (const page of sourcePages ?? []) {
@@ -165,11 +182,12 @@ export function extractPhotoCandidates(sourcePages, businessDomain) {
     const markdown = String(page?.markdown ?? "");
     const matches = [
       ...markdown.matchAll(/!\[([^\]]*)\]\((https?:\/\/[^)\s]+)(?:\s+"[^"]*")?\)/gi),
-      ...markdown.matchAll(/<img\b[^>]*\bsrc=["'](https?:\/\/[^"']+)["'][^>]*>/gi),
+      ...markdown.matchAll(/<img\b[^>]*>/gi),
     ];
     for (const match of matches) {
-      const altText = cleanText(match.length >= 3 ? match[1] : "").slice(0, 500);
-      const imageUrl = String(match.length >= 3 ? match[2] : match[1]).replaceAll("&amp;", "&");
+      const parsed = imageFromMatch(match);
+      if (!parsed) continue;
+      const { altText, imageUrl } = parsed;
       let image;
       try {
         image = new URL(imageUrl);
