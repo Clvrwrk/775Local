@@ -153,8 +153,9 @@ export async function handleAttachExperiencePhoto(input, options = {}) {
     fetchImpl: options.fetchImpl,
     failureCode: "photo_rejected",
   });
-  if (!prepared.ok || typeof prepared.receipt !== "string") {
-    return prepared.ok ? { ok: false, code: "photo_rejected" } : prepared;
+  if (!prepared.ok) return prepared;
+  if (typeof prepared.receipt !== "string" || !/^[0-9a-f-]{36}\/[0-9a-f-]{36}\/[0-3]\.(jpg|png|webp)$/.test(prepared.receipt)) {
+    return { ok: false, code: "photo_path" };
   }
 
   let storage;
@@ -171,13 +172,14 @@ export async function handleAttachExperiencePhoto(input, options = {}) {
         apikey: storage.serviceRoleKey,
         Authorization: `Bearer ${storage.serviceRoleKey}`,
         "Content-Type": image.contentType,
+        "Content-Length": String(bytes.byteLength),
         "x-upsert": "true",
       },
-      body: bytes,
+      body: new Uint8Array(bytes),
       signal: AbortSignal.timeout(15_000),
     },
   );
-  if (!upload.ok) return { ok: false, code: "photo_rejected" };
+  if (!upload.ok) return { ok: false, code: `photo_storage_${upload.status}` };
 
   const registered = await callMemberRpc({
     rpc: "register_experience_photo",
