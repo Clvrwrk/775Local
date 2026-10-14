@@ -59,6 +59,17 @@ test("public photo urls stay on this product storage bucket", () => {
   assert.equal(memberPhotoUrl("https://hcfryjrajqftcnnbnybj.supabase.co", "../secret"), "");
 });
 
+test("the public profile route is not nested under the sign-in editor", () => {
+  const route = readFileSync(new URL("../src/routes/member_.$handle.tsx", import.meta.url), "utf8");
+  const tree = readFileSync(new URL("../src/routeTree.gen.ts", import.meta.url), "utf8");
+  assert.match(route, /createFileRoute\("\/member_\/\$handle"\)/);
+  assert.match(
+    tree,
+    /id: '\/member_\/\$handle',\n {2}path: '\/member\/\$handle',\n {2}getParentRoute: \(\) => rootRouteImport,/,
+  );
+  assert.equal(tree.includes("from './routes/member.$handle'"), false);
+});
+
 test("the member migration does not grant listing authority", () => {
   const sql = readFileSync(
     new URL("../supabase/migrations/20261014190000_local_member_experiences.sql", import.meta.url),

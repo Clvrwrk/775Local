@@ -18,7 +18,7 @@ import { Route as ClaimRouteImport } from './routes/claim'
 import { Route as ListYourBusinessRouteImport } from './routes/list-your-business'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as MemberRouteImport } from './routes/member'
-import { Route as MemberHandleRouteImport } from './routes/member.$handle'
+import { Route as MemberHandleRouteImport } from './routes/member_.$handle'
 import { Route as OffersRouteImport } from './routes/offers'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as PrivacyRouteImport } from './routes/privacy'
@@ -83,7 +83,7 @@ const MemberRoute = MemberRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const MemberHandleRoute = MemberHandleRouteImport.update({
-  id: '/member/$handle',
+  id: '/member_/$handle',
   path: '/member/$handle',
   getParentRoute: () => rootRouteImport,
 } as any)
@@ -242,7 +242,7 @@ export interface FileRoutesById {
   '/list-your-business': typeof ListYourBusinessRoute
   '/login': typeof LoginRoute
   '/member': typeof MemberRoute
-  '/member/$handle': typeof MemberHandleRoute
+  '/member_/$handle': typeof MemberHandleRoute
   '/offers': typeof OffersRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
@@ -331,7 +331,7 @@ export interface FileRouteTypes {
     | '/list-your-business'
     | '/login'
     | '/member'
-    | '/member/$handle'
+    | '/member_/$handle'
     | '/offers'
     | '/pricing'
     | '/privacy'
@@ -446,8 +446,8 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MemberRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/member/$handle': {
-      id: '/member/$handle'
+    '/member_/$handle': {
+      id: '/member_/$handle'
       path: '/member/$handle'
       fullPath: '/member/$handle'
       preLoaderRoute: typeof MemberHandleRouteImport
