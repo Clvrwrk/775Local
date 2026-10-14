@@ -68,8 +68,9 @@ test("database delivery is a separate target-explicit Preview workflow", () => {
   assert.match(workflow, /supabase test db/);
   assert.match(workflow, /supabase db lint --local/);
   assert.match(workflow, /environment:\s*local775-preview/);
-  assert.match(workflow, /supabase db push --dry-run/);
-  assert.match(workflow, /supabase db push --linked/);
+  assert.match(workflow, /preview-forward-package\.mjs dpxeldzunfxmjahgvjhm/);
+  assert.match(workflow, /Hosted apply is disabled/);
+  assert.doesNotMatch(workflow, /supabase (?:link|db push)|secrets\./);
   assert.doesNotMatch(workflow, /production|hcfryjrajqftcnnbnybj/i);
 });
 

@@ -35,6 +35,14 @@ export function isWorkosServerConfigured(env) {
 /** @param {unknown} value @param {string} [fallback] */
 export function safeReturnPath(value, fallback = "/account") {
   if (typeof value !== "string") return fallback;
+  if (
+    value.includes("\\") ||
+    [...value].some(
+      (character) => character.charCodeAt(0) <= 32 || character.charCodeAt(0) === 127,
+    ) ||
+    /%(?:2f|5c|0[0-9a-f]|1[0-9a-f]|7f)/i.test(value)
+  )
+    return fallback;
   if (!value.startsWith("/") || value.startsWith("//") || value.includes("://")) return fallback;
   return value;
 }

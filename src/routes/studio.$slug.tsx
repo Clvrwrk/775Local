@@ -1,5 +1,6 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
+import { ListingPeoplePanel } from "@/components/directory/listing-people";
 import { SiteShell } from "@/components/layout/site-shell";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -8,6 +9,7 @@ import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { studioFeedback } from "@/lib/directory/studio-feedback.mjs";
 import { getBusiness } from "@/lib/directory/queries";
 import { pilotCommand, type PilotWorkspace } from "@/lib/directory/studio";
+import { BusinessImagePanel } from "@/components/directory/business-image-panel";
 
 export const Route = createFileRoute("/studio/$slug")({
   head: () => ({
@@ -26,6 +28,23 @@ export const Route = createFileRoute("/studio/$slug")({
 function StudioPage() {
   const { business } = Route.useLoaderData();
   const { user, isPending } = useCurrentUserState();
+  if (!isPending && !user) return <RedirectToSignIn />;
+  if (!user)
+    return (
+      <SiteShell>
+        <p role="status" className="app-page p-6">
+          Checking sign-in…
+        </p>
+      </SiteShell>
+    );
+  return <StudioSession key={`${user.id}:${business.sourceId}`} business={business} />;
+}
+function StudioSession({
+  business,
+}: {
+  business: NonNullable<Awaited<ReturnType<typeof getBusiness>>>;
+}) {
+  const { user } = useCurrentUserState();
   const userId = user?.id;
   const [workspace, setWorkspace] = useState<PilotWorkspace | null>(null);
   const [error, setError] = useState("");
@@ -33,7 +52,15 @@ function StudioPage() {
   const [saveError, setSaveError] = useState("");
   const [saving, setSaving] = useState(false);
   const [attempt, setAttempt] = useState(0);
+  const savingLock = useRef(false);
   const pending = useRef<{ fingerprint: string; key: string } | null>(null);
+  const alive = useRef(true);
+  useEffect(() => {
+    alive.current = true;
+    return () => {
+      alive.current = false;
+    };
+  }, []);
   useEffect(() => {
     if (!userId) {
       setWorkspace(null);
@@ -58,16 +85,31 @@ function StudioPage() {
   }, [userId, business.sourceId, attempt]);
   async function propose(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (savingLock.current) return;
+    savingLock.current = true;
     const form = new FormData(event.currentTarget);
-    const data = {
-      action: "propose",
-      baseVersion: workspace?.editable.baseVersion,
-      id: business.sourceId,
-      name: String(form.get("name")),
-      description: String(form.get("description")),
-      phone: String(form.get("phone")),
-      website: String(form.get("website")),
-    };
+    const owner = workspace?.role === "business_owner";
+    const data = owner
+      ? {
+          action: "publish_owner_edit",
+          id: business.sourceId,
+          description: String(form.get("description")),
+          phone: String(form.get("phone")),
+          hours: String(form.get("hours")),
+        }
+      : {
+          action: "propose",
+          baseVersion: workspace?.editable.baseVersion,
+          id: business.sourceId,
+          name: String(form.get("name")),
+          description: String(form.get("description")),
+          phone: String(form.get("phone")),
+          website: String(form.get("website")),
+          services: String(form.get("services"))
+            .split("\n")
+            .map((x) => x.trim())
+            .filter(Boolean),
+        };
     const fingerprint = JSON.stringify(data);
     if (pending.current?.fingerprint !== fingerprint)
       pending.current = { fingerprint, key: `listing-${crypto.randomUUID()}` };
@@ -76,20 +118,23 @@ function StudioPage() {
     setSaveError("");
     try {
       const result = await pilotCommand({ data: { ...data, key: pending.current.key } });
+      if (!alive.current) return;
       if (result.ok) {
         setMessage(
-          "Changes saved for review. Your public listing remains unchanged until approval.",
+          owner
+            ? "Your public listing now shows this description, phone, and hours."
+            : "Changes saved for review. Your public listing remains unchanged until approval.",
         );
         pending.current = null;
         setAttempt((x) => x + 1);
       } else setSaveError(studioFeedback(result.code));
     } catch {
-      setSaveError("Connection interrupted. Retry to confirm your submission.");
+      if (alive.current) setSaveError("Connection interrupted. Retry to confirm your submission.");
     } finally {
-      setSaving(false);
+      savingLock.current = false;
+      if (alive.current) setSaving(false);
     }
   }
-  if (!isPending && !user) return <RedirectToSignIn />;
   return (
     <SiteShell wash>
       <section className="app-page px-4 py-10 sm:px-6">
@@ -124,8 +169,9 @@ function StudioPage() {
               >
                 <h2 className="font-display text-2xl font-semibold">Update business details</h2>
                 <p className="text-sm leading-6 text-muted">
-                  Submit accurate details for review. Ownership and contact verification remain
-                  separate from this edit.
+                  {workspace.role === "business_owner"
+                    ? "Description, phone, and hours update the public listing. Add photos in the panel on this page. Name and website changes still go through review."
+                    : "Submit accurate details for review. Ownership and contact verification remain separate from this edit."}
                 </p>
                 <label className="grid gap-2 text-sm font-medium">
                   Business name
@@ -135,6 +181,7 @@ function StudioPage() {
                     required
                     minLength={2}
                     maxLength={200}
+                    readOnly={workspace.role === "business_owner"}
                   />
                 </label>
                 <label className="grid gap-2 text-sm font-medium">
@@ -158,6 +205,19 @@ function StudioPage() {
                     required
                   />
                 </label>
+                {workspace.role === "business_owner" ? (
+                  <label className="grid gap-2 text-sm font-medium">
+                    Hours
+                    <Textarea
+                      name="hours"
+                      defaultValue={workspace.editable.hours ?? ""}
+                      required
+                      minLength={3}
+                      maxLength={400}
+                      placeholder="Mon–Fri 8:00–5:00"
+                    />
+                  </label>
+                ) : null}
                 <label className="grid gap-2 text-sm font-medium">
                   Website (HTTPS)
                   <Input
@@ -165,10 +225,24 @@ function StudioPage() {
                     type="url"
                     defaultValue={workspace.editable.website}
                     placeholder="https://your-business.com"
+                    readOnly={workspace.role === "business_owner"}
+                  />
+                </label>
+                <label className="grid gap-2 text-sm font-medium">
+                  Services (one per line)
+                  <Textarea
+                    name="services"
+                    defaultValue={workspace.editable.services.join("\n")}
+                    maxLength={3030}
+                    placeholder="List only services your business actually provides"
                   />
                 </label>
                 <button className="action-primary justify-self-start" disabled={saving}>
-                  {saving ? "Saving…" : "Submit changes for review"}
+                  {saving
+                    ? "Saving…"
+                    : workspace.role === "business_owner"
+                      ? "Update public listing"
+                      : "Submit changes for review"}
                 </button>
                 {saveError ? (
                   <div role="alert" className="text-sm leading-6 text-danger">
@@ -197,6 +271,9 @@ function StudioPage() {
               </section>
             )}
             <section>
+              {workspace.role === "business_owner" || workspace.role === "operator" ? (
+                <ListingPeoplePanel listingId={business.sourceId} />
+              ) : null}
               <h2 className="font-display text-2xl font-semibold">Recent submissions</h2>
               <div className="mt-4 grid gap-3">
                 {workspace.proposals.length ? (
@@ -226,6 +303,9 @@ function StudioPage() {
             </section>
           </div>
         )}
+        {workspace && userId ? (
+          <BusinessImagePanel key={userId} listingId={business.sourceId} />
+        ) : null}
       </section>
     </SiteShell>
   );

@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { Building2, CreditCard, Truck } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { ClaimEvidenceForm } from "./claim-evidence";
 import { Button } from "@/components/ui/button";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { getMyListingClaim, submitListingClaim } from "@/lib/directory/claims";
@@ -32,12 +33,12 @@ function claimMessage(claim: ClaimReceipt) {
     case "needs_evidence":
       return {
         title: "Evidence needed",
-        body: "Your Claim is saved. Proof must be provided through the private review workflow before an Operator can approve it.",
+        body: "Your Claim is saved. Add a private evidence reference below so an Operator can independently review your authority.",
       };
     case "approved":
       return {
         title: "Claim approved",
-        body: "Your Business Owner participation is active. Lead delivery still requires a verified Lead Recipient.",
+        body: "This claim was approved previously. Your participation is no longer active; approval history does not grant current access.",
       };
     case "rejected":
       return {
@@ -71,6 +72,11 @@ export function ClaimListingPanel({
 }) {
   const { user } = useCurrentUserState();
   const userId = user?.id;
+  const [role, setRole] = useState<"business_owner" | "listing_manager">("business_owner");
+  const [startAgain, setStartAgain] = useState(false);
+  const [attempt, setAttempt] = useState(0);
+  const savingLock = useRef(false);
+  const claimIdentity = useRef(`${listingId}:${userId}`);
   const [kind, setKind] = useState<ProofKind>("document");
   const [claim, setClaim] = useState<ClaimReceipt | null>(null);
   const [checking, setChecking] = useState(false);
@@ -92,7 +98,13 @@ export function ClaimListingPanel({
       setClaim(null);
       return;
     }
+    if (claimIdentity.current !== `${listingId}:${userId}`) {
+      setStartAgain(false);
+      claimIdentity.current = `${listingId}:${userId}`;
+    }
     setClaim(null);
+    setError("");
+    pending.current = null;
     let active = true;
     setChecking(true);
     void getMyListingClaim({ data: { listingId } })
@@ -111,15 +123,30 @@ export function ClaimListingPanel({
     return () => {
       active = false;
     };
-  }, [listingId, userId]);
+  }, [listingId, userId, attempt]);
 
-  if (claim) {
+  if (claim && !startAgain) {
     const message = claimMessage(claim);
     return (
       <div className="mt-4 rounded-[24px] border border-line bg-card p-5">
         <p className="text-xs font-medium uppercase tracking-[0.16em] text-teal">Claim status</p>
         <p className="mt-1 font-medium">{message.title}</p>
         <p className="mt-1 text-sm text-muted">{message.body}</p>
+        {["approved", "rejected", "withdrawn"].includes(claim.status) && !claim.role ? (
+          <button
+            type="button"
+            className="action-secondary mt-4"
+            onClick={() => {
+              setStartAgain(true);
+              setClaim(null);
+              setError("");
+              pending.current = null;
+            }}
+          >
+            Start a new claim with current evidence
+          </button>
+        ) : null}
+        <ClaimEvidenceForm claim={claim} onUpdated={() => setAttempt((x) => x + 1)} />
         {claim.role && claim.role !== "lead_recipient" ? (
           <Link
             to="/studio/$slug"
@@ -133,43 +160,40 @@ export function ClaimListingPanel({
     );
   }
 
-  if (ownerVerified && !checking) {
-    return (
-      <div className="mt-4 rounded-[24px] border border-line bg-card p-5">
-        <p className="font-medium">Owner verified</p>
-        <p className="mt-1 text-sm text-muted">
-          Additional Business Owners, Listing Managers, and Agency Representatives join by a scoped
-          invitation from an authorized participant or Local775 Operator.
-        </p>
-      </div>
-    );
-  }
-
   const next = `/biz/${slug}`;
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
+    const operationIdentity = `${listingId}:${userId}`;
+    if (savingLock.current || checking || error) return;
+    savingLock.current = true;
     setStatus("saving");
     setError("");
     const method = domainHint && !useProof ? "business_domain" : kind;
-    if (pending.current?.method !== method)
-      pending.current = { method, key: `claim-${crypto.randomUUID()}` };
+    const fingerprint = `${listingId}:${userId}:${role}:${method}`;
+    if (pending.current?.method !== fingerprint)
+      pending.current = { method: fingerprint, key: `claim-${crypto.randomUUID()}` };
     let result;
     try {
       result = await submitListingClaim({
         data: {
           listingId,
           method,
+          role,
           idempotencyKey: pending.current.key,
         },
       });
     } catch {
+      savingLock.current = false;
       setStatus("err");
       setError("Connection interrupted. Retry to confirm your claim without duplicating it.");
       return;
     }
+    savingLock.current = false;
+    if (claimIdentity.current !== operationIdentity) return;
     if (result.ok && result.receipt) {
       setClaim(result.receipt);
+      setStartAgain(false);
       pending.current = null;
       setStatus("idle");
       return;
@@ -189,12 +213,14 @@ export function ClaimListingPanel({
 
   return (
     <div className="mt-4 rounded-[24px] border border-line bg-paper p-5">
-      <p className="text-xs font-medium uppercase tracking-[0.16em] text-teal">Unclaimed</p>
-      <h3 className="mt-1 font-display text-xl font-semibold">Own {businessName}?</h3>
+      <p className="text-xs font-medium uppercase tracking-[0.16em] text-teal">
+        {ownerVerified ? "Authority review" : "Unclaimed"}
+      </p>
+      <h3 className="mt-1 font-display text-xl font-semibold">Manage {businessName}?</h3>
       <p className="mt-1 text-sm text-ink-soft">
-        Sign in with Google or email. A work email matching {host || "the Business website"} is
-        strong evidence, but an Operator still approves the Claim before any Listing authority is
-        granted.
+        Sign in with Google or email. A work email matching {host || "the Business website"} is a
+        useful contact hint. An Operator independently verifies your identity, this listing and your
+        owner or manager authority before granting access.
       </p>
       {!user ? (
         <Link to="/login" search={{ next, error: undefined }} className="action-primary mt-4">
@@ -204,11 +230,28 @@ export function ClaimListingPanel({
         <p className="mt-4 text-sm text-muted">Checking Claim status…</p>
       ) : (
         <form onSubmit={onSubmit} className="mt-4 grid gap-3">
+          <label className="grid gap-2 text-sm font-medium">
+            Your authority
+            <select
+              className="h-11 rounded-xl border border-line bg-card px-3"
+              value={role}
+              onChange={(event) => setRole(event.target.value as typeof role)}
+            >
+              <option value="business_owner">Business owner</option>
+              <option value="listing_manager">Authorized listing manager</option>
+            </select>
+          </label>
+          {ownerVerified ? (
+            <p className="text-sm text-muted">
+              This listing already has an owner. Additional or conflicting access requires
+              independent review or an owner invitation.
+            </p>
+          ) : null}
           {domainHint && !useProof ? (
             <div>
               <p className="rounded-[16px] border border-line bg-card px-3 py-2 text-sm text-ink-soft">
-                {email} appears to match this Listing’s domain. The server verifies that match again
-                when you submit.
+                {email} appears to match this Listing’s domain. This is a contact hint only; an
+                Operator must independently verify your identity and authority.
               </p>
               <button
                 type="button"
@@ -224,7 +267,7 @@ export function ClaimListingPanel({
                 {generic
                   ? `${email || "This inbox"} is a personal or generic inbox.`
                   : `That email domain does not match ${host || "the listed website"}.`}{" "}
-                Choose the private evidence you can provide during review.
+                Choose the kind of evidence your reference will describe during review.
               </p>
               <div className="grid grid-cols-3 gap-2">
                 {proofOptions.map(([id, label, Icon]) => (
@@ -245,17 +288,31 @@ export function ClaimListingPanel({
                 ))}
               </div>
               <p className="text-xs text-muted">
-                This step records the Claim and evidence type only. Sensitive files are accepted
-                only through the private, retention-controlled proof workflow.
+                After starting your Claim, provide a private registry, license or authorization
+                reference for review. File uploads are not available yet.
               </p>
             </>
           )}
           {error ? (
             <p role="alert" className="text-sm text-danger">
               {error}
+              <button
+                type="button"
+                className="action-secondary mt-3"
+                onClick={() => setAttempt((x) => x + 1)}
+              >
+                Refresh claim status
+              </button>
+              <Link
+                to="/login"
+                search={{ next, error: undefined }}
+                className="ml-3 font-semibold text-teal"
+              >
+                Sign in again
+              </Link>
             </p>
           ) : null}
-          <Button type="submit" disabled={status === "saving"}>
+          <Button type="submit" disabled={status === "saving" || Boolean(error)}>
             {status === "saving"
               ? "Submitting…"
               : domainHint && !useProof

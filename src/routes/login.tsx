@@ -26,8 +26,8 @@ function Login() {
           </div>
         </div>
         <p className="mt-6 text-sm text-ink-soft">
-          Claim or manage your Reno business listing. Your account access is separate from approval
-          to manage a business.
+          Create your private profile or claim and manage your Reno business listing. Your account
+          access is separate from approval to manage a business.
         </p>
         {error ? (
           <p role="alert" className="mt-6 rounded-[16px] border border-line bg-card p-4 text-sm">
@@ -43,7 +43,8 @@ function Login() {
           Continue with email or Google
         </a>
         <p className="mt-8 text-sm text-muted">
-          Residents do not need an account. Owner and operator access is individually authorized.
+          Browsing is open to everyone. A personal account is optional. Owner and operator access is
+          individually authorized.
         </p>
         <p className="mt-4 text-sm">
           <Link to="/" className="text-teal underline-offset-4 hover:underline">

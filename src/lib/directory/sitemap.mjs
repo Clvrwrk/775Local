@@ -15,7 +15,7 @@ const escapeXml = (value) =>
  */
 export function renderSitemap(listings) {
   const reno = listings.filter((listing) => listing.citySlug === "reno");
-  const paths = new Set(["/", "/about", "/categories", "/privacy", "/terms"]);
+  const paths = new Set(["/", "/about", "/categories", "/privacy", "/terms", "/roadmap"]);
   if (!robotsForListingCount("city", reno.length)) paths.add("/nv/reno");
   const counts = new Map();
   for (const listing of reno) {

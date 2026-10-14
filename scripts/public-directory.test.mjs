@@ -1,6 +1,10 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
+  listingLocationStructuredData,
+  listingPublicLocationLabel,
+} from "../src/lib/directory/structured-data.mjs";
+import {
   buildDirectoryUrl,
   fetchDirectoryCategories,
   fetchDirectoryListings,
@@ -42,6 +46,151 @@ const row = {
   offer_ends_at: null,
 };
 
+test("actual public row locality reaches visible labels and JSON-LD independently from discovery", () => {
+  const physical = mapDirectoryListing(
+    {
+      ...row,
+      city_slug: "reno",
+      street_address: "1757 Synthetic Avenue",
+      is_service_area: false,
+      address_locality: "Sparks",
+      service_area_names: ["Reno", "Sparks"],
+    },
+    { cityName: "Reno" },
+  );
+  assert.equal(physical.cityName, "Reno");
+  assert.equal(listingPublicLocationLabel(physical), "1757 Synthetic Avenue, Sparks, NV 89431");
+  assert.equal(listingLocationStructuredData(physical).address.addressLocality, "Sparks");
+  assert.deepEqual(listingLocationStructuredData(physical).areaServed, [
+    "Reno, Nevada",
+    "Sparks, Nevada",
+  ]);
+  const service = mapDirectoryListing(
+    { ...row, city_slug: "reno", address_locality: "Reno", service_area_names: ["Reno", "Sparks"] },
+    { cityName: "Reno" },
+  );
+  assert.equal(service.verifiedAddressLocality, null);
+  assert.equal(service.zip, "");
+  assert.equal(listingLocationStructuredData(service).address, undefined);
+  assert.equal(listingPublicLocationLabel(service), "Serving Reno, Sparks, Nevada");
+});
+
+test("mapper masks all private location fields when street is absent or service-area privacy applies", () => {
+  for (const privateRow of [
+    row,
+    { ...row, is_service_area: false },
+    { ...row, street_address: "Stored private address", address_locality: "Sparks" },
+    {
+      ...row,
+      street_address: "Stored private address",
+      is_service_area: false,
+      hide_street: true,
+      address_locality: "Sparks",
+    },
+    { ...row, street_address: "   ", is_service_area: false },
+    { ...row, street_address: "Service area", is_service_area: false },
+  ]) {
+    const mapped = mapDirectoryListing(privateRow);
+    assert.equal(mapped.street, "Service area");
+    assert.equal(mapped.hideStreet, true);
+    assert.equal(mapped.zip, "");
+    assert.equal(mapped.verifiedAddressLocality, null);
+    assert.equal(mapped.lat, null);
+    assert.equal(mapped.lng, null);
+    assert.doesNotMatch(JSON.stringify(mapped), /Stored private address|39\.53|-119\.75|89431/);
+  }
+  const physical = mapDirectoryListing({
+    ...row,
+    street_address: "1757 Synthetic Avenue",
+    is_service_area: false,
+    address_locality: "Sparks",
+  });
+  assert.equal(physical.street, "1757 Synthetic Avenue");
+  assert.equal(physical.hideStreet, false);
+  assert.equal(physical.zip, "89431");
+  assert.equal(physical.verifiedAddressLocality, "Sparks");
+  assert.equal(physical.lat, 39.53);
+  assert.equal(physical.lng, -119.75);
+});
+
+test("old schema/cache permits only one safe public GET fallback with identical filters and auth", async () => {
+  for (const code of ["42703", "PGRST204"]) {
+    const requests = [];
+    const result = await fetchDirectoryListings({
+      env: {
+        SUPABASE_URL: "https://fixture.supabase.co",
+        SUPABASE_PUBLISHABLE_KEY: "synthetic-public-key",
+      },
+      filters: { slug: "sparks-screen-shop", city: "sparks" },
+      fetchImpl: async (url, init) => {
+        requests.push({ url: new URL(url), init });
+        return requests.length === 1
+          ? Response.json(
+              { code, message: "column directory_listings.address_locality does not exist" },
+              { status: 400 },
+            )
+          : Response.json([row]);
+      },
+    });
+    assert.equal(result.length, 1);
+    assert.equal(result[0].hideStreet, true);
+    assert.equal(result[0].street, "Service area");
+    assert.equal(result[0].zip, "");
+    assert.equal(result[0].verifiedAddressLocality, null);
+    assert.equal(result[0].lat, null);
+    assert.equal(result[0].lng, null);
+    assert.doesNotMatch(JSON.stringify(result), /39\.53|-119\.75|89431/);
+    assert.equal(requests.length, 2);
+    assert.equal(requests[1].url.searchParams.get("current_slug"), "eq.sparks-screen-shop");
+    assert.equal(requests[1].url.searchParams.get("city_slug"), "eq.sparks");
+    assert.deepEqual(requests[0].init.headers, requests[1].init.headers);
+    assert.doesNotMatch(
+      requests[1].url.searchParams.get("select"),
+      /hours_text|about_text|address_locality|service_area_names|email|evidence/,
+    );
+  }
+});
+
+test("auth, unrelated schema, transport and a second cache failure abstain without extra retries", async () => {
+  for (const [status, code, message] of [
+    [401, "42703", "hours_text"],
+    [400, "42501", "hours_text"],
+    [400, "42703", "private_evidence"],
+    [503, "42703", "hours_text"],
+  ]) {
+    let calls = 0;
+    await assert.rejects(
+      fetchDirectoryListings({
+        env: {
+          SUPABASE_URL: "https://fixture.supabase.co",
+          SUPABASE_PUBLISHABLE_KEY: "synthetic-public-key",
+        },
+        fetchImpl: async () => {
+          calls++;
+          return Response.json({ code, message }, { status });
+        },
+      }),
+      /temporarily unavailable/,
+    );
+    assert.equal(calls, 1);
+  }
+  let calls = 0;
+  await assert.rejects(
+    fetchDirectoryListings({
+      env: {
+        SUPABASE_URL: "https://fixture.supabase.co",
+        SUPABASE_PUBLISHABLE_KEY: "synthetic-public-key",
+      },
+      fetchImpl: async () => {
+        calls++;
+        return Response.json({ code: "42703", message: "hours_text" }, { status: 400 });
+      },
+    }),
+    /temporarily unavailable/,
+  );
+  assert.equal(calls, 2);
+});
+
 test("the REST query targets only the reviewed public projection", () => {
   const url = buildDirectoryUrl("https://preview.supabase.co", {
     city: "sparks",
@@ -77,6 +226,27 @@ test("the public row mapper does not invent ratings, reviews, ownership, or a st
   assert.equal(listing.verified, true);
   assert.equal(listing.contentTier, "standard");
   assert.equal(listing.primaryCategory, "Screen Repair");
+});
+
+test("reviewed hours survive the public projection and mapper with their original scope", () => {
+  const hours = "Office hours: Monday–Friday 9am–4pm. Service appointments require confirmation.";
+  const listing = mapDirectoryListing({ ...row, hours_text: hours });
+  assert.equal(listing.hours, hours);
+  assert.ok(
+    buildDirectoryUrl("https://preview.supabase.co")
+      .searchParams.get("select")
+      .split(",")
+      .includes("hours_text"),
+  );
+});
+
+test("unknown or malformed hours retain a truthful confirmation fallback", () => {
+  for (const value of [undefined, null, "", "   ", {}, ["Monday"]]) {
+    assert.equal(
+      mapDirectoryListing({ ...row, hours_text: value }).hours,
+      "Call or visit the business website for current hours.",
+    );
+  }
 });
 
 test("category discovery returns only non-empty database projections", async () => {
@@ -256,4 +426,69 @@ test("primary directory queries normalize transport and malformed response error
       assert.equal(calls, 1, "the failing provider mock was actually reached");
     }
   }
+});
+
+test("legacy fallback rejects unprovable ownership while current projection retains reviewed owners", async () => {
+  const env = {
+    SUPABASE_URL: "https://fixture.supabase.co",
+    SUPABASE_PUBLISHABLE_KEY: "synthetic-public-key",
+  };
+  const owned = { ...row, owner_verified_at: "2026-09-30T12:00:00Z" };
+  let requests = 0;
+  await assert.rejects(
+    fetchDirectoryListings({
+      env,
+      fetchImpl: async () => {
+        requests++;
+        return requests === 1
+          ? Response.json(
+              {
+                code: "42703",
+                message: "column directory_listings.address_locality does not exist",
+              },
+              { status: 400 },
+            )
+          : Response.json([owned]);
+      },
+    }),
+    /Directory data is temporarily unavailable/,
+  );
+  assert.equal(requests, 2);
+  requests = 0;
+  const current = await fetchDirectoryListings({
+    env,
+    fetchImpl: async () => {
+      requests++;
+      return Response.json([owned]);
+    },
+  });
+  assert.equal(requests, 1);
+  assert.equal(current[0].ownerVerified, true);
+});
+
+test("legacy project images are withheld from public payloads while reviewed narrative is preserved", () => {
+  const mapped = mapDirectoryListing({
+    ...row,
+    projects: [
+      {
+        title: "Reviewed project title",
+        description: "Retained reviewed narrative",
+        imageUrl: "https://fixture.example/unreviewed.png",
+        image_url: "https://fixture.example/alternate.png",
+      },
+    ],
+  });
+  assert.deepEqual(mapped.projects, [
+    { title: "Reviewed project title", description: "Retained reviewed narrative" },
+  ]);
+});
+
+test("public About and short search description remain independent", () => {
+  const mapped = mapDirectoryListing({
+    ...row,
+    description: "Exact short summary.",
+    about_text: "Exact longer approved About copy.",
+  });
+  assert.equal(mapped.description, "Exact short summary.");
+  assert.equal(mapped.about, "Exact longer approved About copy.");
 });

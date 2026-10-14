@@ -8,11 +8,13 @@ on:
       - "src/lib/directory/operator-publication-handler.mjs"
       - "src/lib/directory/operator-publication.ts"
       - "src/lib/supabase/operator-publication.mjs"
+      - "scripts/preview-forward-package*"
+      - "release/preview-claims/**"
       - ".github/workflows/database-preview.yml"
   workflow_dispatch:
     inputs:
       apply:
-        description: Apply the reviewed migrations after the dry run
+        description: Hosted application is blocked pending target and provider approval
         required: true
         type: boolean
         default: false
@@ -63,31 +65,33 @@ jobs:
         run: supabase stop --no-backup
 
   preview-migrations:
-    name: Preview Migration Gate
+    name: Preview Forward Package (no hosted execution)
     if: ${{ github.event_name == 'workflow_dispatch' }}
     needs: database-contract
     runs-on: ubuntu-latest
     environment: local775-preview
     timeout-minutes: 15
-    env:
-      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-      SUPABASE_DB_PASSWORD: ${{ secrets.PREVIEW_SUPABASE_DB_PASSWORD }}
-      PREVIEW_PROJECT_ID: ${{ secrets.PREVIEW_SUPABASE_PROJECT_ID }}
     steps:
+      - name: Refuse hosted application until the divergent target is approved
+        if: ${{ inputs.apply }}
+        run: |
+          echo 'Hosted apply is disabled. Review the target-specific forward package and provider controls first.'
+          exit 1
+
       - name: Check out repository
         uses: actions/checkout@v4
 
-      - name: Install Supabase CLI
-        uses: supabase/setup-cli@v1
+      - name: Use Node 24
+        uses: actions/setup-node@v4
         with:
-          version: 2.105.0
+          node-version: 24
 
-      - name: Link the Preview database
-        run: supabase link --project-ref "$PREVIEW_PROJECT_ID"
+      - name: Prepare reviewed target-specific SQL without connecting
+        run: node scripts/preview-forward-package.mjs dpxeldzunfxmjahgvjhm artifacts/preview-claims/forward.sql
 
-      - name: Show the pending migration plan
-        run: supabase db push --dry-run --linked
-
-      - name: Apply reviewed migrations to Preview
-        if: ${{ inputs.apply }}
-        run: supabase db push --linked
+      - name: Save forward package for review
+        uses: actions/upload-artifact@v4
+        with:
+          name: preview-claims-forward-package
+          path: artifacts/preview-claims/forward.sql
+          retention-days: 7
