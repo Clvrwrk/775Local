@@ -99,6 +99,7 @@ export function listingMediaSlots(input) {
     }
   }
 
+  /** @type {{ id: string, url: string, alt: string, template: boolean }[]} */
   const images = realImages.slice(0, LISTING_IMAGE_SLOT_COUNT);
   let templateIndex = 1;
   while (images.length < LISTING_IMAGE_SLOT_COUNT) {
