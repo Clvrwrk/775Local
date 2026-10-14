@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { BadgeCheck, Clock, MapPin } from "lucide-react";
-import { telephoneHref, safeWebsite } from "@/lib/directory/presentation.mjs";
+import { telephoneHref } from "@/lib/directory/presentation.mjs";
+import { listingMediaSlots } from "@/lib/directory/category-art.mjs";
 import type { BusinessCard, ListingPlan } from "@/lib/directory/types";
 import { cn, formatPhone, mapsHref } from "@/lib/utils";
 import { Stars } from "./stars";
@@ -130,18 +131,24 @@ function TierChip({ label, floating = false }: { label: string; floating?: boole
 const cardBase =
   "group relative overflow-hidden bg-card focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-pine";
 
-function CardPhoto({ url }: { url: string | null }) {
-  return url ? (
-    <img src={url} alt="" loading="lazy" className="size-full object-cover" />
-  ) : (
-    <div className="flex size-full min-h-20 items-center justify-center bg-paper-2 p-2 text-center text-xs text-muted">
-      Photo not supplied
-    </div>
+function CardPhoto({ url, alt, template }: { url: string; alt: string; template: boolean }) {
+  return (
+    <>
+      <img src={url} alt={alt} loading="lazy" className="size-full object-cover" />
+      {template ? <span className="listing-template-pill">Template</span> : null}
+    </>
   );
 }
 
 export function BusinessCardView({ biz, layout }: { biz: BusinessCard; layout?: CardLayout }) {
-  const cover = safeWebsite(biz.coverUrl);
+  const cover = listingMediaSlots({
+    logoUrl: biz.logoUrl,
+    photos: biz.photos,
+    coverUrl: biz.coverUrl,
+    categorySlug: biz.primaryCategorySlug,
+    categoryName: biz.primaryCategory,
+    businessName: biz.name,
+  }).images[0];
   const tier = ["basic", "standard", "premium"].includes(biz.contentTier)
     ? biz.contentTier
     : "basic";
@@ -155,7 +162,7 @@ export function BusinessCardView({ biz, layout }: { biz: BusinessCard; layout?: 
         className={cn(cardBase, "flex items-center gap-3.5 rounded-[14px] border border-line p-3")}
       >
         <div className="relative size-20 shrink-0 overflow-hidden rounded-[12px]">
-          <CardPhoto url={cover} />
+          <CardPhoto url={cover.url} alt={cover.alt} template={cover.template} />
         </div>
         <div className="flex min-w-0 flex-1 flex-col gap-1">
           <div className="flex items-center gap-2">
@@ -189,7 +196,7 @@ export function BusinessCardView({ biz, layout }: { biz: BusinessCard; layout?: 
         )}
       >
         <div className="relative w-[38%] min-w-32 max-w-56 shrink-0 overflow-hidden">
-          <CardPhoto url={cover} />
+          <CardPhoto url={cover.url} alt={cover.alt} template={cover.template} />
           <TierChip label={tierLabel} floating />
           {biz.featured ? <Sponsored side /> : null}
         </div>
@@ -215,7 +222,7 @@ export function BusinessCardView({ biz, layout }: { biz: BusinessCard; layout?: 
       )}
     >
       <div className="relative aspect-[4/3] overflow-hidden">
-        <CardPhoto url={cover} />
+        <CardPhoto url={cover.url} alt={cover.alt} template={cover.template} />
         <TierChip label={tierLabel} floating />
         {biz.featured ? <Sponsored /> : null}
       </div>

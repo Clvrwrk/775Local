@@ -1,44 +1,46 @@
 import { useState } from "react";
-import { X, ChevronLeft, ChevronRight, Image } from "lucide-react";
-import type { ListingPhoto } from "@/lib/directory/types";
-import { safeWebsite } from "@/lib/directory/presentation.mjs";
+import { X, ChevronLeft, ChevronRight } from "lucide-react";
+
+export type GallerySlot = {
+  id: string;
+  url: string;
+  alt: string;
+  template: boolean;
+};
+
+function TemplatePill() {
+  return <span className="listing-template-pill">Template</span>;
+}
 
 export function ListingGallery({
-  photos,
+  slots,
+  more = [],
   name,
-  variant,
 }: {
-  photos: ListingPhoto[];
+  slots: GallerySlot[];
+  more?: GallerySlot[];
   name: string;
-  variant: "standard" | "premium";
 }) {
   const [active, setActive] = useState<number | null>(null);
-  const usable = photos.filter((photo) => safeWebsite(photo.url));
-  if (!usable.length)
-    return (
-      <div className={`listing-gallery-empty listing-gallery-${variant}`}>
-        <Image size={28} strokeWidth={1.75} />
-        <p>Business photos have not been added yet.</p>
-      </div>
-    );
-  const current = active === null ? undefined : usable[active];
-  const count = variant === "standard" ? 5 : 3;
+  const viewer = [...slots, ...more];
+  const current = active === null ? undefined : viewer[active];
   return (
     <>
       <div
-        className={`listing-gallery listing-gallery-${variant}`}
-        data-photo-count={Math.min(usable.length, count)}
+        className="listing-gallery listing-gallery-standard"
+        data-photo-count={slots.length}
       >
-        {usable.slice(0, count).map((photo, i) => (
+        {slots.map((slot, i) => (
           <button
             type="button"
-            key={photo.id}
+            key={slot.id}
             onClick={() => setActive(i)}
-            aria-label={`Open photo ${i + 1} of ${usable.length} for ${name}`}
+            aria-label={`Open photo ${i + 1} of ${viewer.length} for ${name}`}
           >
-            <img src={photo.url} alt={photo.caption || `${name}, photo ${i + 1}`} loading="lazy" />
-            {i === count - 1 && usable.length > count ? (
-              <span>+ {usable.length - count} more photos</span>
+            <img src={slot.url} alt={slot.alt} loading="lazy" />
+            {slot.template ? <TemplatePill /> : null}
+            {i === slots.length - 1 && more.length > 0 ? (
+              <span className="listing-gallery-more">+ {more.length} more photos</span>
             ) : null}
           </button>
         ))}
@@ -53,7 +55,10 @@ export function ListingGallery({
           >
             <X size={20} strokeWidth={1.75} />
           </button>
-          <img src={current.url} alt={current.caption || `${name}, photo ${active + 1}`} />
+          <div className="listing-photo-frame">
+            <img src={current.url} alt={current.alt} />
+            {current.template ? <TemplatePill /> : null}
+          </div>
           <div>
             <button
               type="button"
@@ -64,11 +69,11 @@ export function ListingGallery({
               <ChevronLeft strokeWidth={1.75} />
             </button>
             <p>
-              {active + 1} of {usable.length}
+              {active + 1} of {viewer.length}
             </p>
             <button
               type="button"
-              disabled={active === usable.length - 1}
+              disabled={active === viewer.length - 1}
               onClick={() => setActive(active + 1)}
               aria-label="Next photo"
             >
