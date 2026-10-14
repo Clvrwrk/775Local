@@ -9,6 +9,7 @@ import { retryIdentity } from "@/lib/directory/retry-key.mjs";
 import { ListingRequestReview } from "@/components/directory/listing-request-review";
 import { ClaimAuthorityReview } from "@/components/directory/claim-authority-review";
 import { decideListingClaim } from "@/lib/directory/claims";
+import { BusinessImagePanel } from "@/components/directory/business-image-panel";
 export const Route = createFileRoute("/review")({
   head: () => ({
     meta: [
@@ -57,6 +58,7 @@ function ReviewPage() {
           ← Your account
         </Link>
         <h1 className="mt-6 font-display text-4xl font-semibold">Reno review queue</h1>
+        {userId ? <BusinessImagePanel key={userId} review /> : null}
         <p className="mt-3 text-muted">
           Review the evidence and record a reason for every decision.
         </p>

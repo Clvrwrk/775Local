@@ -35,6 +35,7 @@ import { Route as NvCityRouteImport } from './routes/nv.$city'
 import { Route as StudioSlugRouteImport } from './routes/studio.$slug'
 import { Route as ApiAuthCallbackRouteImport } from './routes/api/auth/callback'
 import { Route as ApiAuthSignInRouteImport } from './routes/api/auth/sign-in'
+import { Route as ApiBusinessImagesIdRouteImport } from './routes/api/business-images.$id'
 import { Route as NvCityCategoryRouteImport } from './routes/nv_.$city.$category'
 
 const IndexRoute = IndexRouteImport.update({
@@ -167,6 +168,11 @@ const ApiAuthSignInRoute = ApiAuthSignInRouteImport.update({
   path: '/api/auth/sign-in',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiBusinessImagesIdRoute = ApiBusinessImagesIdRouteImport.update({
+  id: '/api/business-images/$id',
+  path: '/api/business-images/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const NvCityCategoryRoute = NvCityCategoryRouteImport.update({
   id: '/nv_/$city/$category',
   path: '/nv/$city/$category',
@@ -200,6 +206,7 @@ export interface FileRoutesByFullPath {
   '/studio/$slug': typeof StudioSlugRoute
   '/api/auth/callback': typeof ApiAuthCallbackRoute
   '/api/auth/sign-in': typeof ApiAuthSignInRoute
+  '/api/business-images/$id': typeof ApiBusinessImagesIdRoute
   '/nv/$city/$category': typeof NvCityCategoryRoute
 }
 export interface FileRoutesByTo {
@@ -229,6 +236,7 @@ export interface FileRoutesByTo {
   '/studio/$slug': typeof StudioSlugRoute
   '/api/auth/callback': typeof ApiAuthCallbackRoute
   '/api/auth/sign-in': typeof ApiAuthSignInRoute
+  '/api/business-images/$id': typeof ApiBusinessImagesIdRoute
   '/nv/$city/$category': typeof NvCityCategoryRoute
 }
 export interface FileRoutesById {
@@ -259,6 +267,7 @@ export interface FileRoutesById {
   '/studio/$slug': typeof StudioSlugRoute
   '/api/auth/callback': typeof ApiAuthCallbackRoute
   '/api/auth/sign-in': typeof ApiAuthSignInRoute
+  '/api/business-images/$id': typeof ApiBusinessImagesIdRoute
   '/nv_/$city/$category': typeof NvCityCategoryRoute
 }
 export interface FileRouteTypes {
@@ -290,6 +299,7 @@ export interface FileRouteTypes {
     | '/studio/$slug'
     | '/api/auth/callback'
     | '/api/auth/sign-in'
+    | '/api/business-images/$id'
     | '/nv/$city/$category'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -319,6 +329,7 @@ export interface FileRouteTypes {
     | '/studio/$slug'
     | '/api/auth/callback'
     | '/api/auth/sign-in'
+    | '/api/business-images/$id'
     | '/nv/$city/$category'
   id:
     | '__root__'
@@ -348,6 +359,7 @@ export interface FileRouteTypes {
     | '/studio/$slug'
     | '/api/auth/callback'
     | '/api/auth/sign-in'
+    | '/api/business-images/$id'
     | '/nv_/$city/$category'
   fileRoutesById: FileRoutesById
 }
@@ -378,6 +390,7 @@ export interface RootRouteChildren {
   StudioSlugRoute: typeof StudioSlugRoute
   ApiAuthCallbackRoute: typeof ApiAuthCallbackRoute
   ApiAuthSignInRoute: typeof ApiAuthSignInRoute
+  ApiBusinessImagesIdRoute: typeof ApiBusinessImagesIdRoute
   NvCityCategoryRoute: typeof NvCityCategoryRoute
 }
 
@@ -565,6 +578,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthSignInRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/business-images/$id': {
+      id: '/api/business-images/$id'
+      path: '/api/business-images/$id'
+      fullPath: '/api/business-images/$id'
+      preLoaderRoute: typeof ApiBusinessImagesIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/nv_/$city/$category': {
       id: '/nv_/$city/$category'
       path: '/nv/$city/$category'
@@ -602,6 +622,7 @@ const rootRouteChildren: RootRouteChildren = {
   StudioSlugRoute: StudioSlugRoute,
   ApiAuthCallbackRoute: ApiAuthCallbackRoute,
   ApiAuthSignInRoute: ApiAuthSignInRoute,
+  ApiBusinessImagesIdRoute: ApiBusinessImagesIdRoute,
   NvCityCategoryRoute: NvCityCategoryRoute,
 }
 export const routeTree = rootRouteImport

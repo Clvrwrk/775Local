@@ -284,6 +284,12 @@ export function ListingPage({ biz }: { biz: BusinessDetail }) {
       verifiedAddressLocality: biz.verifiedAddressLocality,
       serviceAreas: biz.serviceAreas,
     }),
+    ...((biz.businessImages ?? []).some((m) => m.kind === "logo")
+      ? { logo: biz.businessImages!.find((m) => m.kind === "logo")!.url }
+      : {}),
+    ...((biz.businessImages ?? []).some((m) => m.kind === "image")
+      ? { image: biz.businessImages!.filter((m) => m.kind === "image").map((m) => m.url) }
+      : {}),
   };
   const heading = (
     <div className="listing-heading-copy">
@@ -378,6 +384,44 @@ export function ListingPage({ biz }: { biz: BusinessDetail }) {
                 />
               </div>
             </header>
+          ) : null}
+          {biz.businessImages?.length ? (
+            <section className="py-6" aria-label="Approved business images">
+              {biz.businessImages
+                .filter((m) => m.kind === "logo")
+                .map((m) => (
+                  <img
+                    key={m.id}
+                    src={m.url}
+                    alt={m.alt}
+                    width={m.width}
+                    height={m.height}
+                    className="max-h-24 max-w-64 object-contain"
+                  />
+                ))}
+              {biz.businessImages.some((m) => m.kind === "image") ? (
+                <div
+                  className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
+                  aria-label="Business photographs"
+                >
+                  {biz.businessImages
+                    .filter((m) => m.kind === "image")
+                    .map((m) => (
+                      <figure key={m.id}>
+                        <img
+                          src={m.url}
+                          alt={m.alt}
+                          width={m.width}
+                          height={m.height}
+                          className="h-auto w-full rounded-2xl"
+                          loading="lazy"
+                        />
+                        <figcaption className="mt-2 text-sm text-muted">{m.alt}</figcaption>
+                      </figure>
+                    ))}
+                </div>
+              ) : null}
+            </section>
           ) : null}
           {biz.contentTier === "standard" ? (
             <ListingGallery photos={biz.photos} name={biz.name} variant="standard" />
