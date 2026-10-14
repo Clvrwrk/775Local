@@ -8,6 +8,7 @@ import {
   visibleProjects,
   descriptionBlocks,
 } from "@/lib/directory/presentation.mjs";
+import { listingMediaSlots } from "@/lib/directory/category-art.mjs";
 import { serializeStructuredData } from "@/lib/directory/structured-data.mjs";
 import { formatPhone } from "@/lib/utils";
 import { BrandMark } from "@/components/brand/logo";
@@ -209,6 +210,10 @@ function Services({ biz }: { biz: BusinessDetail }) {
   ) : null;
 }
 
+function TemplatePill() {
+  return <span className="listing-template-pill">Template</span>;
+}
+
 function PremiumContent({ biz }: { biz: BusinessDetail }) {
   const projects = visibleProjects(biz.projects).map((project) => ({
     ...project,
@@ -216,7 +221,6 @@ function PremiumContent({ biz }: { biz: BusinessDetail }) {
   }));
   return (
     <>
-      <ListingGallery photos={biz.photos} name={biz.name} variant="premium" />
       <Services biz={biz} />
       {biz.faqs.length ? (
         <Panel title="Frequently asked questions">
@@ -250,7 +254,15 @@ function PremiumContent({ biz }: { biz: BusinessDetail }) {
 }
 
 export function ListingPage({ biz }: { biz: BusinessDetail }) {
-  const cover = safeWebsite(biz.coverUrl);
+  const media = listingMediaSlots({
+    logoUrl: biz.logoUrl,
+    photos: biz.photos,
+    coverUrl: biz.coverUrl,
+    categorySlug: biz.primaryCategorySlug,
+    categoryName: biz.primaryCategory,
+    businessName: biz.name,
+  });
+  const hero = media.images[0];
   const basic = biz.contentTier === "basic";
   const premium = biz.contentTier === "premium";
   const showStreet = !biz.hideStreet && biz.street && biz.street !== "Service area";
@@ -261,6 +273,7 @@ export function ListingPage({ biz }: { biz: BusinessDetail }) {
     ...(biz.description ? { description: biz.description } : {}),
     ...(biz.phone ? { telephone: biz.phone } : {}),
     ...(safeWebsite(biz.website) ? { url: biz.website } : {}),
+    ...(media.logo.template ? {} : { logo: media.logo.url }),
     ...(biz.photos.some((photo) => safeWebsite(photo.url))
       ? {
           image: biz.photos
@@ -291,6 +304,10 @@ export function ListingPage({ biz }: { biz: BusinessDetail }) {
   };
   const heading = (
     <div className="listing-heading-copy">
+      <figure className="listing-logo">
+        <img src={media.logo.url} alt={media.logo.alt} />
+        {media.logo.template ? <TemplatePill /> : null}
+      </figure>
       <p className="listing-eyebrow">
         {biz.primaryCategory} · {biz.cityName}, NV
       </p>
@@ -339,7 +356,8 @@ export function ListingPage({ biz }: { biz: BusinessDetail }) {
         </div>
         {premium ? (
           <header className="listing-premium-hero">
-            {cover ? <img className="listing-hero-photo" src={cover} alt="" /> : null}
+            {hero ? <img className="listing-hero-photo" src={hero.url} alt="" /> : null}
+            {hero?.template ? <TemplatePill /> : null}
             <div className="listing-container listing-hero-inner">
               {heading}
               <ContactActions phone={biz.phone} website={biz.website} sponsored={biz.featured} />
@@ -358,10 +376,7 @@ export function ListingPage({ biz }: { biz: BusinessDetail }) {
               </div>
             </header>
           ) : null}
-          {biz.contentTier === "standard" ||
-          (basic && biz.photos.some((photo) => safeWebsite(photo.url))) ? (
-            <ListingGallery photos={biz.photos} name={biz.name} variant="standard" />
-          ) : null}
+          <ListingGallery slots={media.images} more={media.more} name={biz.name} />
           <div className="listing-columns">
             <div className="listing-stack">
               {basic ? (

@@ -50,6 +50,9 @@ export type BusinessCard = {
   publicEmail: boolean;
   hideStreet: boolean;
   coverUrl: string | null;
+  /** Approved logo. Absent on the public projection until a listing has one. */
+  logoUrl?: string | null;
+  photos?: ListingPhoto[];
   informationCheckedAt: string | null;
   publishedAt: string | null;
   googlePlaceId: string | null;
