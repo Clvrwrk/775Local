@@ -35,15 +35,22 @@ function hasPhoneNumber(value) {
 /** @param {string} value */
 function isHoursOfOperation(value) {
   const line = value.trim();
-  if (/^(hours?|hours of operation|office hours|business hours|hours of ops|after hours)$/i.test(line))
+  // "After Hours" is a service name. Only bare schedule labels match here.
+  if (/^(hours?|hours of operation|office hours|business hours|hours of ops)$/i.test(line))
     return true;
   if (
-    /^(?:monday|tuesday|wednesday|thursday|friday|saturday|sunday|mon|tue|tues|wed|thu|thur|thurs|fri|sat|sun)\b[:\s-].*(?:\d|closed|open)/i.test(
+    /^(?:monday|tuesday|wednesday|thursday|friday|saturday|sunday|mon|tue|tues|wed|thu|thur|thurs|fri|sat|sun)\b[:\s-].*(?:\d|closed\b)/i.test(
       line,
     )
   )
     return true;
   if (/^\d{1,2}:\d{2}\s*(?:a\.?m\.?|p\.?m\.?)\b/i.test(line)) return true;
+  if (
+    /^\d{1,2}(?::\d{2})?\s*(?:a\.?m\.?|p\.?m\.?)\s*(?:-|–|—|to)\s*\d{1,2}(?::\d{2})?\s*(?:a\.?m\.?|p\.?m\.?)?$/i.test(
+      line,
+    )
+  )
+    return true;
   if (
     line.length <= 80 &&
     /\b(?:monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b/i.test(line) &&

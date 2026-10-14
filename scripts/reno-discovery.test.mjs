@@ -89,6 +89,7 @@ test("navigation fragments and empty project shells do not become business servi
       "Saturday:Closed",
       "Monday - Friday 7:30AM - 5:30PM",
       "11:00 AM - 09:00 PM",
+      "9 AM - 5 PM",
       "Monday September 7th",
       "7111 S. Virgina Șt. Reno, NV 89511",
       "1121 Corporate Blvd, Reno, NV 89502",
@@ -103,12 +104,16 @@ test("navigation fragments and empty project shells do not become business servi
       "Roof Maintenance and Roof Repair in Reno",
       "Vino Reno",
       "Provide same-day repairs",
+      "After Hours",
+      "Sunday open mic",
     ]),
     [
       "Drain cleaning",
       "Roof Maintenance and Roof Repair in Reno",
       "Vino Reno",
       "Provide same-day repairs",
+      "After Hours",
+      "Sunday open mic",
     ],
   );
   assert.deepEqual(
