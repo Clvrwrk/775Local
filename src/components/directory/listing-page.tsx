@@ -240,6 +240,14 @@ export function ListingPage({ biz }: { biz: BusinessDetail }) {
     ...(biz.description ? { description: biz.description } : {}),
     ...(biz.phone ? { telephone: biz.phone } : {}),
     ...(safeWebsite(biz.website) ? { url: biz.website } : {}),
+    ...(biz.photos.some((photo) => safeWebsite(photo.url))
+      ? {
+          image: biz.photos
+            .map((photo) => safeWebsite(photo.url))
+            .filter((url): url is string => Boolean(url))
+            .slice(0, 5),
+        }
+      : {}),
     address: {
       "@type": "PostalAddress",
       ...(showStreet ? { streetAddress: biz.street } : {}),
@@ -318,7 +326,8 @@ export function ListingPage({ biz }: { biz: BusinessDetail }) {
               </div>
             </header>
           ) : null}
-          {biz.contentTier === "standard" ? (
+          {biz.contentTier === "standard" ||
+          (basic && biz.photos.some((photo) => safeWebsite(photo.url))) ? (
             <ListingGallery photos={biz.photos} name={biz.name} variant="standard" />
           ) : null}
           <div className="listing-columns">
