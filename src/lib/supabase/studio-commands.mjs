@@ -21,6 +21,7 @@ const STUDIO_ERRORS = new Set([
   "publication_forbidden",
   "publication_sources_required",
   "invalid_listing_review",
+  "invalid_owned_listing_edit",
 ]);
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 /** @param {unknown} input */
@@ -177,6 +178,33 @@ export function studioCommand(input) {
         requested_id: data.id,
         requested_decision: data.decision,
         requested_reason: data.reason.trim(),
+      },
+    };
+  }
+  if (
+    data.action === "publish_owner_edit" &&
+    typeof data.description === "string" &&
+    data.description.trim().length >= 10 &&
+    data.description.length <= 5000 &&
+    typeof data.hours === "string" &&
+    data.hours.trim().length >= 3 &&
+    data.hours.trim().length <= 400 &&
+    typeof data.key === "string" &&
+    /^[A-Za-z0-9][A-Za-z0-9._:-]{7,199}$/.test(data.key)
+  ) {
+    const phone = telephoneHref(data.phone)?.slice(4);
+    if (!phone || !/^\+1[2-9]\d{2}[2-9]\d{6}$/.test(phone))
+      throw new Error("invalid_studio_command");
+    return {
+      rpc: "apply_owned_listing_edit",
+      body: {
+        requested_listing_id: data.id,
+        requested_key: data.key,
+        requested_edit: {
+          description: data.description.trim(),
+          phone,
+          hours: data.hours.trim(),
+        },
       },
     };
   }

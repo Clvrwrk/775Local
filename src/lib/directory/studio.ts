@@ -26,6 +26,7 @@ export type PilotWorkspace = {
     name: string;
     description: string;
     phone: string;
+    hours?: string;
     website: string;
     baseVersion: string;
     services: string[];

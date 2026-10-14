@@ -88,19 +88,28 @@ function StudioSession({
     if (savingLock.current) return;
     savingLock.current = true;
     const form = new FormData(event.currentTarget);
-    const data = {
-      action: "propose",
-      baseVersion: workspace?.editable.baseVersion,
-      id: business.sourceId,
-      name: String(form.get("name")),
-      description: String(form.get("description")),
-      phone: String(form.get("phone")),
-      website: String(form.get("website")),
-      services: String(form.get("services"))
-        .split("\n")
-        .map((x) => x.trim())
-        .filter(Boolean),
-    };
+    const owner = workspace?.role === "business_owner";
+    const data = owner
+      ? {
+          action: "publish_owner_edit",
+          id: business.sourceId,
+          description: String(form.get("description")),
+          phone: String(form.get("phone")),
+          hours: String(form.get("hours")),
+        }
+      : {
+          action: "propose",
+          baseVersion: workspace?.editable.baseVersion,
+          id: business.sourceId,
+          name: String(form.get("name")),
+          description: String(form.get("description")),
+          phone: String(form.get("phone")),
+          website: String(form.get("website")),
+          services: String(form.get("services"))
+            .split("\n")
+            .map((x) => x.trim())
+            .filter(Boolean),
+        };
     const fingerprint = JSON.stringify(data);
     if (pending.current?.fingerprint !== fingerprint)
       pending.current = { fingerprint, key: `listing-${crypto.randomUUID()}` };
@@ -112,7 +121,9 @@ function StudioSession({
       if (!alive.current) return;
       if (result.ok) {
         setMessage(
-          "Changes saved for review. Your public listing remains unchanged until approval.",
+          owner
+            ? "Your public listing now shows this description, phone, and hours."
+            : "Changes saved for review. Your public listing remains unchanged until approval.",
         );
         pending.current = null;
         setAttempt((x) => x + 1);
@@ -158,8 +169,9 @@ function StudioSession({
               >
                 <h2 className="font-display text-2xl font-semibold">Update business details</h2>
                 <p className="text-sm leading-6 text-muted">
-                  Submit accurate details for review. Ownership and contact verification remain
-                  separate from this edit.
+                  {workspace.role === "business_owner"
+                    ? "Description, phone, and hours update the public listing. Add photos in the panel on this page. Name and website changes still go through review."
+                    : "Submit accurate details for review. Ownership and contact verification remain separate from this edit."}
                 </p>
                 <label className="grid gap-2 text-sm font-medium">
                   Business name
@@ -169,6 +181,7 @@ function StudioSession({
                     required
                     minLength={2}
                     maxLength={200}
+                    readOnly={workspace.role === "business_owner"}
                   />
                 </label>
                 <label className="grid gap-2 text-sm font-medium">
@@ -192,6 +205,19 @@ function StudioSession({
                     required
                   />
                 </label>
+                {workspace.role === "business_owner" ? (
+                  <label className="grid gap-2 text-sm font-medium">
+                    Hours
+                    <Textarea
+                      name="hours"
+                      defaultValue={workspace.editable.hours ?? ""}
+                      required
+                      minLength={3}
+                      maxLength={400}
+                      placeholder="Mon–Fri 8:00–5:00"
+                    />
+                  </label>
+                ) : null}
                 <label className="grid gap-2 text-sm font-medium">
                   Website (HTTPS)
                   <Input
@@ -199,6 +225,7 @@ function StudioSession({
                     type="url"
                     defaultValue={workspace.editable.website}
                     placeholder="https://your-business.com"
+                    readOnly={workspace.role === "business_owner"}
                   />
                 </label>
                 <label className="grid gap-2 text-sm font-medium">
@@ -211,7 +238,11 @@ function StudioSession({
                   />
                 </label>
                 <button className="action-primary justify-self-start" disabled={saving}>
-                  {saving ? "Saving…" : "Submit changes for review"}
+                  {saving
+                    ? "Saving…"
+                    : workspace.role === "business_owner"
+                      ? "Update public listing"
+                      : "Submit changes for review"}
                 </button>
                 {saveError ? (
                   <div role="alert" className="text-sm leading-6 text-danger">
