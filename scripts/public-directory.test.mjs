@@ -77,6 +77,16 @@ test("the public row mapper does not invent ratings, reviews, ownership, or a st
   assert.equal(listing.verified, true);
   assert.equal(listing.contentTier, "standard");
   assert.equal(listing.primaryCategory, "Screen Repair");
+  assert.equal(listing.logoUrl, null);
+});
+
+test("the logo column is the cover only when it is an http address", () => {
+  const listing = mapDirectoryListing({
+    ...row,
+    logo_url: "https://cdn.example/logo.svg",
+  });
+  assert.equal(listing.logoUrl, "https://cdn.example/logo.svg");
+  assert.equal(mapDirectoryListing({ ...row, logo_url: "javascript:alert(1)" }).logoUrl, null);
 });
 
 test("category discovery returns only non-empty database projections", async () => {
