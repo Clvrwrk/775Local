@@ -133,12 +133,12 @@ export async function handleAttachExperiencePhoto(input, options = {}) {
   const sort = Number(candidate?.sort);
   const reviewId = String(candidate?.reviewId ?? "");
   const raw = String(candidate?.imageBase64 ?? "").replace(/^data:image\/[a-z0-9.+-]+;base64,/i, "");
-  if (!validUuid(reviewId) || !Number.isInteger(sort) || sort < 0 || sort > 3 || raw.length > 1_300_000) {
-    return { ok: false, code: "photo_rejected" };
-  }
+  if (!validUuid(reviewId)) return { ok: false, code: "photo_review" };
+  if (!Number.isInteger(sort) || sort < 0 || sort > 3) return { ok: false, code: "photo_sort" };
+  if (raw.length < 16 || raw.length > 1_300_000) return { ok: false, code: "photo_empty" };
   const bytes = Buffer.from(raw, "base64");
   const image = sniffImage(bytes);
-  if (!image) return { ok: false, code: "photo_rejected" };
+  if (!image) return { ok: false, code: `photo_sniff_${bytes.byteLength}` };
 
   const env = options.env ?? process.env;
   const prepared = await callMemberRpc({
@@ -153,7 +153,9 @@ export async function handleAttachExperiencePhoto(input, options = {}) {
     fetchImpl: options.fetchImpl,
     failureCode: "photo_rejected",
   });
-  if (!prepared.ok) return prepared;
+  if (!prepared.ok) {
+    return { ok: false, code: prepared.code === "photo_rejected" ? "photo_prepare" : prepared.code };
+  }
   if (typeof prepared.receipt !== "string" || !/^[0-9a-f-]{36}\/[0-9a-f-]{36}\/[0-3]\.(jpg|png|webp)$/.test(prepared.receipt)) {
     return { ok: false, code: "photo_path" };
   }
