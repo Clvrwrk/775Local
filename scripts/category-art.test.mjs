@@ -65,35 +65,32 @@ test("a real logo and three real images keep those and fill two template slots",
   assert.equal(media.images[4].url, templateImageUrl("hvac", 2));
 });
 
-test("the first stored image is the company logo and is not repeated in the five", () => {
+test("gallery photos stay in the gallery when the logo column is empty", () => {
   const media = listingMediaSlots({
     photos: [1, 2, 3, 4, 5, 6].map(real),
     categorySlug: "dentists",
     categoryName: "Dentists",
     businessName: "River Dentists",
   });
-  assert.equal(media.logo.template, false);
-  assert.equal(media.logo.url, "https://cdn.example/photo-1.jpg");
-  assert.equal(media.logo.alt, "River Dentists logo");
-  assert.equal(media.images[0].url, "https://cdn.example/photo-2.jpg");
+  assert.equal(media.logo.template, true);
+  assert.equal(media.logo.url, templateLogoUrl("dentists"));
+  assert.equal(media.images[0].url, "https://cdn.example/photo-1.jpg");
   assert.equal(media.images.length, 5);
-  assert.equal(
-    media.images.every((image) => image.template === false && image.url !== media.logo.url),
-    true,
-  );
-  assert.equal(media.more.length, 0);
+  assert.equal(media.more.length, 1);
+  assert.equal(media.more[0].url, "https://cdn.example/photo-6.jpg");
 });
 
-test("a seventh stored image stays behind more-photos after the logo is taken", () => {
+test("a seventh stored image stays behind more-photos", () => {
   const media = listingMediaSlots({
     photos: [1, 2, 3, 4, 5, 6, 7].map(real),
     categorySlug: "dentists",
     categoryName: "Dentists",
     businessName: "River Dentists",
   });
-  assert.equal(media.logo.url, "https://cdn.example/photo-1.jpg");
-  assert.equal(media.more.length, 1);
-  assert.equal(media.more[0].url, "https://cdn.example/photo-7.jpg");
+  assert.equal(media.logo.template, true);
+  assert.equal(media.more.length, 2);
+  assert.equal(media.more[0].url, "https://cdn.example/photo-6.jpg");
+  assert.equal(media.more[1].url, "https://cdn.example/photo-7.jpg");
 });
 
 test("an unknown category uses the directory art set", () => {

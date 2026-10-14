@@ -96,21 +96,16 @@ export function listingMediaSlots(input) {
   }
 
   const explicitLogo = safeWebsite(input.logoUrl);
-  // The public listing stores the company logo as the first image until a
-  // separate logo column exists. The cover uses that mark and does not repeat it.
+  // logoUrl is the public logo column. A gallery photo is not a logo.
   const logo = explicitLogo
     ? { id: "logo", url: explicitLogo, alt: `${businessName} logo`, template: false }
-    : stored[0]
-      ? { id: "logo", url: stored[0].url, alt: `${businessName} logo`, template: false }
-      : {
-          id: "logo-template",
-          url: templateLogoUrl(input.categorySlug),
-          alt: illustration,
-          template: true,
-        };
-  const realImages = (explicitLogo ? stored : stored.slice(1)).filter(
-    (image) => image.url !== logo.url,
-  );
+    : {
+        id: "logo-template",
+        url: templateLogoUrl(input.categorySlug),
+        alt: illustration,
+        template: true,
+      };
+  const realImages = stored.filter((image) => image.url !== logo.url);
 
   /** @type {{ id: string, url: string, alt: string, template: boolean }[]} */
   const images = realImages.slice(0, LISTING_IMAGE_SLOT_COUNT);

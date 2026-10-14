@@ -1,3 +1,5 @@
+import { safeWebsite } from "../directory/presentation.mjs";
+
 const PUBLIC_COLUMNS = [
   "id",
   "stable_id",
@@ -31,6 +33,7 @@ const PUBLIC_COLUMNS = [
   "faqs",
   "projects",
   "photo_urls",
+  "logo_url",
 ].join(",");
 
 /** @typedef {{ city?: string, category?: string, q?: string, slug?: string, featured?: boolean, unclaimed?: boolean, limit?: number, offset?: number }} DirectoryFilters */
@@ -157,6 +160,7 @@ export function mapDirectoryListing(row, names = {}) {
     publicEmail: false,
     hideStreet: !row.street_address,
     coverUrl: Array.isArray(row.photo_urls) && row.photo_urls[0] ? String(row.photo_urls[0]) : null,
+    logoUrl: safeWebsite(row.logo_url),
     lat: row.latitude == null ? null : Number(row.latitude),
     lng: row.longitude == null ? null : Number(row.longitude),
     categories: categories.map((categorySlug) => ({ slug: categorySlug, name: categorySlug })),

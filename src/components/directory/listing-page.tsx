@@ -7,6 +7,7 @@ import {
   visibleServices,
   visibleProjects,
   descriptionBlocks,
+  listingDescription,
 } from "@/lib/directory/presentation.mjs";
 import { listingMediaSlots } from "@/lib/directory/category-art.mjs";
 import { serializeStructuredData } from "@/lib/directory/structured-data.mjs";
@@ -144,10 +145,7 @@ function About({ biz }: { biz: BusinessDetail }) {
   return (
     <Panel title="About">
       <div className="listing-prose">
-        {descriptionBlocks(
-          biz.description ||
-            `${biz.name} is listed for ${biz.primaryCategory.toLowerCase()} in ${biz.cityName}. Contact the business for current service details.`,
-        ).map((paragraph, i) => (
+        {descriptionBlocks(listingDescription(biz)).map((paragraph, i) => (
           <p key={i}>{paragraph}</p>
         ))}
       </div>
@@ -270,7 +268,7 @@ export function ListingPage({ biz }: { biz: BusinessDetail }) {
     "@context": "https://schema.org",
     "@type": "LocalBusiness",
     name: biz.name,
-    ...(biz.description ? { description: biz.description } : {}),
+    description: listingDescription(biz),
     ...(biz.phone ? { telephone: biz.phone } : {}),
     ...(safeWebsite(biz.website) ? { url: biz.website } : {}),
     ...(media.logo.template ? {} : { logo: media.logo.url }),

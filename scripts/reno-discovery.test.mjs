@@ -3,6 +3,7 @@ import { test } from "node:test";
 import {
   telephoneHref,
   safeWebsite,
+  listingDescription,
   visibleServices,
   visibleProjects,
 } from "../src/lib/directory/presentation.mjs";
@@ -43,6 +44,29 @@ test("pilot discovery is Reno-only without rewriting a requested historical list
   assert.equal(pilotFilters({ q: "repair" }).q, "repair");
 });
 
+test("dummy latin is replaced with a sentence from the listing", () => {
+  const cleaned = listingDescription({
+    name: "Reno Fine Dining",
+    primaryCategory: "Restaurants",
+    cityName: "Reno",
+    description:
+      "Consectetur adipisicing elit. Cum debitis, ipsum est ipsam vitae vel, quam in sint reprehenderit.",
+  });
+  assert.equal(
+    cleaned,
+    "Reno Fine Dining is listed for restaurants in Reno. Contact the business for current service details.",
+  );
+  assert.equal(
+    listingDescription({
+      name: "Burke Roofing",
+      primaryCategory: "Roofing",
+      cityName: "Reno",
+      description: "Burke Roofing replaces and repairs roofs in Reno.",
+    }),
+    "Burke Roofing replaces and repairs roofs in Reno.",
+  );
+});
+
 test("exact service aliases resolve without consuming arbitrary business-name queries", () => {
   assert.equal(categoryForQuery("AC repair"), "hvac");
   assert.equal(categoryForQuery("plumber"), "plumbing");
@@ -57,8 +81,35 @@ test("navigation fragments and empty project shells do not become business servi
       "Drain cleaning",
       "Drain cleaning",
       "Call to schedule a Service Estimate",
+      "(775) 367-7900",
+      "Call 775-296-8988 or complete the form below.",
+      "Phone (775) 853-3444 Fax (775) 853-3441",
+      "Hours of Operation",
+      "Monday:7:30-5:00",
+      "Saturday:Closed",
+      "Monday - Friday 7:30AM - 5:30PM",
+      "11:00 AM - 09:00 PM",
+      "Monday September 7th",
+      "7111 S. Virgina Șt. Reno, NV 89511",
+      "1121 Corporate Blvd, Reno, NV 89502",
+      "225 E Prater Way",
+      "450 E Plumb Ln",
+      "590 N Virginia St",
+      "225 E Prater Way • (775) 356-7500",
+      "Reno",
+      "Sparks",
+      "Reno, NV",
+      "01 . Reno, NV",
+      "Roof Maintenance and Roof Repair in Reno",
+      "Vino Reno",
+      "Provide same-day repairs",
     ]),
-    ["Drain cleaning"],
+    [
+      "Drain cleaning",
+      "Roof Maintenance and Roof Repair in Reno",
+      "Vino Reno",
+      "Provide same-day repairs",
+    ],
   );
   assert.deepEqual(
     visibleProjects([
