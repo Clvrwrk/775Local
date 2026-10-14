@@ -74,7 +74,7 @@ export async function callMemberRpc({
       payload && typeof payload === "object" && "message" in payload
         ? String(payload.message)
         : "";
-    return { ok: false, code: stableErrorCode(message, failureCode), detail: message.slice(0, 140) };
+    return { ok: false, code: stableErrorCode(message, failureCode) };
   }
   return { ok: true, receipt: payload };
 }
