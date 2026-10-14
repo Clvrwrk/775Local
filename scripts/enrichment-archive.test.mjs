@@ -112,7 +112,9 @@ test("builds a byte-preserving snapshot and robust private seed profile", async 
     assert.ok(profile.description_candidate.includes("Acme Heating & Cooling provides"));
     assert.ok(profile.about_source_excerpt.includes("served Reno and Sparks since 1985"));
     assert.equal(profile.photo_candidates.length, 2);
+    assert.equal(profile.photo_candidates[0].role_candidate, "logo");
     assert.equal(profile.photo_candidates[0].same_site, true);
+    assert.equal(profile.photo_candidates[1].role_candidate, "gallery");
     assert.ok(profile.completeness_score >= 90);
 
     const summary = summarizeEnrichmentSnapshot(snapshot);
@@ -167,6 +169,24 @@ test("photo extraction rejects widgets and retains exact source provenance", () 
       evidence_score: 110,
     },
   ]);
+});
+
+test("a company logo is kept, sorted first, and a widget svg is dropped", () => {
+  const photos = extractPhotoCandidates(
+    [
+      {
+        url: "https://shop.example/about",
+        markdown:
+          "![Shop logo](https://shop.example/brand/logo.svg)\n![Project](https://shop.example/uploads/project.webp)\n![Spinner](https://cdn.userway.org/spin.svg)",
+      },
+    ],
+    "shop.example",
+  );
+  assert.deepEqual(
+    photos.map((photo) => photo.role_candidate),
+    ["logo", "gallery"],
+  );
+  assert.equal(photos[0].image_url, "https://shop.example/brand/logo.svg");
 });
 
 test("archive hashes original UTF-8 bytes and rejects invalid bytes without leaking payload", async () => {

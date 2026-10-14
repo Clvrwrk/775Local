@@ -180,7 +180,9 @@ export function extractPhotoCandidates(sourcePages, businessDomain) {
       if (BAD_IMAGE_HOSTS.some((blocked) => host === blocked || host.endsWith(`.${blocked}`))) {
         continue;
       }
-      if (BAD_IMAGE_TEXT.test(`${altText} ${image.pathname}`) || /\.svg(?:$|\?)/i.test(imageUrl)) {
+      const roleCandidate = imageRole(altText, imageUrl);
+      const svg = /\.svg(?:$|\?)/i.test(imageUrl);
+      if (BAD_IMAGE_TEXT.test(`${altText} ${image.pathname}`) || (svg && roleCandidate !== "logo")) {
         continue;
       }
       const imageDomain = normalizeDomain(imageUrl);
@@ -189,7 +191,6 @@ export function extractPhotoCandidates(sourcePages, businessDomain) {
         businessDomain &&
         (imageDomain === businessDomain || imageDomain.endsWith(`.${businessDomain}`)),
       );
-      const roleCandidate = imageRole(altText, imageUrl);
       let evidenceScore = sameSite ? 50 : 10;
       if (/\.(?:jpe?g|png|webp|avif)(?:$|\?)/i.test(imageUrl)) evidenceScore += 20;
       if (/\/uploads?\/|\/gallery\/|\/portfolio\/|\/projects?\/|\/team\//i.test(image.pathname)) {
@@ -216,10 +217,14 @@ export function extractPhotoCandidates(sourcePages, businessDomain) {
     }
   }
   return [...candidates.values()]
-    .sort(
-      (left, right) =>
-        right.evidence_score - left.evidence_score || left.image_url.localeCompare(right.image_url),
-    )
+    .sort((left, right) => {
+      const role = Number(right.role_candidate === "logo") - Number(left.role_candidate === "logo");
+      return (
+        role ||
+        right.evidence_score - left.evidence_score ||
+        left.image_url.localeCompare(right.image_url)
+      );
+    })
     .slice(0, 30);
 }
 
