@@ -22,6 +22,20 @@ export type Category = {
 
 export type ListingPlan = "basic" | "standard" | "premium";
 
+export type ListingMediaSlot = {
+  id: string;
+  url: string;
+  alt: string;
+  template: boolean;
+};
+
+export type ListingMedia = {
+  logo: ListingMediaSlot;
+  images: ListingMediaSlot[];
+  more: ListingMediaSlot[];
+  schemaImages: string[];
+};
+
 export type BusinessCard = {
   id: number;
   sourceId: string;
@@ -49,10 +63,17 @@ export type BusinessCard = {
   website: string;
   publicEmail: boolean;
   hideStreet: boolean;
-  coverUrl: string | null;
-  /** Approved logo. Absent on the public projection until a listing has one. */
-  logoUrl?: string | null;
-  photos?: ListingPhoto[];
+  /** Approved logo URL, or null when the cover is the category template. */
+  logoUrl: string | null;
+  lat: number | null;
+  lng: number | null;
+  categories: { slug: string; name: string }[];
+  photos: ListingPhoto[];
+  services: string[];
+  faqs: { question: string; answer: string }[];
+  projects: { title: string; description?: string; imageUrl?: string }[];
+  offer: Offer | null;
+  media: ListingMedia;
   informationCheckedAt: string | null;
   publishedAt: string | null;
   googlePlaceId: string | null;
@@ -106,10 +127,6 @@ export type CaseStudy = {
 
 export type BusinessDetail = BusinessCard & {
   email: string;
-  website: string;
-  lat: number | null;
-  lng: number | null;
-  categories: { slug: string; name: string }[];
   reviews: {
     id: string;
     author: string;
@@ -120,11 +137,6 @@ export type BusinessDetail = BusinessCard & {
     createdAt: string;
     photos: string[];
   }[];
-  photos: ListingPhoto[];
-  services: string[];
-  faqs: { question: string; answer: string }[];
-  projects: { title: string; description?: string; imageUrl?: string }[];
-  offer: Offer | null;
   caseStudies: CaseStudy[];
   caseStudiesStatus: "available" | "unavailable";
 };

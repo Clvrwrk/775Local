@@ -4,12 +4,9 @@ import type { BusinessDetail } from "@/lib/directory/types";
 import {
   telephoneHref,
   safeWebsite,
-  visibleServices,
   visibleProjects,
   descriptionBlocks,
-  listingDescription,
 } from "@/lib/directory/presentation.mjs";
-import { listingMediaSlots } from "@/lib/directory/category-art.mjs";
 import { serializeStructuredData } from "@/lib/directory/structured-data.mjs";
 import { formatPhone } from "@/lib/utils";
 import { BrandMark } from "@/components/brand/logo";
@@ -145,7 +142,7 @@ function About({ biz }: { biz: BusinessDetail }) {
   return (
     <Panel title="About">
       <div className="listing-prose">
-        {descriptionBlocks(listingDescription(biz)).map((paragraph, i) => (
+        {descriptionBlocks(biz.description).map((paragraph, i) => (
           <p key={i}>{paragraph}</p>
         ))}
       </div>
@@ -193,7 +190,7 @@ function Reviews({ biz }: { biz: BusinessDetail }) {
 }
 
 function Services({ biz }: { biz: BusinessDetail }) {
-  const services = visibleServices(biz.services);
+  const services = biz.services;
   return services.length ? (
     <Panel title={`Services in ${biz.cityName}`}>
       <ul className="listing-services">
@@ -252,14 +249,7 @@ function PremiumContent({ biz }: { biz: BusinessDetail }) {
 }
 
 export function ListingPage({ biz }: { biz: BusinessDetail }) {
-  const media = listingMediaSlots({
-    logoUrl: biz.logoUrl,
-    photos: biz.photos,
-    coverUrl: biz.coverUrl,
-    categorySlug: biz.primaryCategorySlug,
-    categoryName: biz.primaryCategory,
-    businessName: biz.name,
-  });
+  const media = biz.media;
   const hero = media.logo;
   const basic = biz.contentTier === "basic";
   const premium = biz.contentTier === "premium";
@@ -268,18 +258,11 @@ export function ListingPage({ biz }: { biz: BusinessDetail }) {
     "@context": "https://schema.org",
     "@type": "LocalBusiness",
     name: biz.name,
-    description: listingDescription(biz),
+    description: biz.description,
     ...(biz.phone ? { telephone: biz.phone } : {}),
     ...(safeWebsite(biz.website) ? { url: biz.website } : {}),
     ...(media.logo.template ? {} : { logo: media.logo.url }),
-    ...(biz.photos.some((photo) => safeWebsite(photo.url))
-      ? {
-          image: biz.photos
-            .map((photo) => safeWebsite(photo.url))
-            .filter((url): url is string => Boolean(url))
-            .slice(0, 5),
-        }
-      : {}),
+    ...(media.schemaImages.length ? { image: media.schemaImages } : {}),
     address: {
       "@type": "PostalAddress",
       ...(showStreet ? { streetAddress: biz.street } : {}),
@@ -433,7 +416,7 @@ export function ListingPage({ biz }: { biz: BusinessDetail }) {
                       Listing content and owner verification are separate.
                     </p>
                   </Panel>
-                  {biz.description ? <About biz={biz} /> : null}
+                  <About biz={biz} />
                 </>
               ) : (
                 <>

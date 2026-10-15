@@ -1,7 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { BadgeCheck, Clock, MapPin } from "lucide-react";
 import { telephoneHref } from "@/lib/directory/presentation.mjs";
-import { listingMediaSlots } from "@/lib/directory/category-art.mjs";
 import type { BusinessCard, ListingPlan } from "@/lib/directory/types";
 import { cn, formatPhone, mapsHref } from "@/lib/utils";
 import { Stars } from "./stars";
@@ -141,14 +140,7 @@ function CardPhoto({ url, alt, template }: { url: string; alt: string; template:
 }
 
 export function BusinessCardView({ biz, layout }: { biz: BusinessCard; layout?: CardLayout }) {
-  const cover = listingMediaSlots({
-    logoUrl: biz.logoUrl,
-    photos: biz.photos,
-    coverUrl: biz.coverUrl,
-    categorySlug: biz.primaryCategorySlug,
-    categoryName: biz.primaryCategory,
-    businessName: biz.name,
-  }).logo;
+  const cover = biz.media.logo;
   const tier = ["basic", "standard", "premium"].includes(biz.contentTier)
     ? biz.contentTier
     : "basic";
