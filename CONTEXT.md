@@ -55,6 +55,10 @@ _Avoid_: Account, vendor
 The always-free public directory record for one physical location or service-area operation of a Business, whether claimed or unclaimed. A Business may have one or more Business Listings, each with independent NAP, categories, Claims, Leads, Featured entitlement, and tracking-number state.
 _Avoid_: Directory entry, Profile when referring to the canonical directory record
 
+**Public Listing**:
+The resident-facing shape of one Business Listing: the description a reader may see, the service lines safe to show, the hours statement, and the logo and images. It is not a second record, and it does not change Content Tier, Claim, or Listing Participation.
+_Avoid_: raw listing, directory row, card payload
+
 **Claim**:
 The evidence-based process by which a Business Owner establishes authority over a Business Listing. An authenticated claimant may view Claim status and supply proof, but cannot edit the public Listing until approval.
 _Avoid_: Registration, verification

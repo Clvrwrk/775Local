@@ -1,7 +1,6 @@
 import { createFileRoute, notFound } from "@tanstack/react-router";
 import { ListingPage } from "@/components/directory/listing-page";
 import { getBusiness } from "@/lib/directory/queries";
-import { listingDescription } from "@/lib/directory/presentation.mjs";
 
 export const Route = createFileRoute("/biz/$slug")({
   loader: async ({ params }) => {
@@ -18,7 +17,7 @@ export const Route = createFileRoute("/biz/$slug")({
             : []),
           {
             name: "description",
-            content: listingDescription(loaderData.biz),
+            content: loaderData.biz.description,
           },
         ]
       : [],

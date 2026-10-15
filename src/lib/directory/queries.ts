@@ -51,24 +51,20 @@ const categories: Category[] = CATEGORIES.filter((category) =>
 ).map((category, index) => ({ ...category, id: index + 1 }));
 const cityNames = new Map(CITIES.map((city) => [city.slug, city.name]));
 const categoryNames = new Map(categories.map((category) => [category.slug, category.name]));
-
-function enrichCard(raw: Record<string, unknown>): BusinessCard {
-  const categorySlugs = Array.isArray(raw.categorySlugs)
-    ? raw.categorySlugs.filter((slug): slug is string => typeof slug === "string")
-    : [];
-  const primaryCategorySlug = categorySlugs[0] ?? String(raw.primaryCategorySlug ?? "");
-  return {
-    ...(raw as unknown as BusinessCard),
-    cityName: cityNames.get(String(raw.citySlug)) ?? String(raw.citySlug),
-    primaryCategory:
-      categoryNames.get(primaryCategorySlug) ?? String(raw.primaryCategory ?? "Local business"),
-    primaryCategorySlug,
-  };
-}
+const categoryNameBySlug = Object.fromEntries(categoryNames);
 
 async function fetchCards(filters: DirectoryFilters = {}): Promise<BusinessCard[]> {
-  const rows = await fetchDirectoryListings({ filters: pilotFilters(filters) });
-  return rows.map((row) => enrichCard(row));
+  const rows = await fetchDirectoryListings({
+    filters: pilotFilters(filters),
+    names: (row) => {
+      const cityName = cityNames.get(String(row.city_slug ?? ""));
+      return {
+        ...(cityName ? { cityName } : {}),
+        categoryNames: categoryNameBySlug,
+      };
+    },
+  });
+  return rows as BusinessCard[];
 }
 
 function ownerAccessUnavailable<T>(): T {
@@ -175,18 +171,7 @@ export const getBusiness = createServerFn({ method: "GET" })
       rating,
       reviewCount: reviewCount || null,
       email: "",
-      lat: (card as BusinessCard & { lat?: number | null }).lat ?? null,
-      lng: (card as BusinessCard & { lng?: number | null }).lng ?? null,
-      categories: card.categorySlugs.map((categorySlug) => ({
-        slug: categorySlug,
-        name: categoryNames.get(categorySlug) ?? categorySlug,
-      })),
       reviews: experiences,
-      photos: (card as BusinessCard & { photos?: BusinessDetail["photos"] }).photos ?? [],
-      services: (card as BusinessCard & { services?: string[] }).services ?? [],
-      faqs: (card as BusinessCard & { faqs?: BusinessDetail["faqs"] }).faqs ?? [],
-      projects: (card as BusinessCard & { projects?: BusinessDetail["projects"] }).projects ?? [],
-      offer: (card as BusinessCard & { offer?: BusinessDetail["offer"] }).offer ?? null,
       caseStudies: caseStudies.studies,
       caseStudiesStatus: caseStudies.status,
     } satisfies BusinessDetail;
