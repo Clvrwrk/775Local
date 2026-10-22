@@ -994,6 +994,25 @@
     padding-inline: 24px;
   }
 }
+@media (min-width: 768px) and (max-width: 1023px) {
+  .listing-premium-heading {
+    flex-direction: column;
+    gap: 20px;
+  }
+  .listing-premium-tier {
+    flex-basis: auto;
+    align-items: flex-start;
+    padding-top: 0;
+    text-align: left;
+  }
+  .listing-premium-tier .listing-sponsored {
+    align-self: flex-start;
+  }
+  .listing-premium-overview,
+  .listing-premium .listing-columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
 @media (max-width: 767px) {
   .listing-container {
     padding-inline: 20px;

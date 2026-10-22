@@ -19,16 +19,23 @@ const output = resolve(
 await mkdir(output, { recursive: true });
 const fixture = await mkdtemp(resolve(tmpdir(), "775-premium-browser-"));
 const results = [];
-const viewports = [
+const defaultViewports = [
   { width: 320, height: 740 },
   { width: 390, height: 844 },
   { width: 768, height: 1024 },
   { width: 1440, height: 1000 },
-].filter(
-  (viewport) =>
-    !process.env.PREMIUM_BROWSER_WIDTHS ||
-    process.env.PREMIUM_BROWSER_WIDTHS.split(",").includes(String(viewport.width)),
-);
+];
+const viewports = process.env.PREMIUM_BROWSER_WIDTHS
+  ? [...new Set(process.env.PREMIUM_BROWSER_WIDTHS.split(",").map(Number))].map((width) => {
+      assert.ok(
+        Number.isInteger(width) && width >= 240 && width <= 3840,
+        "Choose a valid viewport width",
+      );
+      return (
+        defaultViewports.find((viewport) => viewport.width === width) || { width, height: 1024 }
+      );
+    })
+  : defaultViewports;
 const scenarios = [
   { key: "real-five", photos: 5, logo: "wide" },
   { key: "no-media", photos: 0, logo: "none" },
@@ -100,6 +107,40 @@ function localSvg(pathname) {
     (logo ? "Synthetic identity" : "Synthetic photo " + (index + 1)) +
     "</text></svg>"
   );
+}
+
+async function verifyContactLayout(page, viewport) {
+  const media = page.locator(".listing-gallery-premium, .listing-premium-no-photos");
+  const contact = page.locator(".listing-premium-contact");
+  const [mediaBox, contactBox] = await Promise.all([media.boundingBox(), contact.boundingBox()]);
+  assert.ok(
+    mediaBox && contactBox,
+    "Premium media and contact surfaces must have visible geometry",
+  );
+  if (viewport.width < 1024) {
+    assert.ok(
+      contactBox.y >= mediaBox.y + mediaBox.height - 1,
+      "Mobile and tablet contact card must stack below the business gallery or photo fallback",
+    );
+    assert.ok(
+      Math.abs(contactBox.x - mediaBox.x) <= 1 && Math.abs(contactBox.width - mediaBox.width) <= 1,
+      "Stacked media and contact card must occupy the same full column",
+    );
+  } else {
+    assert.ok(
+      contactBox.x >= mediaBox.x + mediaBox.width - 1,
+      "Desktop contact card must sit beside the gallery or photo fallback",
+    );
+    assert.ok(
+      Math.abs(contactBox.y - mediaBox.y) <= 1,
+      "Desktop contact card and business media must align at the top",
+    );
+  }
+  return {
+    arrangement: viewport.width < 1024 ? "stacked" : "side-by-side",
+    media: mediaBox,
+    contact: contactBox,
+  };
 }
 
 async function verifyCase(page, viewport, scenario, pendingPhotos) {
@@ -222,7 +263,7 @@ async function verifyCase(page, viewport, scenario, pendingPhotos) {
       true,
       "Closing after the original image fails must focus a surviving gallery control",
     );
-    return;
+    return verifyContactLayout(page, viewport);
   }
   const usable = scenario.brokenPhotos ? 0 : scenario.photos - (scenario.brokenFirst ? 1 : 0);
   if (!usable) {
@@ -247,13 +288,6 @@ async function verifyCase(page, viewport, scenario, pendingPhotos) {
         "Lead and thumbnail crops must share the photo treatment",
       );
       assert.ok(await image.getAttribute("alt"), "Business photographs need meaningful alt text");
-    }
-    if (viewport.width >= 1024) {
-      const box = await gallery.boundingBox();
-      assert.ok(
-        box && contactBox.x >= box.x + box.width - 1,
-        "Desktop contact card must sit beside the gallery",
-      );
     }
     const buttons = gallery.getByRole("button");
     assert.ok(
@@ -315,6 +349,7 @@ async function verifyCase(page, viewport, scenario, pendingPhotos) {
     );
   }
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
+  return verifyContactLayout(page, viewport);
 }
 
 let origin;
@@ -415,7 +450,7 @@ try {
       });
       const result = { viewport, scenario: scenario.key, passed: false };
       try {
-        await verifyCase(page, viewport, scenario, pendingPhotos);
+        result.layout = await verifyCase(page, viewport, scenario, pendingPhotos);
         assert.deepEqual(errors, [], "Rendered component must not throw");
         result.passed = true;
       } catch (error) {
