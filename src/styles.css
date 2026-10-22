@@ -235,7 +235,7 @@
   --listing-width: 880px;
 }
 .listing-premium {
-  --listing-width: 1060px;
+  --listing-width: 1280px;
 }
 .listing-container {
   width: 100%;
@@ -288,7 +288,6 @@
 .listing-logo img,
 .listing-media-img,
 .listing-gallery img,
-.listing-hero-photo,
 .listing-photo-frame > img,
 .listing-photo-viewer > img {
   width: 100%;
@@ -384,7 +383,7 @@
   grid-template-columns: 1.4fr 1fr;
 }
 .listing-premium .listing-columns {
-  grid-template-columns: 1.55fr 1fr;
+  grid-template-columns: minmax(0, 2.1fr) minmax(0, 1fr);
 }
 .listing-stack {
   display: flex;
@@ -604,80 +603,175 @@
   margin-top: 12px;
   font-size: 21px;
 }
-.listing-premium-hero {
-  position: relative;
-  background: var(--color-pine);
-  color: var(--color-paper);
-  overflow: hidden;
+.listing-premium .listing-body {
+  padding-top: 40px;
 }
-.listing-hero-photo {
-  position: absolute;
-  inset: 0;
+.listing-premium {
+  overflow-wrap: anywhere;
+}
+.listing-premium .listing-breadcrumb > [aria-current="page"] {
+  min-width: 0;
+}
+.listing-premium-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 32px;
+  margin-bottom: 30px;
+}
+.listing-premium-identity {
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr);
+  align-items: center;
+  gap: 28px;
+  min-width: 0;
+}
+.listing-premium-identity > div {
+  min-width: 0;
+}
+.listing-premium-heading h1 {
+  margin: 0;
+  font-size: clamp(40px, 4.4vw, 66px);
+  font-weight: 600;
+  line-height: 1.02;
+  letter-spacing: -0.025em;
+  overflow-wrap: anywhere;
+}
+.listing-premium-logo {
+  display: grid;
+  place-items: center;
+  width: 112px;
+  height: 112px;
+  padding: 12px;
+  border: 1px solid var(--color-line);
+  border-radius: 8px;
+  background: var(--color-card);
+}
+.listing-premium-logo img {
   width: 100%;
   height: 100%;
   object-fit: contain;
-  object-position: center;
-  opacity: 0.24;
 }
-.listing-hero-inner {
-  position: relative;
-  padding-block: 56px;
+.listing-premium-logo-fallback {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  color: var(--color-muted);
+  font-size: 12px;
+}
+.listing-premium-category {
+  margin-top: 12px;
+  color: var(--color-ink-soft);
+  font-size: 17px;
+}
+.listing-premium-tier {
   display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-  gap: 32px;
-}
-.listing-hero-inner .listing-heading-copy {
-  max-width: 620px;
-  gap: 12px;
-}
-.listing-hero-inner h1 {
-  font-size: 44px;
-  line-height: 1.08;
-  font-weight: 600;
-  margin: 0;
-}
-.listing-hero-inner .listing-intro {
-  font-size: 15.5px;
-  line-height: 1.55;
-  color: rgb(246 243 236 / 0.85);
-}
-.listing-hero-inner .listing-eyebrow {
-  color: var(--color-gold);
-}
-.listing-hero-inner .listing-trust {
-  color: rgb(246 243 236 / 0.8);
-}
-.listing-badges {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-.listing-badges span {
-  background: var(--color-gold);
-  color: var(--color-ink);
-  padding: 4px 12px;
-  border-radius: 999px;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-}
-.listing-hero-inner [aria-label="Contact this business"] {
+  flex: 0 0 200px;
   flex-direction: column;
-  min-width: 230px;
+  align-items: flex-end;
+  gap: 8px;
+  padding-top: 6px;
+  text-align: right;
+}
+.listing-premium-tier > span:first-child {
+  padding: 7px 16px;
+  border: 1px solid #a27e15;
+  border-radius: 6px;
+  color: #80620e;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+.listing-premium-tier p {
+  color: var(--color-muted);
+  font-size: 12px;
+}
+.listing-premium-tier .listing-sponsored {
+  align-self: flex-end;
+}
+.listing-premium-overview {
+  display: grid;
+  grid-template-columns: minmax(0, 2.1fr) minmax(0, 1fr);
+  align-items: start;
+  gap: 24px;
+  margin-bottom: 32px;
+}
+.listing-premium-gallery-column {
+  min-width: 0;
+}
+.listing-premium-contact {
+  padding: 28px 24px;
+  border: 1px solid #d3c5aa;
+  border-radius: 8px;
+  background: var(--color-card);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.listing-premium-contact h2 {
+  font-size: 36px;
+  font-weight: 600;
+  line-height: 1.1;
+}
+.listing-premium-contact-summary {
+  margin-block: 8px 24px;
+  color: var(--color-muted);
+  font-size: 15px;
+}
+.listing-premium-contact [aria-label="Contact this business"] {
+  flex-direction: column;
   gap: 10px;
 }
-.listing-hero-inner .action-secondary {
-  color: var(--color-paper);
-  border-color: rgb(246 243 236 / 0.5);
+.listing-premium-contact .action-primary,
+.listing-premium-contact .action-secondary {
+  width: 100%;
+  justify-content: center;
+  border-radius: 7px;
+  padding-inline: 12px;
+  min-height: 50px;
+  font-size: 15px;
+}
+.listing-premium-contact .action-secondary {
+  border-color: #a27e15;
+  color: var(--color-ink);
   background: transparent;
 }
-.listing-hero-inner .action-secondary:hover {
-  background: rgb(246 243 236 / 0.1);
+.listing-premium-contact h3 {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 5px;
 }
-.listing-premium .listing-body {
-  padding-top: 40px;
+.listing-premium-contact-location,
+.listing-premium-status,
+.listing-premium-claim-link {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--color-line);
+}
+.listing-premium-contact-location {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+.listing-premium-contact-location svg {
+  flex: 0 0 22px;
+}
+.listing-premium-contact-location p,
+.listing-premium-status p,
+.listing-premium-claim-link {
+  font-size: 14px;
+  color: var(--color-muted);
+}
+.listing-premium-claim-link a {
+  display: inline-block;
+  padding-block: 10px;
+  text-decoration: underline;
+}
+.listing-premium a:focus-visible,
+.listing-premium button:focus-visible,
+.listing-premium [tabindex="-1"]:focus-visible {
+  outline: 3px solid #80620e;
+  outline-offset: 3px;
 }
 .listing-premium .listing-stack:not(aside) .listing-panel h2 {
   font-size: 26px;
@@ -730,13 +824,52 @@
 }
 .listing-gallery-premium {
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  grid-auto-rows: 150px;
+  gap: 12px;
+  border-radius: 7px;
 }
-.listing-gallery-premium[data-photo-count="1"] {
-  grid-template-columns: 1fr;
+.listing-gallery-premium > button {
+  aspect-ratio: 3 / 2;
+  min-width: 0;
+  border-radius: 4px;
 }
-.listing-gallery-premium[data-photo-count="2"] {
-  grid-template-columns: 1fr 1fr;
+.listing-gallery-premium > button:first-child {
+  grid-column: 1 / -1;
+  aspect-ratio: 12 / 5;
+}
+.listing-gallery-premium > button:focus-visible {
+  outline: 3px solid var(--color-gold);
+  outline-offset: -4px;
+  box-shadow: inset 0 0 0 7px var(--color-paper);
+}
+.listing-premium .listing-gallery-premium img {
+  object-fit: cover;
+  padding: 0;
+  background: var(--color-paper-2);
+}
+.listing-premium .listing-premium-no-photos {
+  min-height: 420px;
+  padding: 36px;
+  background: var(--color-card);
+  border-radius: 7px;
+}
+.listing-premium-no-photos > svg {
+  color: #80620e;
+}
+.listing-premium-no-photos h2 {
+  color: var(--color-ink);
+  font-size: 34px;
+  font-weight: 600;
+}
+.listing-premium-no-photos p {
+  max-width: 36ch;
+  overflow-wrap: anywhere;
+}
+.listing-premium .listing-photo-viewer > div {
+  color: var(--color-paper);
+}
+.listing-premium .listing-photo-frame img {
+  padding: 0;
+  background: transparent;
 }
 .listing-gallery button {
   position: relative;
@@ -759,8 +892,7 @@
   font-size: 13px;
 }
 .listing-gallery button span.listing-template-pill,
-.listing-photo-frame span.listing-template-pill,
-.listing-premium-hero > span.listing-template-pill {
+.listing-photo-frame span.listing-template-pill {
   position: absolute;
   left: 8px;
   bottom: 8px;
@@ -768,12 +900,6 @@
   width: auto;
   height: auto;
   background: rgb(28 26 22 / 0.78);
-}
-.listing-premium-hero > span.listing-template-pill {
-  top: 16px;
-  bottom: auto;
-  left: 16px;
-  z-index: 2;
 }
 .listing-gallery-empty {
   display: flex;
@@ -882,8 +1008,7 @@
   .listing-heading-copy {
     flex-basis: 100%;
   }
-  .listing-heading h1,
-  .listing-hero-inner h1 {
+  .listing-heading h1 {
     font-size: 36px;
   }
   .listing-heading-actions {
@@ -897,14 +1022,49 @@
   .listing-panel {
     padding: 22px;
   }
-  .listing-hero-inner {
+  .listing-premium-heading {
     flex-direction: column;
-    align-items: stretch;
-    padding-block: 32px;
-    gap: 22px;
+    gap: 20px;
   }
-  .listing-hero-inner [aria-label="Contact this business"] {
-    min-width: 0;
+  .listing-premium .listing-body {
+    padding-top: 28px;
+  }
+  .listing-premium-identity {
+    grid-template-columns: 64px minmax(0, 1fr);
+    gap: 16px;
+    width: 100%;
+  }
+  .listing-premium-logo {
+    width: 64px;
+    height: 64px;
+    padding: 7px;
+  }
+  .listing-premium-heading h1 {
+    font-size: clamp(32px, 7vw, 48px);
+    line-height: 1.06;
+  }
+  .listing-premium-category {
+    font-size: 14px;
+    margin-top: 8px;
+  }
+  .listing-premium-tier {
+    flex-basis: auto;
+    align-items: flex-start;
+    text-align: left;
+    padding-top: 0;
+  }
+  .listing-premium-tier .listing-sponsored {
+    align-self: flex-start;
+  }
+  .listing-premium-overview {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 24px;
+  }
+  .listing-premium-contact {
+    padding: 24px;
+  }
+  .listing-premium .listing-premium-no-photos {
+    min-height: 280px;
   }
   .listing-gallery-standard {
     grid-template-rows: 110px 110px;
@@ -914,8 +1074,10 @@
     min-height: 226px;
   }
   .listing-gallery-premium {
-    gap: 6px;
-    grid-auto-rows: 110px;
+    gap: 8px;
+  }
+  .listing-gallery-premium > button:first-child {
+    aspect-ratio: 4 / 3;
   }
   .listing-services {
     grid-template-columns: minmax(0, 1fr);

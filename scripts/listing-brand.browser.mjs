@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { mkdir, mkdtemp, writeFile, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import { resolve } from "node:path";
 import { createServer } from "vite";
 import react from "@vitejs/plugin-react";
@@ -11,7 +12,7 @@ import { chromium } from "playwright";
 const root = resolve(import.meta.dirname, "..");
 const output = resolve(root, "artifacts/release-audit");
 await mkdir(output, { recursive: true });
-const fixture = await mkdtemp(resolve(output, "location-browser-fixture-"));
+const fixture = await mkdtemp(resolve(tmpdir(), "775-location-browser-fixture-"));
 let server, browser;
 const results = [];
 try {
@@ -25,7 +26,7 @@ try {
   );
   await writeFile(
     resolve(fixture, "commands.mjs"),
-    'export const claimWorkflow=async()=>({ok:false}); export const getMyListingClaim=async()=>({ok:true,receipt:null}); export const submitListingClaim=async()=>({ok:false}); export const inquiryAvailability=async()=>({available:false,siteKey:""});',
+    'export const claimWorkflow=async()=>({ok:false}); export const getMyListingClaim=async()=>({ok:true,receipt:null}); export const submitListingClaim=async()=>({ok:false}); export const inquiryAvailability=async()=>({available:false,siteKey:""}); export const getMyLocalMember=async()=>({ok:true,member:{profile:null,experiences:[]}}); export const attachExperiencePhoto=async()=>({ok:false}); export const submitExperience=async()=>({ok:false});',
   );
   await writeFile(
     resolve(fixture, "fixture.css"),
@@ -54,23 +55,31 @@ createRoot(document.getElementById("root")!).render(<RouterProvider router={rout
   server = await createServer({
     configFile: false,
     root: fixture,
+    cacheDir: resolve(fixture, ".vite"),
     publicDir: resolve(root, "public"),
     plugins: [react(), tailwindcss()],
     resolve: {
       alias: [
+        { find: "react", replacement: resolve(root, "node_modules/react") },
+        { find: "react-dom", replacement: resolve(root, "node_modules/react-dom") },
+        {
+          find: "@tanstack/react-router",
+          replacement: resolve(root, "node_modules/@tanstack/react-router"),
+        },
         {
           find: "@workos/authkit-tanstack-react-start/client",
           replacement: resolve(fixture, "auth.mjs"),
         },
         { find: "@/lib/directory/claims", replacement: resolve(fixture, "commands.mjs") },
         { find: "@/lib/directory/inquiries", replacement: resolve(fixture, "commands.mjs") },
+        { find: "@/lib/directory/members", replacement: resolve(fixture, "commands.mjs") },
         { find: "@", replacement: resolve(root, "src") },
       ],
     },
     server: {
       host: "127.0.0.1",
       port: process.env.LISTING_BRAND_SERVE_ONLY ? 8080 : 0,
-      fs: { allow: [root] },
+      fs: { allow: [root, fixture] },
     },
   });
   await server.listen();
@@ -175,7 +184,9 @@ createRoot(document.getElementById("root")!).render(<RouterProvider router={rout
           .getByRole("heading", { name: "Synthetic Local Business", exact: true })
           .waitFor();
         if (signedIn) {
-          await page.getByText("Checking Claim status…", { exact: true }).waitFor({ state: "hidden" });
+          await page
+            .getByText("Checking Claim status…", { exact: true })
+            .waitFor({ state: "hidden" });
           for (const message of [
             "Connection interrupted while checking your claim.",
             "Claim status could not be loaded. Retry before starting another claim.",

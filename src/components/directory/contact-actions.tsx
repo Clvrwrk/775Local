@@ -14,7 +14,7 @@ export function ContactActions({
   const telephone = telephoneHref(phone);
   const destination = safeWebsite(website);
   return (
-    <div className="flex flex-wrap gap-3" aria-label="Contact this business">
+    <div className="flex flex-wrap gap-3" role="group" aria-label="Contact this business">
       {telephone ? (
         <a href={telephone} className="action-primary">
           <Phone className="size-4" strokeWidth={1.75} />

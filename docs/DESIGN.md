@@ -2,6 +2,8 @@
 
 A membership directory that feels like a local card in your pocket, not a SaaS table of businesses.
 
+**Premium listing exception (approved October 22, 2026):** use the business-name-first ivory/gold template recorded in `docs/LISTING-DESIGN-ACCEPTANCE.md`. A generous desktop photo gallery and defined right-hand contact card supersede the older narrow-canvas/no-sidebar listing guidance for Premium only. Use existing business assets, a small uncropped logo, clearly factual status and honest missing-media fallbacks. Premium describes presentation; it never implies verification or a Featured entitlement. Basic and Standard retain their existing structure.
+
 **North star:** Shangri-La Circle iOS (cream wash, gold ring, circular shortcuts, photo-forward cards, dark tab bar) × Sierra / high-desert material (topo lines, pine, sage, real job photos).
 
 **Tagline on product:** *Who actually shows up.*  
