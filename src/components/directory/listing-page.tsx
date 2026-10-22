@@ -1,5 +1,6 @@
+import { useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { Check, MapPin } from "lucide-react";
+import { Building2, Check, MapPin } from "lucide-react";
 import type { BusinessDetail } from "@/lib/directory/types";
 import {
   telephoneHref,
@@ -140,7 +141,7 @@ function Claim({ biz }: { biz: BusinessDetail }) {
 
 function About({ biz }: { biz: BusinessDetail }) {
   return (
-    <Panel title="About">
+    <Panel title={biz.contentTier === "premium" ? "Business overview" : "About"}>
       <div className="listing-prose">
         {descriptionBlocks(biz.description).map((paragraph, i) => (
           <p key={i}>{paragraph}</p>
@@ -209,6 +210,65 @@ function TemplatePill() {
   return <span className="listing-template-pill">Template</span>;
 }
 
+function PremiumLogo({ biz }: { biz: BusinessDetail }) {
+  const [failed, setFailed] = useState(false);
+  const logo = biz.media.logo;
+  return (
+    <div className="listing-premium-logo">
+      {!logo.template && !failed ? (
+        <img src={logo.url} alt={logo.alt} onError={() => setFailed(true)} />
+      ) : (
+        <span
+          className="listing-premium-logo-fallback"
+          role="img"
+          aria-label="Business logo unavailable"
+        >
+          <Building2 size={28} strokeWidth={1.25} aria-hidden="true" />
+          <span>No logo</span>
+        </span>
+      )}
+    </div>
+  );
+}
+
+function PremiumContact({ biz }: { biz: BusinessDetail }) {
+  const showStreet = !biz.hideStreet && biz.street && biz.street !== "Service area";
+  const hasContact = telephoneHref(biz.phone) || safeWebsite(biz.website);
+  return (
+    <aside className="listing-premium-contact" aria-label={`Contact ${biz.name}`}>
+      <h2>Contact</h2>
+      <p className="listing-premium-contact-summary">
+        {biz.primaryCategory} in {biz.cityName}
+      </p>
+      {hasContact ? (
+        <ContactActions phone={biz.phone} website={biz.website} sponsored={biz.featured} />
+      ) : (
+        <p className="listing-note">No phone number or website has been published.</p>
+      )}
+      <div className="listing-premium-contact-location">
+        <MapPin size={22} strokeWidth={1.5} aria-hidden="true" />
+        <div>
+          <h3>{showStreet ? "Location" : "Service area"}</h3>
+          <p>
+            {showStreet ? `${biz.street}, ` : ""}
+            {biz.cityName}, Nevada{showStreet && biz.zip ? ` ${biz.zip}` : ""}
+          </p>
+        </div>
+      </div>
+      <div className="listing-premium-status">
+        <h3>Listing status</h3>
+        <p>{biz.ownerVerified ? "Owner verified" : "Unclaimed"}</p>
+        <p>{biz.verified ? "Information checked" : "Unverified information"}</p>
+      </div>
+      {biz.citySlug === "reno" && !biz.ownerVerified ? (
+        <p className="listing-premium-claim-link">
+          Own this business? <a href="#claim-listing">Claim this listing</a>
+        </p>
+      ) : null}
+    </aside>
+  );
+}
+
 function PremiumContent({ biz }: { biz: BusinessDetail }) {
   const projects = visibleProjects(biz.projects).map((project) => ({
     ...project,
@@ -216,6 +276,7 @@ function PremiumContent({ biz }: { biz: BusinessDetail }) {
   }));
   return (
     <>
+      <About biz={biz} />
       <Services biz={biz} />
       {biz.faqs.length ? (
         <Panel title="Frequently asked questions">
@@ -229,7 +290,6 @@ function PremiumContent({ biz }: { biz: BusinessDetail }) {
           </div>
         </Panel>
       ) : null}
-      <About biz={biz} />
       {projects.length ? (
         <Panel title="Projects">
           <div className="listing-projects">
@@ -250,7 +310,6 @@ function PremiumContent({ biz }: { biz: BusinessDetail }) {
 
 export function ListingPage({ biz }: { biz: BusinessDetail }) {
   const media = biz.media;
-  const hero = media.logo;
   const basic = biz.contentTier === "basic";
   const premium = biz.contentTier === "premium";
   const showStreet = !biz.hideStreet && biz.street && biz.street !== "Service area";
@@ -292,14 +351,7 @@ export function ListingPage({ biz }: { biz: BusinessDetail }) {
       <p className="listing-eyebrow">
         {biz.primaryCategory} · {biz.cityName}, NV
       </p>
-      {premium ? (
-        <div className="listing-badges">
-          <span>Premium listing</span>
-          {biz.featured ? <span>Sponsored</span> : null}
-        </div>
-      ) : null}
-      <h1>{premium ? `${biz.primaryCategory} in ${biz.cityName}, NV — ${biz.name}` : biz.name}</h1>
-      {premium && biz.tagline ? <p className="listing-intro">{biz.tagline}</p> : null}
+      <h1>{biz.name}</h1>
       <TrustLine biz={biz} />
       {!premium && biz.featured ? <span className="listing-sponsored">Sponsored</span> : null}
       {basic && biz.citySlug === "reno" && !biz.ownerVerified ? (
@@ -335,18 +387,39 @@ export function ListingPage({ biz }: { biz: BusinessDetail }) {
             <span aria-current="page">{biz.name}</span>
           </nav>
         </div>
-        {premium ? (
-          <header className="listing-premium-hero">
-            {hero ? <img className="listing-hero-photo" src={hero.url} alt="" /> : null}
-            {hero?.template ? <TemplatePill /> : null}
-            <div className="listing-container listing-hero-inner">
-              {heading}
-              <ContactActions phone={biz.phone} website={biz.website} sponsored={biz.featured} />
-            </div>
-          </header>
-        ) : null}
         <div className="listing-container listing-body">
-          {!premium ? (
+          {premium ? (
+            <>
+              <header className="listing-premium-heading">
+                <div className="listing-premium-identity">
+                  <PremiumLogo key={`${biz.sourceId}-${media.logo.url}`} biz={biz} />
+                  <div>
+                    <h1>{biz.name}</h1>
+                    <p className="listing-premium-category">
+                      {biz.primaryCategory} · {biz.cityName}, NV
+                    </p>
+                  </div>
+                </div>
+                <div className="listing-premium-tier">
+                  <span>Premium listing</span>
+                  <p>Presentation tier, not verification</p>
+                  {biz.featured ? <span className="listing-sponsored">Sponsored</span> : null}
+                </div>
+              </header>
+              <div className="listing-premium-overview">
+                <div className="listing-premium-gallery-column">
+                  <ListingGallery
+                    key={biz.sourceId}
+                    slots={media.images}
+                    more={media.more}
+                    name={biz.name}
+                    variant="premium"
+                  />
+                </div>
+                <PremiumContact biz={biz} />
+              </div>
+            </>
+          ) : (
             <header className="listing-heading">
               {heading}
               <div className="listing-heading-actions">
@@ -356,8 +429,10 @@ export function ListingPage({ biz }: { biz: BusinessDetail }) {
                 <ContactActions phone={biz.phone} website={biz.website} sponsored={biz.featured} />
               </div>
             </header>
+          )}
+          {!premium ? (
+            <ListingGallery slots={media.images} more={media.more} name={biz.name} />
           ) : null}
-          <ListingGallery slots={media.images} more={media.more} name={biz.name} />
           <div className="listing-columns">
             <div className="listing-stack">
               {basic ? (
