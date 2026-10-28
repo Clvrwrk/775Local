@@ -45,7 +45,7 @@ function TabBar() {
 
   return (
     <nav
-      className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-pine pb-[env(safe-area-inset-bottom)] lg:hidden"
+      className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-pine pb-[env(safe-area-inset-bottom)] lg:hidden [--focus-outline-color:var(--color-gold)] [--focus-outline-offset:-4px]"
       aria-label="Mobile navigation"
     >
       <div className="grid grid-cols-4">
@@ -145,7 +145,7 @@ export function SiteShell({
           <p>© {new Date().getFullYear()} 775Directory</p>
         </footer>
       ) : (
-        <footer className="mt-12 border-t border-white/10 bg-pine pb-20 text-paper lg:pb-0">
+        <footer className="mt-12 border-t border-white/10 bg-pine pb-20 text-paper lg:pb-0 [--focus-outline-color:var(--color-gold)] [&_a]:scroll-my-24">
           <div className="mx-auto grid max-w-6xl gap-10 px-6 py-14 sm:grid-cols-[1.4fr_1fr_1fr]">
             <div>
               <BrandLogo dark className="w-52" />
