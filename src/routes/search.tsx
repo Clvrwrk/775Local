@@ -44,7 +44,7 @@ function SearchPage() {
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-teal">
           Directory search
         </p>
-        <h1 className="mt-2 font-display text-5xl font-semibold leading-[0.95] tracking-[-0.03em] sm:text-6xl">
+        <h1 className="mt-2 font-display text-5xl font-semibold leading-[0.95] tracking-[-0.03em] [overflow-wrap:anywhere] sm:text-6xl">
           {title}
         </h1>
         <p className="mt-2 text-sm text-muted">
