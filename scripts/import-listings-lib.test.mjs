@@ -47,4 +47,42 @@ test("apply mode requires an exact preview project match and rejects production"
     }),
     /does not match/,
   );
+  assert.throws(
+    () => validateImportTarget({
+      IMPORT_TARGET: "preview",
+      SUPABASE_URL: "https://hcfryjrajqftcnnbnybj.supabase.co",
+      PREVIEW_SUPABASE_PROJECT_REF: "hcfryjrajqftcnnbnybj",
+      SUPABASE_SERVICE_ROLE_KEY: "service-role-key-with-sufficient-length",
+    }),
+    /production/,
+  );
+});
+
+test("local rehearsal is an explicit loopback target", () => {
+  const valid = validateImportTarget({
+    IMPORT_TARGET: "local",
+    SUPABASE_URL: "http://127.0.0.1:55421",
+    LOCAL_SUPABASE_PROJECT_ID: "local775cli",
+    SUPABASE_SERVICE_ROLE_KEY: "service-role-key-with-sufficient-length",
+  });
+  assert.equal(valid.projectRef, "local775cli");
+
+  assert.throws(
+    () => validateImportTarget({
+      IMPORT_TARGET: "local",
+      SUPABASE_URL: "https://hcfryjrajqftcnnbnybj.supabase.co",
+      LOCAL_SUPABASE_PROJECT_ID: "local775cli",
+      SUPABASE_SERVICE_ROLE_KEY: "service-role-key-with-sufficient-length",
+    }),
+    /production/,
+  );
+  assert.throws(
+    () => validateImportTarget({
+      IMPORT_TARGET: "local",
+      SUPABASE_URL: "http://127.0.0.1:54321",
+      LOCAL_SUPABASE_PROJECT_ID: "local775cli",
+      SUPABASE_SERVICE_ROLE_KEY: "service-role-key-with-sufficient-length",
+    }),
+    /isolated CLI loopback/,
+  );
 });

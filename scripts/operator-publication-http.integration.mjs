@@ -113,6 +113,22 @@ const malformedReview = await withAuthKitContext(accessToken, () =>
 );
 assert.deepEqual(malformedReview, { ok: false, code: "invalid_operator_command" });
 
+const reviewExecute = databaseQuery(`
+  select has_function_privilege(
+    'authenticated',
+    'public.review_listing_candidate(uuid,jsonb,text)',
+    'execute'
+  )::text;
+`);
+assert.equal(reviewExecute, "false");
+// Local process only. The migration keeps EXECUTE denied. This grant lets the
+// rest of the file prove the operator predicate on a database that rolls away.
+databaseQuery(`
+  grant execute on function public.review_listing_candidate(uuid, jsonb, text) to authenticated;
+  grant execute on function public.publish_launch_selection(uuid[], text) to authenticated;
+  grant execute on function public.transition_listing_publication_state(uuid, text, text[], text) to authenticated;
+`);
+
 const candidateReview = await withAuthKitContext(accessToken, () =>
   handleReviewListingCandidate(
     {
