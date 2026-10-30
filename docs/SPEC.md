@@ -188,6 +188,7 @@ The principal proof is not traffic. It is qualified Leads delivered reliably, ac
 - Lead delivery persists first, projects to GoHighLevel, notifies verified Lead Recipients by email/SMS, records receipts, retries failures, dead-letters exhausted work, and escalates to Operators.
 - Stripe connected through GoHighLevel processes payment. Signed transaction events enter the inbox and append billing events; Supabase computes entitlement.
 - Preview uses provider staging/test modes or deterministic sinks. Real external tests are individually approved and receipt-bearing.
+- Every Listing web source has a private Listing Intelligence account. Owned sites retain all accessible Firecrawl pages plus a complete DataForSEO OnPage audit; Facebook/Yelp/Houzz/other platform sources retain only the registered business landing page. Raw provider payloads are content-addressed and append-only, contacts remain private, and partial/blocked coverage is explicit.
 - Featured tracking numbers are dedicated per Listing. Recording requires explicit keypress consent or continues unrecorded. No transcription or Voice AI.
 
 ### Public discovery, SEO, and ratings
@@ -200,6 +201,7 @@ The principal proof is not traffic. It is qualified Leads delivered reliably, ac
 - Sitemap includes canonical indexable published URLs only. `lastmod` changes only for significant public content, link, or structured-data updates.
 - Featured placement is visibly Sponsored. Paid outbound links use sponsored relation metadata; ordinary organic citations do not.
 - Duplicate/merged Listing returns 301 to survivor; permanent removal returns 410; temporary suspension returns a non-indexable 404-style response.
+- Listing Intelligence may propose a unique top-service page and local-searcher decision tree only from claim-level provenance. Automated drafts remain non-public until reviewed; audit completion, payment, or a successful crawl is never publication authority.
 
 ### Observability, analytics, and privacy
 
